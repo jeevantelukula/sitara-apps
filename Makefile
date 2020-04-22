@@ -1,3 +1,5 @@
+include Rules.make
+
 # Set default target
 all:
 
