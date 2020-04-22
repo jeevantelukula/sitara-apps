@@ -1,0 +1,3 @@
+[submodule "concerto"]
+	path = concerto
+	url = ssh://git@bitbucket.itg.ti.com/sitara/concerto.git
