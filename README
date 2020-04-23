@@ -1,1 +1,64 @@
-TDB
+Sitara Applications
+===================
+
+Cloning sources
+-------------------
+The sitara-apps repo uses git submodules. Use one of the following set of
+commands to fetch all sources:
+
+    $ git clone ssh://git@bitbucket.itg.ti.com/sitara/sitara-apps.git
+    $ git submodule init
+    $ git submodule update
+
+Or to clone in a single command:
+
+    $ git clone --recurse-submodules ssh://git@bitbucket.itg.ti.com/sitara/sitara-apps.git
+
+
+Configuring sitara-apps for building
+-------------------
+The file `Rules.make` is provided to configure paths to dependencies provided by
+Processor SDK. These paths can be set to either build against the Sitara SDK
+which provides both RTOS and Linux packages, or the individual Processor SDK for
+RTOS and Linux each.
+
+Variables expected to be modified:
+
+If building agaisnt the Sitara SDK:
+* `PSDK_PATH`: install directory of the Sitara SDK
+
+
+If building against the Processor SDK:
+
+*This should only be used for experimental purposes. All pull requests must be
+validated against the Sitara SDK.*
+
+* `PRSDK_PATH`: install directory of the Processor SDK for Baremetal/RTOS.
+* `PLSDK_PATH`: install directory of the Processor SDK for Linux
+
+
+Building sitara-apps
+-------------------
+The sitara-apps can be built using the Makefile contained in the top directory.
+Once the paths have been configured as specified above, the following command
+will build all demo applications.
+
+    $ make
+
+To see a more verbose output for debugging, the following command may be used to
+see compile/linking commands:
+
+    $ make SHOW_COMMANDS=1
+
+
+Using Concerto:
+-------------------
+For an introduction and overview of Concerto, please refer to the README under
+the concerto directory.
+
+For example usage, please refer to the following files in the servo-drive-demo:
+* `apps/servo_drive_demo/Makefile`: top-level makefile for invoking concerto.
+* `apps/servo_drive_demo/ethercat_loop/src/concerto.mak`: example sub-makefile for building a TI RTOS application
+* `apps/servo_drive_demo/position_speed_loop/src/concerto.mak`: example sub-makefile for building a baremetal application
+
+
