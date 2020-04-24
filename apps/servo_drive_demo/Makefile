@@ -17,7 +17,9 @@ DIRECTORIES = $(HOST_ROOT)
 TARGET_COMBOS ?= AM65X:SYSBIOS:R5F:2:release:TIARMCGT \
                  AM65X:SYSBIOS:R5F:2:debug:TIARMCGT \
                  AM65X:NO_OS:R5F:2:release:TIARMCGT \
-                 AM65X:NO_OS:R5F:2:debug:TIARMCGT
+                 AM65X:NO_OS:R5F:2:debug:TIARMCGT \
+                 AM64X:NO_OS:M4F:2:release:TIARMCGT \
+                 AM64X:NO_OS:M4F:2:debug:TIARMCGT
 
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
