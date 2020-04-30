@@ -17,13 +17,28 @@ TARGET      := app_tirtos_mcu1_0_servo_drive_ethcat
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
-CSOURCES    := $(call all-c-files)
+CSOURCES    := tiescutils.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
 
+# FIXME
+ifeq ($(TARGET_PLATFORM),AM65X)
+CSOURCES += tiesc_soc_am65x.c
+ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM65xx_r5f.lib
+STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM65xx
+LDIRS += $(APPDIR)/lib/am65xx/r5f
+endif
+
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
+IDIRS+=$(APPDIR)/ti_osal
+IDIRS+=$(APPDIR)/beckhoff_ssc
+IDIRS+=$(APPDIR)/ti_board/include
+
+# Add this for including private board headers
+IDIRS+=$(PDK_PATH)/packages/ti/csl
+IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -42,13 +57,25 @@ IDIRS+=$(COMMON_CONFIG)/mem_map
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 #STATIC_LIBS += app_common_mcu1_0
+STATIC_LIBS += app_servo_drive_ethcat_beckhoff_ssc
+STATIC_LIBS += app_servo_drive_ethcat_tiboard_common
+STATIC_LIBS += app_servo_drive_ethcat_osal
+
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f
+ADDITIONAL_STATIC_LIBS += ti.csl.init.aer5f
+ADDITIONAL_STATIC_LIBS += ti.csl.aer5f
+ADDITIONAL_STATIC_LIBS += ti.board.aer5f
+ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
+ADDITIONAL_STATIC_LIBS += ti.drv.i2c.aer5f
+ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f
+ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
+ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
-
 
 # The following XDC_* files are used to configure SYSBIOS to enable TI RTOS.
 # XDC/BIOS configuro need below 3 input arguments to work
