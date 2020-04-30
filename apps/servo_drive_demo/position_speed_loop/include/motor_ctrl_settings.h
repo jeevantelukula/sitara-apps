@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2017-2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,61 +31,47 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <logs/include/app_log.h>
-#include "app_init.h"
-#include "position_speed_loop_if.h"
+#ifndef MOTOR_CTRL_SETTINGS_H
+#define MOTOR_CTRL_SETTINGS_H
 
-/*
- * Implements Position Speed Loop R5F main().
- * Control comes here immediately after the core boots-up
- * All Motor control related APIs shall be called from this here.
- */
+//
+// Include project specific include files.
+//
 
-/* Added for debug purpose when load and run via SBL.
- * set enableDebug = 1 and build for debug.
- * Once started running connect CCS and reset enableDebug=0
- * to proceed with single-step from the beginning
- */
-void StartupEmulatorWaitFxn (void)
-{
-    volatile uint32_t enableDebug = 0;
-    do
-    {
-    }while (enableDebug);
-}
+//
+// Following is the list of the Build Level choices.
+//
+#define  FCL_LEVEL1   1     // Verify HAL
+#define  FCL_LEVEL2   2     // Verify IPC for Node_M with speed loop
+#define  FCL_LEVEL3   3     // Verify EtherCAT & IPC for Node_M w/o control
+#define  FCL_LEVEL4   4     // Verify EtherCAT & IPC with speed loop for Node_M
+#define  FCL_LEVEL5   5     // Verify FSI
+#define  FCL_LEVEL6   6     // Verify torque current control over FSI (**)
+#define  FCL_LEVEL7   7     // Verify speed loop over FSI & IPC
+#define  FCL_LEVEL8   8     // Verify position loop over FSI & IPC
+#define  FCL_LEVEL9   9     // SFRA verify slaves control bandwidth
+#define  FCL_LEVEL10  10    // Verify EtherCAT, IPC & FSI w/o control loop
+#define  FCL_LEVEL11  11    // Speed/position loop over EtherCAT, IPC and FSI
 
-int main(void)
-{
-    int32_t status;
-    
-    /* This is for debug purpose - see the description of function header */
-    StartupEmulatorWaitFxn();
+//
+// Here below, pick position and speed loop controller option
+//
+#define  SPD_PID_CNTLR      1
+#define  SPD_DCL_CNTLR      2
 
-    appLogPrintf("MCU-SS core0 is up !!!! \n");
+//
+// User can select choices from available control configurations
+//
+#define  BUILDLEVEL          FCL_LEVEL7         // 7 & 11 for demo
+#define  SPD_CNTLR           SPD_PID_CNTLR      // SPD_DCL_CNTLR     //
 
-    status = appInit();
-    if (status != 0)
-    {
-        appLogPrintf("ERROR: appInit() failed\n");        
-        return -1;
-    }
-    
-    status = appPositionSpeedLoopInit();
-    if (status != POSITION_SPEED_LOOP_SOK)
-    {
-        appLogPrintf("ERROR: appPositionSpeedLoopInit() failed\n");
-        return -1;
-    }
+#ifndef BUILDLEVEL
+#error  Critical: BUILDLEVEL must be defined !!
+#endif  // BUILDLEVEL
 
-#if 1
-    while(1)
-    {
-        appPositionSpeedLoopStart();
-    }
-#else
-    appCommonDeInit();
+#ifndef PI
+#define PI 3.14159265358979
 #endif
-}
+
+#endif  // end of MOTOR_CTRL_SETTINGS_H definition
+

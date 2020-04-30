@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2019-2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,61 +31,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <logs/include/app_log.h>
-#include "app_init.h"
-#include "position_speed_loop_if.h"
+#ifndef _GPIO_BOARD_H
+#define _GPIO_BOARD_H
 
-/*
- * Implements Position Speed Loop R5F main().
- * Control comes here immediately after the core boots-up
- * All Motor control related APIs shall be called from this here.
- */
-
-/* Added for debug purpose when load and run via SBL.
- * set enableDebug = 1 and build for debug.
- * Once started running connect CCS and reset enableDebug=0
- * to proceed with single-step from the beginning
- */
-void StartupEmulatorWaitFxn (void)
-{
-    volatile uint32_t enableDebug = 0;
-    do
-    {
-    }while (enableDebug);
-}
-
-int main(void)
-{
-    int32_t status;
-    
-    /* This is for debug purpose - see the description of function header */
-    StartupEmulatorWaitFxn();
-
-    appLogPrintf("MCU-SS core0 is up !!!! \n");
-
-    status = appInit();
-    if (status != 0)
-    {
-        appLogPrintf("ERROR: appInit() failed\n");        
-        return -1;
-    }
-    
-    status = appPositionSpeedLoopInit();
-    if (status != POSITION_SPEED_LOOP_SOK)
-    {
-        appLogPrintf("ERROR: appPositionSpeedLoopInit() failed\n");
-        return -1;
-    }
-
-#if 1
-    while(1)
-    {
-        appPositionSpeedLoopStart();
-    }
-#else
-    appCommonDeInit();
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+
+/* Example/Board Header files */
+#include <ti/board/board.h>
+
+#if defined (SOC_AM65XX)
+#include <ti/csl/src/ip/intr_router/V0/csl_intr_router.h>
+#include <ti/csl/src/ip/fss/V0/csl_fss.h>
+#include <ti/csl/src/ip/rat/V0/csl_rat.h>
+#include <ti/csl/soc/am65xx/src/cslr_soc_baseaddress.h>
+#include <ti/csl/soc/am65xx/src/cslr_mcu_ctrl_mmr.h>
+#include <ti/csl/soc/am65xx/src/cslr_mcu_pll_mmr.h>
+#include <ti/csl/soc/am65xx/src/cslr_wkup_ctrl_mmr.h>
+#endif
+
+
+/**********************************************************************
+ ************************** Macros ************************************
+ **********************************************************************/
+#define TEST_GPIO_PORT_NUM  ( 0 )
+#define TEST_GPIO_PIN_NUM   ( 14 )
+#define TEST_GPIO2_PIN_NUM  ( 15 )
+
+#define GPIO_PIN_VAL_LOW    ( 0U )
+#define GPIO_PIN_VAL_HIGH   ( 1U )
+
+#define TEST_GPIO_IDX       ( 0 )
+#define TEST_GPIO2_IDX      ( 1 )
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* _GPIO_BOARD_H */

@@ -31,61 +31,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <logs/include/app_log.h>
-#include "app_init.h"
-#include "position_speed_loop_if.h"
+#ifndef _CFG_ICSS_H_
+#define _CFG_ICSS_H_
 
-/*
- * Implements Position Speed Loop R5F main().
- * Control comes here immediately after the core boots-up
- * All Motor control related APIs shall be called from this here.
- */
+#include <ti/csl/tistdtypes.h>
 
-/* Added for debug purpose when load and run via SBL.
- * set enableDebug = 1 and build for debug.
- * Once started running connect CCS and reset enableDebug=0
- * to proceed with single-step from the beginning
- */
-void StartupEmulatorWaitFxn (void)
-{
-    volatile uint32_t enableDebug = 0;
-    do
-    {
-    }while (enableDebug);
-}
+#define CFG_ICSS_SOK            (  0 )  /* no error */      
+#define CFG_ICSS_SERR_INIT_ICSS ( -1 )  /* initialize ICSS error */
+#define CFG_ICSS_SERR_INIT_PRU  ( -2 )  /* initialize PRU error */
+#define CFG_ICSS_SERR_INIT_FSI  ( -3 )  /* initialize FSI error */
 
-int main(void)
-{
-    int32_t status;
-    
-    /* This is for debug purpose - see the description of function header */
-    StartupEmulatorWaitFxn();
+/* Default ICSS pin mux setting */
+#define PRUICSS_PINMUX_DEF      ( 0x0 )
 
-    appLogPrintf("MCU-SS core0 is up !!!! \n");
+/* Initialize ICSSG */
+int32_t initIcss(
+    PRUICSS_MaxInstances icssInstId, 
+    PRUICSS_Handle *pPruIcssHandle    
+);
 
-    status = appInit();
-    if (status != 0)
-    {
-        appLogPrintf("ERROR: appInit() failed\n");        
-        return -1;
-    }
-    
-    status = appPositionSpeedLoopInit();
-    if (status != POSITION_SPEED_LOOP_SOK)
-    {
-        appLogPrintf("ERROR: appPositionSpeedLoopInit() failed\n");
-        return -1;
-    }
+/* Initialize PRU for FSI */
+int32_t initPruFsi(
+    PRUICSS_Handle pruIcssHandle,
+    PRUSS_PruCores pruInstId,
+    const uint32_t *sourceMemData,
+    uint32_t dataSize,
+    const uint32_t *sourceMemInstr,
+    uint32_t instrSize
+);
 
-#if 1
-    while(1)
-    {
-        appPositionSpeedLoopStart();
-    }
-#else
-    appCommonDeInit();
-#endif
-}
+#endif /* _CFG_ICSS_H_ */

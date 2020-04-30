@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2019-2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,61 +31,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <logs/include/app_log.h>
-#include "app_init.h"
-#include "position_speed_loop_if.h"
+#ifndef HW_TYPES_H
+#define HW_TYPES_H
 
-/*
- * Implements Position Speed Loop R5F main().
- * Control comes here immediately after the core boots-up
- * All Motor control related APIs shall be called from this here.
- */
+typedef float         float32_t;
 
-/* Added for debug purpose when load and run via SBL.
- * set enableDebug = 1 and build for debug.
- * Once started running connect CCS and reset enableDebug=0
- * to proceed with single-step from the beginning
- */
-void StartupEmulatorWaitFxn (void)
-{
-    volatile uint32_t enableDebug = 0;
-    do
-    {
-    }while (enableDebug);
-}
-
-int main(void)
-{
-    int32_t status;
-    
-    /* This is for debug purpose - see the description of function header */
-    StartupEmulatorWaitFxn();
-
-    appLogPrintf("MCU-SS core0 is up !!!! \n");
-
-    status = appInit();
-    if (status != 0)
-    {
-        appLogPrintf("ERROR: appInit() failed\n");        
-        return -1;
-    }
-    
-    status = appPositionSpeedLoopInit();
-    if (status != POSITION_SPEED_LOOP_SOK)
-    {
-        appLogPrintf("ERROR: appPositionSpeedLoopInit() failed\n");
-        return -1;
-    }
-
-#if 1
-    while(1)
-    {
-        appPositionSpeedLoopStart();
-    }
-#else
-    appCommonDeInit();
-#endif
-}
+#endif // HW_TYPES_H
