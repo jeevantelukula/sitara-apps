@@ -1,0 +1,79 @@
+/*
+ * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the
+ *    distribution.
+ *
+ *  * Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef APP_UTILS_MISC_H_
+#define APP_UTILS_MISC_H_
+
+/**
+ * \defgroup group_apps_utils_misc Miscellaneous utility APIs (TI-RTOS only)
+ *
+ * \brief This section contains miscellaneous utility APIs
+ *
+ * \ingroup group_apps_utils
+ *
+ * @{
+ */
+
+#include <stdint.h>
+
+/**
+ * \brief Tell TI-RTOS what is the CPU frequency
+ *
+ * NOTE, this does not set the actuall CPU Hz in PSC, this just tells
+ * SysBIOS what is the CPU Hz so that its timestamp API returns value in
+ * correct units
+ */
+int32_t appUtilsSetCpuHz(uint32_t freq);
+
+/**
+ * \brief API to set to DLFO bit in ACTRL register of R5F
+ *
+ * This API uses assembly instruction to set DLFO bit in ACTRL register
+ * of R5F.
+ * This should be called from the Core reset callback.
+ *
+ */
+void appUtilsSetDLFOBitInACTRLReg(void);
+
+/**
+ * \brief API to set to set pinmux required for running basic apps
+ *
+ * It internally uses Board API to configure Pinmux.
+ *
+ */
+void appSetPinmux(pinmuxPerCfg_t *pInstanceData);
+
+/* @} */
+
+#endif
+
