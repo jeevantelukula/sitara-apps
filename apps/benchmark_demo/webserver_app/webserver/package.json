@@ -1,0 +1,22 @@
+{
+	"name" : "benchmark_demo",
+	"version" : "1.0.0", 
+	"description" : "Webserver for the benchmark demo",
+	"main" : "benchmark_server.js",
+	"scripts" : {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"benchmark_server.js" : "node benchmark_server.js",
+		"start" : "node benchmark_server.js"
+	},
+	"license" : "BSD-3-Clause",
+	"dependencies" : {
+		"serve-static" : "^1.14.1",
+		"express" : "^4.17.1",
+		"edit-json-file" : "^1.4.0"
+	},
+	"private" : true,
+	"bin" : {
+		"benchmark_server" : "benchmark_server.js"
+	},
+	"main" : "benchmark_server.js"
+}
