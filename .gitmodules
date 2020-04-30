@@ -1,3 +1,7 @@
 [submodule "concerto"]
 	path = concerto
 	url = ssh://git@bitbucket.itg.ti.com/sitara/concerto.git
+[submodule "apps/servo_drive_demo/ethercat_loop/beckhoff_ssc"]
+	path = apps/servo_drive_demo/ethercat_loop/beckhoff_ssc
+	url = ssh://git@bitbucket.itg.ti.com/~a0756868/beckhoff_ssc.git
+	branch = sitara_apps_am64x_0.2
