@@ -1,0 +1,19 @@
+{
+	"template":"AM64x Starter Tool",
+	"description":"Multipage application with benchmark data",
+	"version":"1.0.0",
+	"theme":"ti-analogevm-theme",
+	"projectName":"AM64x_Starter_Tool",
+	"applicationName":"AM64x Starter Tool",
+	"applicationIcon":"",
+	"windowIcon":"",
+	"splashImage":"",
+	"tiBrandingEnabled":true,
+	"disableAutoConnect":false,
+	"vendorName":"",
+	"technologyName":"",
+	"customLicense":"",
+	"customManifest":"",
+	"customAppInfo":"",
+	"nosplash":true
+}

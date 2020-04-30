@@ -1,0 +1,2446 @@
+<!doctype html>
+<!--
+%COPYRIGHTNOTICE%
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+*   Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+*   Neither the name of Texas Instruments Incorporated nor the names of
+its contributors may be used to endorse or promote products derived
+from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <link rel="icon" type="image/png" href="splash/gui_icon.png">
+
+    <title>AM64x Starter Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <script src="components/webcomponentsjs/webcomponents-lite.js"></script>
+    <script> if (typeof nw != 'undefined') {window.$ti_nw_main_window = true;} </script>
+    <script>
+        console.log("window.opener = "+window.opener);
+        if (window.opener) {
+            if (window.opener.getNodeWebkit){
+                window.opener.getNodeWebkit(window,window.opener);
+            }
+        }
+        console.log("typeof process = "+(typeof process).toString());
+    </script>
+    <script src="components/ti-core-assets/scripts/gcDesktop.js"></script>
+    <link rel="import" href="components/ti-core-databind/ti-core-databind.html">
+    <script src="main.js"></script>
+    <link rel="stylesheet" href="oneui.css">
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            height: 100%;
+            overflow-y: hidden;
+        }
+
+        design-gist-element-preview {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body class="ti-analogevm-theme">
+<div id="splash" style='width:100%; height:100%; z-index: 999999; background-color: #eeeeee; position: absolute;'>
+	<div style="width: 100%; height: 100%; background: url('./images/loading.gif') no-repeat center"></div>
+</div>
+
+<!-- ------------------------------------------------------------------------------------- -->
+<!--gist-begin-->
+<link rel="import" href="components/ti-widget-readme/ti-widget-readme.html">
+<link rel="import" href="components/ti-core-stylesheets/ti-core-stylesheets.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-menubar.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-filemenu.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-menuaction.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-optionsmenu.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-menuitem.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-zoommenu.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-helpmenu.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-menutoggle.html">
+<link rel="import" href="components/ti-widget-menubar/ti-widget-menuseparator.html">
+<link rel="import" href="components/ti-widget-window-buttons/ti-widget-window-buttons.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-container.html">
+<link rel="import" href="components/ti-widget-icon-button/ti-widget-icon-button.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-label.html">
+<link rel="import" href="components/ti-widget-toast/ti-widget-toast.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-banner.html">
+<link rel="import" href="components/ti-widget-eventlog/ti-widget-eventlog-view.html">
+<link rel="import" href="components/ti-widget-statusbar/ti-widget-statusbar.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-vtabcontainer.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-vtab.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-image.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-tabcontainer.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-tab.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-button.html">
+<link rel="import" href="components/ti-widget-app-menu-buttons/ti-widget-app-menu-buttons.html">
+<link rel="import" href="components/ti-widget-markdown/ti-widget-markdown.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-tilecontainer.html">
+<link rel="import" href="components/ti-tile-wizard/ti-tile-container.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-dialog.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-droplist.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-progressbar.html">
+<link rel="import" href="components/ti-widget-instruments/ti-widget-gauge.html">
+<link rel="import" href="components/ti-widget-common/ti-widget-numberbox.html">
+<link rel="import" href="components/ti-core-databind/ti-transport-network.html">
+<link rel="import" href="components/ti-model-http/ti-model-http.html">
+<link rel="import" href="components/ti-model-http/ti-route-http.html">
+
+ 
+  <template id="template_obj" is="dom-bind">
+
+<style is="custom-style">
+  #ti_widget_menubar {
+    top: 0px;
+    width: 100%;
+    margin: 0px;
+    position: absolute;
+  }
+  html .viewport {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    bottom: 28px;
+    top: 41px;
+    border: none;
+  }
+  #viewport {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    left: 0px;
+    top: 40px;
+    width: 100%;
+    height: calc(100% - 40px);
+    background-color: rgb(255, 255, 255);
+    overflow: hidden;
+  }
+  #toolbar {
+    top: 0px;
+    height: 45px;
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    left: 0px;
+    position: absolute;
+    background-color: rgb(255, 255, 255);
+    border: 1px solid white;
+    overflow: hidden;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 2px 4px;
+    z-index: 3;
+    padding: 4px;
+  }
+  #ti_widget_icon_button_menu {
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+  #ti_widget_label_menu {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+  }
+  #ti_widget_vtabcontainer {
+    height: calc(100% - 73px);
+    left: 0px;
+    top: 86px;
+    background-color: rgb(255, 255, 255);
+    z-index: 1;
+    overflow: hidden;
+    position: absolute;
+    width: calc(100% - 2px);
+    padding-left: 2px;
+  }
+  #ti_widget_vtab_home {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: hidden;
+    transition: background-color 0.5s ease;
+    background-color: rgb(20, 140, 156);
+    z-index: 1;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: calc(100% - 40px);
+  }
+  #ti_widget_vtab_info {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    background-color: rgb(255, 255, 255);
+    z-index: 1;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+  }
+  #ti_widget_vtab_config {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    background-color: rgb(255, 255, 255);
+    z-index: 1;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+  }
+  #ti_widget_statusbar {
+    position: static;
+  }
+  #ti_widget_eventlog_view {
+    height: 250px;
+    bottom: 30px;
+    width: 100%;
+    display: none;
+    position: absolute;
+    z-index: 10;
+  }
+  #ti_widget_toast {
+    height: 44px;
+    left: 55px;
+    position: fixed;
+    bottom: 30px;
+    z-index: 200;
+    display: block;
+  }
+  #ti_widget_vtab_info {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+  }
+  #ti_widget_tilecontainer_quickstart {
+    width: 100%;
+    position: absolute;
+    top: 50px;
+    left: 0px;
+    overflow: auto;
+    height: calc(100% - 50px);
+  }
+  #ti_widget_tilecontainer_general {
+    width: 100%;
+    position: absolute;
+    top: 50px;
+    left: 0px;
+    overflow: auto;
+    height: calc(100% - 50px);
+  }
+    #ti_widget_tabcontainer {
+        width: 100%;
+        height: 325px;
+        position: absolute;
+        top: calc(100% - 325px);
+        left: 0px;
+    }
+    #ti_widget_tab {
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: initial;
+        height: 100%;
+        width: 100%;
+        display: block;
+        background-color: rgb(20, 140, 156);
+    }
+    #ti_widget_app_menu_buttons {
+        width: 100%;
+        height: calc(100% - 90px);
+        position: absolute;
+        left: 0px;
+        top: 90px;
+    }
+    #ti_widget_container_greybar {
+        height: 52px;
+        width: 100%;
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: hidden;
+        left: 0px;
+        top: 0px;
+        position: absolute;
+        background-color: rgb(52, 52, 52);
+    }
+  #ti_widget_label_showless {
+    position: absolute;
+    opacity: 0.7;
+    left: 0px;
+    width: 100%;
+    top: calc(100% - 345px);
+    text-align: center;
+    text-decoration: underline;
+    font-weight: normal;
+    font-style: normal;
+    color: rgb(255, 255, 255);
+    font-size: 12px;
+    white-space: nowrap;
+    height: 20px;
+  }
+  #ti_widget_image {
+    padding-top: 40px;
+    height: calc(100% - 450px);
+    margin: 0px;
+    width: calc(100% - 50px);
+    position: relative;
+    transform: translate(0px, 40px);
+    overflow: hidden;
+    display: inline-block;
+    top: 50px;
+    left: 25px;
+  }
+  #ti_widget_label_productname {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+    left: 0px;
+    top: 27px;
+    position: absolute;
+    width: 100%;
+  }
+  #ti_widget_label_productdesc {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+    left: 0px;
+    top: 67px;
+    position: absolute;
+    width: 100%;
+    opacity: 0.4;
+  }
+    #ti_widget_container1 {
+        height: 100%;
+        width: 100%;
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: hidden;
+        left: 0px;
+        top: 0px;
+        position: absolute;
+        background-color: rgb(255, 255, 255);
+        display: block;
+    }
+  #ti_widget_vtab_datacapture {
+    background-color: white;
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+  }
+  #ti_widget_vtab_collateral {
+    background-color: white;
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    height: calc(100% - 40px);
+  }
+  #ti_tile_container_userguide {
+    width: 200px;
+    height: 200px;
+    overflow: initial;
+    visibility: visible;
+  }
+  #ti_tile_container_appnotes {
+    width: 200px;
+    height: 200px;
+    overflow: initial;
+    visibility: visible;
+  }
+  #ti_widget_label3 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+    left: 0px;
+    top: 70px;
+    position: absolute;
+    width: 100%;
+  }
+  #ti_widget_label4 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+    left: 0px;
+    top: 70px;
+    position: absolute;
+    width: 100%;
+  }
+  #ti_widget_icon_button3 {
+    width: 100%;
+    height: 80px;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+  #ti_widget_label10 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+    left: 0px;
+    top: 70px;
+    position: absolute;
+    width: 100%;
+  }
+  #ti_widget_icon_button4 {
+    width: 100%;
+    height: 80px;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+  #ti_tile_container_datasheet {
+    width: 200px;
+    height: 200px;
+    overflow: initial;
+    visibility: visible;
+  }
+  #ti_widget_icon_button5 {
+    width: 100%;
+    height: 80px;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+  #ti_widget_label13 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    white-space: nowrap;
+    left: 0px;
+    top: 70px;
+    position: absolute;
+    width: 100%;
+  }
+  #ti_widget_icon_button6 {
+    width: 100%;
+    height: 80px;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+  #ti_tile_container_reports {
+    width: 200px;
+    height: 200px;
+    overflow: initial;
+    visibility: visible;
+  }
+  #ti_widget_container_calibration {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+    #ti_widget_label18 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+  #ti_widget_tilecontainer1 {
+    height: 700px;
+    width: 100%;
+    overflow: auto;
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    left: 0px;
+    top: 50px;
+    position: absolute;
+  }
+  #ti_widget_markdown_userguides {
+    overflow: hidden;
+    width: calc(100% - 50px);
+    left: 25px;
+    top: 100px;
+    position: absolute;
+    height: calc(100% - 110px);
+    padding: 3px;
+    text-align: center;
+    color: rgb(204, 204, 204);
+  }
+  #ti_widget_markdown_userguides {
+    color: rgb(204, 204, 204);
+  }
+  #ti_widget_markdown_datasheets {
+    position: absolute;
+    top: 100px;
+    left: 25px;
+    width: calc(100% - 50px);
+    height: calc(100% - 110px);
+    text-align: center;
+    color: rgb(204, 204, 204);
+    padding: 3px;
+  }
+  #ti_widget_markdown_appnotes {
+    overflow: hidden;
+    width: calc(100% - 50px);
+    height: calc(100% - 110px);
+    left: 25px;
+    top: 100px;
+    position: absolute;
+    text-align: center;
+    color: rgb(204, 204, 204);
+    padding: 3px;
+  }
+  #ti_widget_markdown_reports {
+    overflow: hidden;
+    width: calc(100% - 50px);
+    height: calc(100% - 110px);
+    left: 25px;
+    top: 100px;
+    position: absolute;
+    text-align: center;
+    color: rgb(204, 204, 204);
+    padding: 3px;
+  }
+  #ti_widget_banner1 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    left: 0px;
+    top: 0px;
+    width: calc(100% - 40px);
+  }
+  #ti_widget_banner2 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+  #ti_widget_banner3 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+  #ti_widget_banner4 {
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+  }
+    #ti_widget_container5 {
+        height: 38.429em;
+        width:65.072em;
+    }
+    #step_1 {
+        height: 15.214em;
+        width:14.929em;
+        position: absolute;
+        left: 10px;
+        top: 34px;
+        box-shadow: 0px 0px 10px #888888;
+    }
+    #ti_widget_label {
+        position: absolute;
+        left: 73px;
+        top: 4px
+    }
+    #ti_widget_label1 {
+        position: absolute;
+        left: 45px;
+        top: 150px
+    }
+    #ti_widget_label5 {
+        position: absolute;
+        left: 73px;
+        top: 4px;
+    }
+    #ti_widget_label2 {
+        position: absolute;
+        left: 38px;
+        top: 148px;
+    }
+    #step_2 {
+        height: 15.214em;
+        width:14.929em;
+        position: absolute;
+        left: 236px;
+        top: 34px;
+        box-shadow: 0px 0px 10px #888888;
+    }
+    #ti_widget_label9 {
+        position: absolute;
+        left: 73px;
+        top: 4px;
+    }
+    #ti_widget_label6 {
+        position: absolute;
+        left: 34px;
+        top: 148px;
+    }
+    #step_3 {
+        height: 15.214em;
+        width:14.929em;
+        position: absolute;
+        left: 462px;
+        top: 34px;
+        box-shadow: 0px 0px 10px #888888;
+    }
+    #ti_widget_label12 {
+        position: absolute;
+        left: 73px;
+        top: 4px;
+    }
+    #ti_widget_label11 {
+        position: absolute;
+        left: 91px;
+        top: 149px;
+    }
+    #step_4 {
+        height: 15.214em;
+        width:14.929em;
+        position: absolute;
+        left: 688px;
+        top: 34px;
+        box-shadow: 0px 0px 10px #888888;
+    }
+    #Start_button3 {
+        position: absolute;
+        left: 139px;
+        top: 170px;
+        background-color: #06aee6;
+        width: 350px;
+        height: 62px;
+        padding: 4px;
+        font-size: large;
+        font-weight: 900;
+    }
+    #ti_widget_label25 {
+        position: absolute;
+        left: 132px;
+        top: 130px;
+        width: 100px;
+    }
+    #ti_widget_label24 {
+        position: absolute;
+        left: 139px;
+        top: 88px;
+        width: 92px;
+    }
+    #ti_tile_container5 {
+        width: 619px;
+        height: 324px;
+        border: 1px solid lightgray;
+        overflow: initial;
+        visibility: visible;
+        top: -15px;
+    }
+    #sram_1 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label26 {
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        white-space: nowrap;
+        left: 31px;
+        top: 10px;
+        position: absolute;
+    }
+    #ti_widget_container6 {
+        height: 40px;
+        width: calc(100% - 40px);
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: hidden;
+        left: -1px;
+        top: 54px;
+        position: absolute;
+        display: block;
+        margin-left: 20px;
+        margin-right: 20px;
+        background-color: white;
+        border-bottom: 1px solid rgb(204, 204, 204);
+        z-index: 1;
+        padding: 10px;
+    }
+    #ti_widget_label27 {
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        white-space: nowrap;
+        left: 30px;
+        top: 10px;
+        position: absolute;
+    }
+    #ti_widget_container7 {
+        height: 40px;
+        width: calc(100% - 40px);
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: hidden;
+        left: -1px;
+        top: 233px;
+        position: absolute;
+        display: block;
+        margin-left: 20px;
+        margin-right: 20px;
+        background-color: white;
+        border-bottom: 1px solid rgb(204, 204, 204);
+        z-index: 1;
+        padding: 10px;
+    }
+    #ti_widget_label14 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px
+    }
+    #ti_widget_label33 {
+        position: absolute;
+        left: 161px;
+        top: 99px
+    }
+    #ti_widget_label34 {
+        position: absolute;
+        left: 145px;
+        top: 133px;
+        width: 60px
+    }
+    #ti_widget_label35 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label36 {
+        position: absolute;
+        left: 210px;
+        top: 133px;
+        width: 60px;
+    }
+    #int_box_1 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;*/
+        position: absolute;
+        left: 21px;
+        top: 295px;
+        box-shadow: 0px 0px 7px black;
+    }
+    #gauge1 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #load_0 {
+        position: absolute;
+        left: 212px;
+        top: 115px;
+        background-color: #44c85b;
+        width: 70px;
+        height: 30px;
+        font-size: small;
+        font-weight: 700;
+        z-index: 10;
+    }
+    #ti_widget_label70 {
+        position: absolute;
+        left: 9px;
+        top: 38px;
+        width: 80px;
+    }
+    #freq_list_0 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 35px;
+    }
+    #app_list_0 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 9px;
+    }
+    #ti_widget_label69 {
+        position: absolute;
+        left: 9px;
+        top: 12px;
+        width: 80px;
+    }
+    #core_load_container_0 {
+        width: 280px;
+        height: 105px;
+        border: 1px solid lightgray;
+        overflow: initial;
+        visibility: visible;
+        top: 112px;
+        position: absolute;
+        left: 21px;
+        z-index: 0;
+    }
+    #ti_widget_label37 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label38 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label39 {
+        position: absolute;
+        left: 145px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label40 {
+        position: absolute;
+        left: 210px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label81 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #ti_widget_label82 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label83 {
+        position: absolute;
+        left: 145px;
+        top: 210px;
+        width: 60px;
+    }
+    #ti_widget_label84 {
+        position: absolute;
+        left: 210px;
+        top: 210px;
+        height: 21px;
+        width: 60px;
+    }
+    #ti_widget_banner5 {
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: initial;
+        left: 0px;
+        top: 0px;
+        position: absolute;
+    }
+    #ti_widget_label32 {
+        position: absolute;
+        left: 122px;
+        top: 34px;
+        width: 371px;
+    }
+    #ti_widget_filemenu1 {
+        position: absolute;
+        left: 274px;
+        top: 78px;
+        width: 65px;
+        background-color: #ececec;
+        opacity: 1;
+        height: 37px
+    }
+    #ti_widget_numberbox {
+        position: absolute;
+        left: 273px;
+        top: 125px;
+        width: 148px
+    }
+    #ti_widget_led4 {
+        width:40px;
+        height:40px;
+        position: absolute;
+        left: 503px;
+        top: 24px;
+    }
+    #freq_list_1 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 35px;
+    }
+    #ti_widget_label72 {
+        position: absolute;
+        left: 9px;
+        top: 38px;
+        width: 80px;
+    }
+    #app_list_1 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 9px;
+    }
+    #ti_widget_label71 {
+        position: absolute;
+        left: 9px;
+        top: 12px;
+        width: 80px;
+    }
+    #core_load_container_1 {
+        width: 280px;
+        height: 105px;
+        border: 1px solid lightgray;
+        overflow: initial;
+        visibility: visible;
+        top: 112px;
+        position: absolute;
+        left: 311px;
+        z-index: 0;
+    }
+    #load_1 {
+        position: absolute;
+        left: 502px;
+        top: 115px;
+        background-color: #44c85b;
+        width: 70px;
+        height: 30px;
+        font-size: small;
+        font-weight: 700;
+        z-index: 10;
+    }
+    #ti_widget_label15 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_2 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label88 {
+        position: absolute;
+        left: 210px;
+        top: 210px;
+        height: 21px;
+        width: 60px;
+    }
+    #ti_widget_label87 {
+        position: absolute;
+        left: 145px;
+        top: 210px;
+        width: 60px;
+    }
+    #ti_widget_label86 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label48 {
+        position: absolute;
+        left: 210px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label47 {
+        position: absolute;
+        left: 145px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label46 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label45 {
+        position: absolute;
+        left: 145px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label44 {
+        position: absolute;
+        left: 210px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label43 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label42 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label41 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label85 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge2 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_2 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 311px;
+        top: 295px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #freq_list_2 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 35px;
+    }
+    #ti_widget_label74 {
+        position: absolute;
+        left: 9px;
+        top: 38px;
+        width: 80px;
+    }
+    #app_list_2 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 9px;
+    }
+    #ti_widget_label73 {
+        position: absolute;
+        left: 9px;
+        top: 12px;
+        width: 80px;
+    }
+    #core_load_container_2 {
+        width: 280px;
+        height: 105px;
+        border: 1px solid lightgray;
+        overflow: initial;
+        visibility: visible;
+        top: 112px;
+        position: absolute;
+        left: 601px;
+        z-index: 0;
+    }
+    #load_2 {
+        position: absolute;
+        left: 792px;
+        top: 115px;
+        background-color: #44c85b;
+        width: 70px;
+        height: 30px;
+        font-size: small;
+        font-weight: 700;
+        z-index: 10;
+    }
+    #ti_widget_label16 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_3 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label92 {
+        position: absolute;
+        left: 210px;
+        top: 210px;
+        height: 21px;
+        width: 60px;
+    }
+    #ti_widget_label91 {
+        position: absolute;
+        left: 145px;
+        top: 210px;
+        width: 60px;
+    }
+    #ti_widget_label90 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label56 {
+        position: absolute;
+        left: 210px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label55 {
+        position: absolute;
+        left: 145px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label54 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label53 {
+        position: absolute;
+        left: 145px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label52 {
+        position: absolute;
+        left: 210px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label51 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label50 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label49 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label89 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge3 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_3 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 601px;
+        top: 295px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #freq_list_3 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 35px;
+    }
+    #ti_widget_label76 {
+        position: absolute;
+        left: 9px;
+        top: 38px;
+        width: 80px;
+    }
+    #app_list_3 {
+        width:167px;
+        height:auto;
+        position: absolute;
+        left: 95px;
+        top: 9px;
+    }
+    #ti_widget_label75 {
+        position: absolute;
+        left: 9px;
+        top: 12px;
+        width: 80px;
+    }
+    #core_load_container_3 {
+        width: 280px;
+        height: 105px;
+        border: 1px solid lightgray;
+        overflow: initial;
+        visibility: visible;
+        top: 112px;
+        position: absolute;
+        left: 891px;
+        z-index: 0;
+    }
+    #load_3 {
+        position: absolute;
+        left: 1082px;
+        top: 115px;
+        background-color: #44c85b;
+        width: 70px;
+        height: 30px;
+        font-size: small;
+        font-weight: 700;
+        z-index: 10;
+    }
+    #ti_widget_label17 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_4 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label96 {
+        position: absolute;
+        left: 210px;
+        top: 210px;
+        height: 21px;
+        width: 60px;
+    }
+    #ti_widget_label95 {
+        position: absolute;
+        left: 145px;
+        top: 210px;
+        width: 60px;
+    }
+    #ti_widget_label94 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label64 {
+        position: absolute;
+        left: 210px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label63 {
+        position: absolute;
+        left: 145px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label62 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label61 {
+        position: absolute;
+        left: 145px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label60 {
+        position: absolute;
+        left: 210px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label59 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label58 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label57 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label93 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge4 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_4 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 891px;
+        top: 295px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #core_load_container_a53 {
+        width: 280px;
+        height: 59px;
+        border: 1px solid lightgray;
+        overflow: initial;
+        visibility: visible;
+        top: 112px;
+        position: absolute;
+        left: 1181px;
+        z-index: 0;
+    }
+    #sram_5 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label102 {
+        position: absolute;
+        left: 210px;
+        top: 210px;
+        height: 21px;
+        width: 60px;
+    }
+    #ti_widget_label101 {
+        position: absolute;
+        left: 145px;
+        top: 210px;
+        width: 60px;
+    }
+    #ti_widget_label100 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label99 {
+        position: absolute;
+        left: 210px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label98 {
+        position: absolute;
+        left: 145px;
+        top: 170px;
+        width: 60px;
+    }
+    #ti_widget_label80 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label79 {
+        position: absolute;
+        left: 145px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label68 {
+        position: absolute;
+        left: 210px;
+        top: 133px;
+        width: 60px;
+    }
+    #ti_widget_label67 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label66 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label65 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label97 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge5 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_5 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 1181px;
+        top: 295px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #ti_widget_label28 {
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        white-space: nowrap;
+        left: 31px;
+        top: 10px;
+        position: absolute;
+    }
+    #ti_widget_container8 {
+        height: 40px;
+        width: calc(100% - 40px);
+        text-align: left;
+        text-decoration: none;
+        font-weight: normal;
+        font-style: normal;
+        font-size: inherit;
+        overflow: hidden;
+        left: -1px;
+        top: 54px;
+        position: absolute;
+        display: block;
+        margin-left: 20px;
+        margin-right: 20px;
+        background-color: white;
+        border-bottom: 1px solid rgb(204, 204, 204);
+        z-index: 1;
+        padding: 10px;
+    }
+    #ti_widget_label19 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_6 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label112 {
+        position: absolute;
+        left: 235px;
+        top: 210px;
+        height: 21px;
+    }
+    #ti_widget_label111 {
+        position: absolute;
+        left: 170px;
+        top: 210px;
+    }
+    #ti_widget_label110 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label109 {
+        position: absolute;
+        left: 235px;
+        top: 170px;
+    }
+    #ti_widget_label108 {
+        position: absolute;
+        left: 170px;
+        top: 170px;
+    }
+    #ti_widget_label107 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label106 {
+        position: absolute;
+        left: 170px;
+        top: 133px;
+    }
+    #ti_widget_label105 {
+        position: absolute;
+        left: 235px;
+        top: 133px;
+    }
+    #ti_widget_label104 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label78 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label77 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label103 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge6 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_6 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 21px;
+        top: 112px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #ti_widget_label20 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_7 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label124 {
+        position: absolute;
+        left: 235px;
+        top: 210px;
+        height: 21px;
+    }
+    #ti_widget_label123 {
+        position: absolute;
+        left: 170px;
+        top: 210px;
+    }
+    #ti_widget_label122 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label121 {
+        position: absolute;
+        left: 235px;
+        top: 170px;
+    }
+    #ti_widget_label120 {
+        position: absolute;
+        left: 170px;
+        top: 170px;
+    }
+    #ti_widget_label119 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label118 {
+        position: absolute;
+        left: 170px;
+        top: 133px;
+    }
+    #ti_widget_label117 {
+        position: absolute;
+        left: 235px;
+        top: 133px;
+    }
+    #ti_widget_label116 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label115 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label114 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label113 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge7 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_7 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 311px;
+        top: 112px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #ti_widget_label21 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_8 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label136 {
+        position: absolute;
+        left: 235px;
+        top: 210px;
+        height: 21px;
+    }
+    #ti_widget_label135 {
+        position: absolute;
+        left: 170px;
+        top: 210px;
+    }
+    #ti_widget_label134 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label133 {
+        position: absolute;
+        left: 235px;
+        top: 170px;
+    }
+    #ti_widget_label132 {
+        position: absolute;
+        left: 170px;
+        top: 170px;
+    }
+    #ti_widget_label131 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label130 {
+        position: absolute;
+        left: 170px;
+        top: 133px;
+    }
+    #ti_widget_label129 {
+        position: absolute;
+        left: 235px;
+        top: 133px;
+    }
+    #ti_widget_label128 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label127 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label126 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label125 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge8 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_8 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 601px;
+        top: 112px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #ti_widget_label22 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_9 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label148 {
+        position: absolute;
+        left: 235px;
+        top: 210px;
+        height: 21px;
+    }
+    #ti_widget_label147 {
+        position: absolute;
+        left: 170px;
+        top: 210px;
+    }
+    #ti_widget_label146 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label145 {
+        position: absolute;
+        left: 235px;
+        top: 170px;
+    }
+    #ti_widget_label144 {
+        position: absolute;
+        left: 170px;
+        top: 170px;
+    }
+    #ti_widget_label143 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label142 {
+        position: absolute;
+        left: 170px;
+        top: 133px;
+    }
+    #ti_widget_label141 {
+        position: absolute;
+        left: 235px;
+        top: 133px;
+    }
+    #ti_widget_label140 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label139 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label138 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label137 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge9 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_9 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 891px;
+        top: 112px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+    #ti_widget_label23 {
+        position: absolute;
+        left: 21px;
+        top: 259px;
+        width: 237px;
+        height: 19px;
+    }
+    #sram_10 {
+        position: absolute;
+        width: 241px;
+        height: 34px;
+        background-color: #AAAAAA;
+        left: 19px;
+        top: 252px;
+        box-shadow: 0px 0px 7px black;
+        background: linear-gradient(0.25turn, #0066ff, #33ccff);
+        transform: rotate(180deg);
+    }
+    #ti_widget_label160 {
+        position: absolute;
+        left: 235px;
+        top: 210px;
+        height: 21px;
+    }
+    #ti_widget_label159 {
+        position: absolute;
+        left: 170px;
+        top: 210px;
+    }
+    #ti_widget_label158 {
+        position: absolute;
+        left: 35px;
+        top: 208px;
+        width: 96px;
+    }
+    #ti_widget_label157 {
+        position: absolute;
+        left: 235px;
+        top: 170px;
+    }
+    #ti_widget_label156 {
+        position: absolute;
+        left: 170px;
+        top: 170px;
+    }
+    #ti_widget_label155 {
+        position: absolute;
+        left: 33px;
+        top: 163px;
+        width: 98px;
+    }
+    #ti_widget_label154 {
+        position: absolute;
+        left: 170px;
+        top: 133px;
+    }
+    #ti_widget_label153 {
+        position: absolute;
+        left: 235px;
+        top: 133px;
+    }
+    #ti_widget_label152 {
+        position: absolute;
+        left: 31px;
+        top: 134px;
+        width: 100px;
+    }
+    #ti_widget_label151 {
+        position: absolute;
+        left: 224px;
+        top: 99px;
+        width: 32px;
+    }
+    #ti_widget_label150 {
+        position: absolute;
+        left: 161px;
+        top: 99px;
+    }
+    #ti_widget_label149 {
+        position: absolute;
+        left: 160px;
+        top: 29px;
+        width: 101px;
+        height: 38px;
+    }
+    #gauge10 {
+        width: 139px;
+        height: 125px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        box-shadow: 0px 0px 7px grey;
+        padding: 10px 15px 20px 15px;
+    }
+    #int_box_10 {
+        height: 300px;
+        width:280px;
+        /*border: 1px solid black;
+        */ position: absolute;
+        left: 1181px;
+        top: 112px;
+        box-shadow: 0px 0px 7px black;
+        position: absolute;
+    }
+</style>
+
+<ti-widget-readme background-color="#ffffff" elevation="5" title-text="README.md" id="readmeViewer" pin></ti-widget-readme>
+<ti-core-stylesheets id="ti_core_stylesheets"></ti-core-stylesheets>
+
+<ti-widget-menubar id="ti_widget_menubar" layout class="x-scope ti-widget-menubar-0" horizontal pin product-name="AM64x Starter Tool">
+    <ti-widget-filemenu load-save-disabled="true" id="ti_widget_filemenu" layout>
+        <ti-widget-menuitem id="fileFormat"  name="Register File Format" icon-name="icons:description">
+           <ti-widget-menutoggle id="fileFormatCSV" name="CSV (Comma Separated Values)" action="set_csv_format"></ti-widget-menutoggle>
+           <ti-widget-menutoggle id="fileFormatJSON" name="JSON (Javascript Object)" action="set_json_format"></ti-widget-menutoggle>
+        </ti-widget-menuitem>
+        <ti-widget-menuseparator></ti-widget-menuseparator>
+        <ti-widget-menuaction name="Load Registers" action="load_registers" icon-name="folder" id="load_registers"></ti-widget-menuaction>
+        <ti-widget-menuaction name="Save Registers" action="save_registers" icon-name="save" id="save_registers"></ti-widget-menuaction>
+        <ti-widget-menuaction name="Save Registers As..." action="save_registers_as" icon-name="save" id="save_registers_as"></ti-widget-menuaction>
+    </ti-widget-filemenu>
+    <ti-widget-optionsmenu id="ti_widget_optionsmenu" layout></ti-widget-optionsmenu>
+    <ti-widget-menuitem name="Tools" id="ti_widget_menuitem_tools" layout>
+        <ti-widget-menuaction name="Open Scripting Window" action="open_scripting_window" icon-name="icons:description" id="ti_widget_menuaction_scripting"></ti-widget-menuaction>
+        <ti-widget-menuaction name="Log pane" action="open_log_pane" icon-name="ti-core-icons:book" id="ti_widget_menuaction_openlog"></ti-widget-menuaction>
+    </ti-widget-menuitem>
+    <ti-widget-zoommenu id="ti_widget_zoommenu" layout></ti-widget-zoommenu>
+    <ti-widget-helpmenu id="ti_widget_helpmenu" layout></ti-widget-helpmenu>
+    <ti-widget-window-buttons show-in-designer id="ti_widget_window_buttons" class="toolMenuItem"></ti-widget-window-buttons>
+</ti-widget-menubar>
+
+<ti-widget-container id="viewport" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible pin class="viewport" title>
+    <ti-widget-container id="toolbar" font-size="inherit" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible pin title>
+        <ti-widget-icon-button id="ti_widget_icon_button_menu" icon="menu" icon-color="#000000" visible title layout></ti-widget-icon-button>
+        <ti-widget-label id="ti_widget_label_menu" label="Menu" text-align="left" font-size="inherit" font-style="normal" font-weight="normal" text-decoration="none" visible layout></ti-widget-label>
+    </ti-widget-container>
+    <ti-widget-toast id="ti_widget_toast" message="toast" duration="2000" font-color="#ffffff" class="x-scope ti-widget-toast-0"></ti-widget-toast>
+</ti-widget-container>
+
+<ti-widget-eventlog-view show-event-number show-newest-first is-info-enabled is-warning-enabled is-error-enabled id="ti_widget_eventlog_view" is-hidden class="x-scope ti-widget-eventlog-view-0"></ti-widget-eventlog-view>
+<ti-widget-statusbar id="ti_widget_statusbar" progress-bar-enabled hide-connection></ti-widget-statusbar>
+
+<ti-widget-vtabcontainer id="ti_widget_vtabcontainer" vtab-height-in-px="60" selected-index="0" ink-color="#f1f1f1" color-selected="#ffffff" color-unselected="#888" color-disabled="#ccc" color-selection-bar="white" background-color-selected="#148c9c" background-color-hover="#dcdcec" auto-expand auto-zero-htab-index tab-height-in-px="60" vertical layout>
+    <ti-widget-vtab id="ti_widget_vtab_home" name="Home" icon="home" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
+        <ti-widget-label id="ti_widget_label_productname" label="AM64x Starter Tool" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        <ti-widget-label id="ti_widget_label_productdesc" label="Analyze system performance, review documentation, and run demos" text-align="center" font-size="custom" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        <ti-widget-image id="ti_widget_image" image-path="images/ti_adschip.png" lock-aspect-ratio hover-effect="no" visible lockaspectratio center-justified horizontal layout center></ti-widget-image>
+        <ti-widget-label id="ti_widget_label_showless" label="Show Less..." mouse-over-font-color="#0c515a" mouse-over-underline-color="#0c515a" text-align="center" font-size="custom" custom-font-size="12px" font-color="#0c515a" font-style="normal" font-weight="normal" text-decoration="none" visible hidden></ti-widget-label>
+        <ti-widget-tabcontainer selected-index="1" selected-label="More" show-tab-labels-in-designer-only id="ti_widget_tabcontainer" layout>
+            <ti-widget-tab name="Home" icon-style="width:30px;height:30px;padding:5px;" visible font-style="normal" font-weight="normal" text-align="left" text-decoration="none" id="ti_widget_tab" title>
+                <ti-widget-container id="ti_widget_container1" font-size="inherit" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
+                    <ti-widget-container id="ti_widget_container_greybar" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title horizontal layout center-justified center>
+                    </ti-widget-container>
+                    <ti-widget-app-menu-buttons id="ti_widget_app_menu_buttons" background-color="#ffffff" icon-color="#148C9C" selected-index="0" title></ti-widget-app-menu-buttons>
+                </ti-widget-container>
+            </ti-widget-tab>
+        </ti-widget-tabcontainer>
+    </ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_benchmark_demo" name="Benchmark Demo" caption="Configure, capture, and measure data" icon="icons:assessment" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" icon-name="build" autoscroll title>
+        <ti-widget-banner id="ti_widget_banner3" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
+        <ti-widget-container id="ti_widget_container6" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
+            <ti-widget-label id="ti_widget_label26" label="Core Loading" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-button id="load_0" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
+        <ti-tile-container title-text="R5F Core 0" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_0">
+            <ti-widget-label id="ti_widget_label69" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="app_list_0" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+            <ti-widget-label id="ti_widget_label70" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="freq_list_0" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+        </ti-tile-container>
+        <ti-tile-container title-text="R5F Core 1" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_1">
+            <ti-widget-label id="ti_widget_label71" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="app_list_1" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+            <ti-widget-label id="ti_widget_label72" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="freq_list_1" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+        </ti-tile-container>
+        <ti-tile-container title-text="R5F Core 2" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_2">
+            <ti-widget-label id="ti_widget_label73" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="app_list_2" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+            <ti-widget-label id="ti_widget_label74" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="freq_list_2" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+        </ti-tile-container>
+        <ti-tile-container title-text="A53" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_a53">
+        </ti-tile-container>
+        <ti-tile-container title-text="R5F Core 3" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_3">
+            <ti-widget-label id="ti_widget_label75" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="app_list_3" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+            <ti-widget-label id="ti_widget_label76" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-droplist id="freq_list_3" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
+        </ti-tile-container>
+        <ti-widget-button id="load_1" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
+        <ti-widget-button id="load_2" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
+        <ti-widget-button id="load_3" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
+        <ti-widget-container id="ti_widget_container7" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
+            <ti-widget-label id="ti_widget_label27" label="Stats" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_1"  auto-scroll>
+            <ti-widget-gauge id="gauge1" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" size="0" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label81" label="Core 0" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label33" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label35" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label37" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label36" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label34" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label38" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label39" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label40" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label82" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label83" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label84" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_1" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label14" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_2"  auto-scroll>
+            <ti-widget-gauge id="gauge2" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label85" label="Core 1" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label41" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label42" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label43" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label44" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label45" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label46" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label47" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label48" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label86" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label87" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label88" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_2" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label15" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_3"  auto-scroll>
+            <ti-widget-gauge id="gauge3" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label89" label="Core 2" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label49" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label50" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label51" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label52" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label53" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label54" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label55" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label56" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label90" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label91" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label92" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_3" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label16" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_5"  auto-scroll>
+            <ti-widget-gauge id="gauge5" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label97" label="A53" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label65" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label66" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label67" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label68" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label79" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label80" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label98" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label99" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label100" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label101" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label102" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_5" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label18" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_4"  auto-scroll>
+            <ti-widget-gauge id="gauge4" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label93" label="Core 3" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label57" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label58" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label59" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label60" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label61" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label62" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label63" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label64" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label94" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label95" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label96" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_4" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label17" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+    </ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_motor_demo" name="Motor Drive Demo" caption="View output data from the motor drive demo" icon="ti-core-icons:area-chart" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" icon-name="build" autoscroll title>
+        <ti-widget-banner id="ti_widget_banner5" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
+        <ti-widget-container id="ti_widget_container8" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
+            <ti-widget-label id="ti_widget_label28" label="Stats" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_6"  auto-scroll>
+            <ti-widget-gauge id="gauge6" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" size="0" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label103" label="Core 0" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label77" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label78" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label104" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label105" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label106" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label107" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label108" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label109" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label110" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label111" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label112" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_6" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label19" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_7"  auto-scroll>
+            <ti-widget-gauge id="gauge7" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label113" label="Core 1" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label114" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label115" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label116" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label117" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label118" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label119" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label120" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label121" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label122" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label123" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label124" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_7" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label20" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_8"  auto-scroll>
+            <ti-widget-gauge id="gauge8" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label125" label="Core 2" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label126" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label127" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label128" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label129" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label130" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label131" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label132" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label133" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label134" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label135" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label136" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_8" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label21" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_9"  auto-scroll>
+            <ti-widget-gauge id="gauge9" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label137" label="Core 3" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label138" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label139" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label140" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label141" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label142" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label143" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label144" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label145" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label146" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label147" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label148" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_9" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label22" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+        <ti-widget-container id="int_box_10"  auto-scroll>
+            <ti-widget-gauge id="gauge10" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <ti-widget-label id="ti_widget_label149" label="A53" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label150" label="Avg:" text-align="center" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label151" label="Max:" text-align="center" font-size="small" font-color="#4d4d4d" font-weight="700" center></ti-widget-label>
+            <ti-widget-label id="ti_widget_label152" label="CPU Loading %:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label153" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label154" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label155" label="Interrupt Latency (us):" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label156" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label157" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label158" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
+            <ti-widget-label id="ti_widget_label159" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label160" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
+            <ti-widget-progressbar id="sram_10" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
+            <ti-widget-label id="ti_widget_label23" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
+        </ti-widget-container>
+    </ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_collateral" name="Collateral" caption="Documentation" icon="av:library-books" icon-style="width:30px;height:30px;padding:5px;" tooltip="Collateral" visible font-size="inherit" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" icon-name="build" autoscroll title="Collateral">
+        <ti-widget-banner id="ti_widget_banner4" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title>
+        </ti-widget-banner>
+        <ti-widget-tilecontainer id="ti_widget_tilecontainer_general" tile-style="margin:10px;width:calc(50% - 40px);border-top:solid 2px #189;" tile-title-style="margin:0;padding:0;display:none;" tile-title-background-color="#f9f9f9" tile-padding-style="10px" tile-margin="10px" tile-padding="20px" title pin autoscroll center horizontal layout wrap center-justified>
+            <ti-tile-container title-style="margin:0;padding:0;display:none;" tile-body-style="padding:0 1em 1em 1em;" background-color="#f9f9f9" elevation="3" id="ti_tile_container_userguide" pin class="item align-self-auto x-scope ti-tile-container-0" horizontal layout>
+                <ti-widget-label id="ti_widget_label3" label="Benchmark Demo User Guide" text-align="center" font-size="custom" custom-font-size="24px" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+                <ti-widget-icon-button id="ti_widget_icon_button3" icon="ti-core-icons:book" icon-color="#148c9c" visible title></ti-widget-icon-button>
+                <ti-widget-markdown id="ti_widget_markdown_userguides" markdown-text="[User Guide](http://www.ti.com/processors/sitara-arm/overview.html)" title></ti-widget-markdown>
+            </ti-tile-container>
+            <ti-tile-container title-style="margin:0;padding:0;display:none;" tile-body-style="padding:0 1em 1em 1em;" background-color="#f9f9f9" elevation="3" id="ti_tile_container_datasheet" pin class="item align-self-auto x-scope ti-tile-container-0" horizontal layout>
+                <ti-widget-label id="ti_widget_label10" label="Motor Drive Demo User Guide" text-align="center" font-size="custom" custom-font-size="24px" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+                <ti-widget-icon-button id="ti_widget_icon_button4" icon="ti-core-icons:book" icon-color="#148c9c" visible title></ti-widget-icon-button>
+                <ti-widget-markdown id="ti_widget_markdown_datasheets" markdown-text="[User Guide](http://www.ti.com/processors/sitara-arm/overview.html)"  title></ti-widget-markdown>
+            </ti-tile-container>
+            <ti-tile-container title-style="margin:0;padding:0;display:none;" tile-body-style="padding:0 1em 1em 1em;" background-color="#f9f9f9" elevation="3" id="ti_tile_container_appnotes" pin class="item align-self-auto x-scope ti-tile-container-0" horizontal layout center center-justified>
+                <ti-widget-label id="ti_widget_label4" label="Processor SDK" text-align="center" font-size="custom" custom-font-size="24px" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+                <ti-widget-icon-button id="ti_widget_icon_button5" icon="image:filter-none" icon-color="#148c9c" visible title class="x-scope ti-widget-icon-button-5"></ti-widget-icon-button>
+                <ti-widget-markdown id="ti_widget_markdown_appnotes" markdown-text="[AM64x Processor SDK](http://www.ti.com/processors/sitara-arm/overview.html)" title center></ti-widget-markdown>
+            </ti-tile-container>
+            <ti-tile-container title-style="margin:0;padding:0;display:none;" tile-body-style="padding:0 1em 1em 1em;" background-color="#f9f9f9" elevation="3" id="ti_tile_container_reports" pin class="item align-self-auto x-scope ti-tile-container-0" horizontal layout center center-justified>
+                <ti-widget-label id="ti_widget_label13" label="AM64x User Guide" text-align="center" font-size="custom" custom-font-size="24px" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+                <ti-widget-icon-button id="ti_widget_icon_button6" icon="av:library-books" icon-color="#148c9c" visible title></ti-widget-icon-button>
+                <ti-widget-markdown id="ti_widget_markdown_reports" markdown-text="[User Guide](http://www.ti.com/processors/sitara-arm/overview.html)"  title></ti-widget-markdown>
+            </ti-tile-container>
+        </ti-widget-tilecontainer>
+    </ti-widget-vtab>
+</ti-widget-vtabcontainer>
+<ti-transport-network id="ti_transport_network_oob_input" hidden>
+<ti-model-http id="ti_model_http_oob_input" hidden url="http://1.1.1.1:8081">
+<ti-route-http id="ti_route_http" hidden content-type="json" verb="POST" name="oob_in" path="/oob_data.json"></ti-route-http></ti-model-http></ti-transport-network>
+<ti-transport-network id="ti_transport_network_oob_output" hidden>
+<ti-model-http id="ti_model_http_oob_output" hidden url="http://1.1.1.1:8081" poll-interval="1000">
+<ti-route-http id="ti_route_http1" hidden content-type="json" verb="GET" name="oob_out" path="/oob_data.json"></ti-route-http></ti-model-http></ti-transport-network>
+
+</template><!--gist-end-->
+
+<!-- ------------------------------------------------------------------------------------- -->
+
+<script>
+	// Do not edit this file - it is automatically generated.  Please edit index.js
+	addEventListener('WebComponentsReady', function () {
+		// remove splash
+        var splash = document.querySelector("#splash")
+        if (splash) {
+			splash.parentNode.removeChild(splash);
+        }
+	});
+</script>
+</body>
+</html>
