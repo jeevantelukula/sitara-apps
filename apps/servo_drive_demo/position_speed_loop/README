@@ -1,0 +1,27 @@
+Position Speed Loop for AM65x Servo Drive Demo
+==============================================
+The code included in this folder is a port of the master node in the C2000
+Multi-axis TI Design: 
+[Distributed multi-axis servo drive over fast serial interface (FSI) reference design](http://www.ti.com/tool/TIDM-02006 "TIDM-02006")
+
+The C2000 code for the demo is provided here (v3.00.00.00 is used in our demo):
+[MotorControl software development kit (SDK) for C2000 MCUs](http://www.ti.com/tool/download/C2000WARE-MOTORCONTROL-SDK "MotorControl SDK")
+
+PRU FSI Emulation on AM65x
+--------------------------
+Developing this demo on AM65x is a path to pre-silicon development for AM64x.
+One major IP that AM65x lacks is hardware FSI. To overcome this limitation
+during development prototype PRU firmwares were developed. The goal of the PRU
+firmwares is to mimic the FSI register set using ICSSG memories and send and
+receive FSI frames accordingly. Pre-built binaries of the PRU firmwares are
+provided in this repository at:
+```
+sitara_apps/apps/servo_drive_demo/position_speed_loop/include/PRU_FSI_Receive.h
+sitara_apps/apps/servo_drive_demo/position_speed_loop/include/PRU_FSI_Transmit.h
+```
+Source code to recreate the two binaries can be found in the pru_proof_of_concepts/pru_fsi
+repository on bitbucket (am65x_fsi_csl branch @ commit a8320d87395 to match this repo commit):
+[PRU Proof of Concepts: PRU FSI prototype](https://bitbucket.itg.ti.com/projects/PPOC/repos/pru_fsi/browse "PRU FSI Prototype")
+
+To rebuild the firmwares use Code Composer Studio to import the CCS project
+files found in the 'PRU_FSI_Recieve' (sic) and 'PRU_FSI_Transmit' directories.
