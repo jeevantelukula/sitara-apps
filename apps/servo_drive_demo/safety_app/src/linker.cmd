@@ -13,7 +13,7 @@
 --fill_value=0
 --stack_size=0x2000
 --heap_size=0x1000
-
+-u _c_int00
 -stack  0x2000                              /* SOFTWARE STACK SIZE           */
 -heap   0x2000                              /* HEAP AREA SIZE                */
 
