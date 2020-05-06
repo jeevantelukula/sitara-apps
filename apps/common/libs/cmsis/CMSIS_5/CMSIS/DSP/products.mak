@@ -51,7 +51,7 @@ DEPOT = c:/ti
 endif
 
 #### Tools installation directory ####
-TOOLS = /home/minglocal/ti_am65xx_06_03_00_106
+TOOLS = /home/minglocal/ti-processor-sdk-am65xx-evm-0.1A/rtos
 
 #### CMSIS_5 installation directory ####
 ifneq ($(OS),Windows_NT)

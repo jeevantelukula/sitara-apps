@@ -267,7 +267,7 @@ CFLAGS = -mv$(PROC_VER) --code_state=32 --float_support=$(VFP_VER) --fp_mode=str
 
 #CPREDEFS = --define=ARM_MATH_MATRIX_CHECK --define=ARM_MATH_ROUNDING --define=__FPU_PRESENT=1 --define=ARM_MATH_CM4
 # TI asm flag
-CPREDEFS = --define=ARM_MATH_MATRIX_CHECK --define=ARM_MATH_ROUNDING --define=__FPU_PRESENT=1 --define=ARM_MATH_CM4 --define=__TI_ARM__ --define=__COMPILER_BARRIER
+CPREDEFS = --define=ARM_MATH_MATRIX_CHECK --define=ARM_MATH_ROUNDING --define=__FPU_PRESENT=1 --define=ARM_MATH_CM4 --define=__TI_ARM__ --define=__COMPILER_BARRIER --define=ARM_MATH_LOOPUNROLL
 
 CINCDIRS = -I"$(CGTOOLS)/include" \
     -I"$(CMSIS_ROOT)/Core/Include" \
