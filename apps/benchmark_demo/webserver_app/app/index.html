@@ -50,6 +50,67 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <script src="main.js"></script>
     <link rel="stylesheet" href="oneui.css">
 
+    <script type = "text/javascript" src = "jquery-3.5.1.min.js"></script>
+    <script type = "text/javascript" language = "javascript">
+	     $(function() {
+			function update_data() {
+				$.getJSON('oob_data.json',
+					function(json_file) {
+
+						<!-- Bind all widgets to the corresponding value in the json file -->
+
+						$('#gauge1').attr('value', json_file.core0.output.cpu_load.current);
+						$('#ti_widget_label34').attr('label', json_file.core0.output.cpu_load.average);
+						$('#ti_widget_label36').attr('label', json_file.core0.output.cpu_load.max);
+						$('#ti_widget_label39').attr('label', json_file.core0.output.int_latency.average);
+						$('#ti_widget_label40').attr('label', json_file.core0.output.int_latency.max);
+						$('#ti_widget_label83').attr('label', json_file.core0.output.cycles_per_loop.average);
+						$('#ti_widget_label84').attr('label', json_file.core0.output.cycles_per_loop.max);
+						$('#ti_widget_label14').attr('label', json_file.core0.output.sram_label);
+						$('#sram_1').attr('value', json_file.core0.output.sram);
+						$('#gauge2').attr('value', json_file.core1.output.cpu_load.current);
+						$('#ti_widget_label45').attr('label', json_file.core1.output.cpu_load.average);
+						$('#ti_widget_label44').attr('label', json_file.core1.output.cpu_load.max);
+						$('#ti_widget_label47').attr('label', json_file.core1.output.int_latency.average);
+						$('#ti_widget_label48').attr('label', json_file.core1.output.int_latency.max);
+						$('#ti_widget_label87').attr('label', json_file.core1.output.cycles_per_loop.average);
+						$('#ti_widget_label88').attr('label', json_file.core1.output.cycles_per_loop.max);
+						$('#ti_widget_label15').attr('label', json_file.core1.output.sram_label);
+						$('#sram_2').attr('value', json_file.core1.output.sram);
+						$('#gauge3').attr('value', json_file.core2.output.cpu_load.current);
+						$('#ti_widget_label53').attr('label', json_file.core2.output.cpu_load.average);
+						$('#ti_widget_label52').attr('label', json_file.core2.output.cpu_load.max);
+						$('#ti_widget_label55').attr('label', json_file.core2.output.int_latency.average);
+						$('#ti_widget_label56').attr('label', json_file.core2.output.int_latency.max);
+						$('#ti_widget_label91').attr('label', json_file.core2.output.cycles_per_loop.average);
+						$('#ti_widget_label92').attr('label', json_file.core2.output.cycles_per_loop.max);
+						$('#ti_widget_label16').attr('label', json_file.core2.output.sram_label);
+						$('#sram_3').attr('value', json_file.core2.output.sram);
+						$('#gauge4').attr('value', json_file.core3.output.cpu_load.current);
+						$('#ti_widget_label61').attr('label', json_file.core3.output.cpu_load.average);
+						$('#ti_widget_label60').attr('label', json_file.core3.output.cpu_load.max);
+						$('#ti_widget_label63').attr('label', json_file.core3.output.int_latency.average);
+						$('#ti_widget_label64').attr('label', json_file.core3.output.int_latency.max);
+						$('#ti_widget_label95').attr('label', json_file.core3.output.cycles_per_loop.average);
+						$('#ti_widget_label96').attr('label', json_file.core3.output.cycles_per_loop.max);
+						$('#ti_widget_label17').attr('label', json_file.core3.output.sram_label);
+						$('#sram_4').attr('value', json_file.core3.output.sram);
+						$('#gauge5').attr('value', json_file.a53.output.cpu_load.current);
+						$('#ti_widget_label79').attr('label', json_file.a53.output.cpu_load.average);
+						$('#ti_widget_label68').attr('label', json_file.a53.output.cpu_load.max);
+						$('#ti_widget_label98').attr('label', json_file.a53.output.int_latency.average);
+						$('#ti_widget_label99').attr('label', json_file.a53.output.int_latency.max);
+						$('#ti_widget_label101').attr('label', json_file.a53.output.cycles_per_loop.average);
+						$('#ti_widget_label102').attr('label', json_file.a53.output.cycles_per_loop.max);
+						$('#ti_widget_label18').attr('label', json_file.a53.output.sram_label);
+						$('#sram_5').attr('value', json_file.a53.output.sram);
+					});
+			}
+			setInterval(update_data, 1000);
+			update_data();
+	       });
+    </script>
+
     <style>
         body,
         html {
@@ -2424,9 +2485,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <ti-transport-network id="ti_transport_network_oob_input" hidden>
 <ti-model-http id="ti_model_http_oob_input" hidden url="http://1.1.1.1:8081">
 <ti-route-http id="ti_route_http" hidden content-type="json" verb="POST" name="oob_in" path="/oob_data.json"></ti-route-http></ti-model-http></ti-transport-network>
-<ti-transport-network id="ti_transport_network_oob_output" hidden>
-<ti-model-http id="ti_model_http_oob_output" hidden url="http://1.1.1.1:8081" poll-interval="1000">
-<ti-route-http id="ti_route_http1" hidden content-type="json" verb="GET" name="oob_out" path="/oob_data.json"></ti-route-http></ti-model-http></ti-transport-network>
 
 </template><!--gist-end-->
 
