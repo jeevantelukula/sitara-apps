@@ -3,7 +3,6 @@ Wants=network-online.target
 After=network.target network-online.target
 
 [Service]
-ExecStartPre=/home/ti/ti-processor-sdk-am64xx/apps/benchmark_demo/webserver_app/webserver/ip_update.sh
 ExecStart=node /home/ti/ti-processor-sdk-am64xx/apps/benchmark_demo/webserver_app/webserver/benchmark_server.js
 
 [Install]

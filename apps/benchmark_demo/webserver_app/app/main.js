@@ -586,61 +586,25 @@ var init = function() {
             templateObj.$.load_0.addEventListener('click', () => {
                 const app_body = '{"core0":{"input":{"application":' + app_list_0.getSelectedIndex() + '}}}';
                 const freq_body = '{"core0":{"input":{"frequency":' + freq_list_0.getSelectedIndex() + '}}}';
-                fetch('http://1.1.1.1:8081/oob_data.json', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    referrerPolicy: 'no-referrer-when-downgrade',
-                    body: app_body + freq_body
-                })
-                .then((response) => response.json())
-                .catch((error) => console.error(error));
+                $.post('oob_data.json', app_body + freq_body);
             });
 
             templateObj.$.load_1.addEventListener('click', () => {
                 const app_body = '{"core1":{"input":{"application":' + app_list_1.getSelectedIndex() + '}}}';
                 const freq_body = '{"core1":{"input":{"frequency":' + freq_list_1.getSelectedIndex() + '}}}';
-                fetch('http://1.1.1.1:8081/oob_data.json', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    referrerPolicy: 'no-referrer-when-downgrade',
-                    body: app_body + freq_body
-                })
-                .then((response) => response.json())
-                .catch((error) => console.error(error));
+                $.post('oob_data.json', app_body + freq_body);
             });
 
             templateObj.$.load_2.addEventListener('click', () => {
                 const app_body = '{"core2":{"input":{"application":' + app_list_2.getSelectedIndex() + '}}}';
                 const freq_body = '{"core2":{"input":{"frequency":' + freq_list_2.getSelectedIndex() + '}}}';
-                fetch('http://1.1.1.1:8081/oob_data.json', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    referrerPolicy: 'no-referrer-when-downgrade',
-                    body: app_body + freq_body
-                })
-                .then((response) => response.json())
-                .catch((error) => console.error(error));
+                $.post('oob_data.json', app_body + freq_body);
             });
 
             templateObj.$.load_3.addEventListener('click', () => {
                 const app_body = '{"core3":{"input":{"application":' + app_list_3.getSelectedIndex() + '}}}';
                 const freq_body = '{"core3":{"input":{"frequency":' + freq_list_3.getSelectedIndex() + '}}}';
-                fetch('http://1.1.1.1:8081/oob_data.json', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    referrerPolicy: 'no-referrer-when-downgrade',
-                    body: app_body + freq_body
-                })
-                .then((response) => response.json())
-                .catch((error) => console.error(error));
+                $.post('oob_data.json', app_body + freq_body);
             });
 
         }, 1);
