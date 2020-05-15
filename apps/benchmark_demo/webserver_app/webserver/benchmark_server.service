@@ -3,7 +3,8 @@ Wants=network-online.target
 After=network.target network-online.target
 
 [Service]
-ExecStart=node /home/ti/ti-processor-sdk-am64xx/apps/benchmark_demo/webserver_app/webserver/benchmark_server.js
+EnvironmentFile=/etc/benchmark_server.conf
+ExecStart=benchmark_server $APP_DIR
 
 [Install]
 WantedBy=multi-user.target
