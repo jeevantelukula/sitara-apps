@@ -110,7 +110,7 @@ attrs.noExecute = false;
 attrs.accPerm = 1;          /* RW at PL1 */
 attrs.tex = 1;
 attrs.subregionDisableMask = 0;
-MPU.setRegionMeta(index++, 0x70000000, MPU.RegionSize_8M, attrs);
+MPU.setRegionMeta(index++, 0x70000000, MPU.RegionSize_2M, attrs);
 
 /* make all 2G DDR as cacheable */
 attrs.enable = true;

@@ -49,11 +49,11 @@ MEMORY
     R5F_ATCM                 (    X ) : ORIGIN = 0x00000100 , LENGTH = 0x00008000 - 0x100
 
     /* MCU0_R5F_0 SoC view */
-    R5F0_ATCM (RWIX) 		: ORIGIN = 0x41000000, LENGTH = 0x8000
+    R5F0_ATCM (RWIX) 		: ORIGIN = 0x41000100, LENGTH = 0x8000 - 0x100
     R5F0_BTCM (RWIX) 		: ORIGIN = 0x41010000, LENGTH = 0x8000
 
     /* MCU0_R5F_1 SoC view */
-    R5F1_ATCM (RWIX)		: ORIGIN = 0x41400000, LENGTH = 0x8000
+    R5F1_ATCM (RWIX)		: ORIGIN = 0x41400100, LENGTH = 0x8000 - 0x100
     R5F1_BTCM (RWIX)		: ORIGIN = 0x41410000, LENGTH = 0x8000
 
 	/* Will have to split OCMRAM into banks due to DMA spanning issue.         */
@@ -65,10 +65,10 @@ MEMORY
     /* MCU0 memory used for SBL. Avaiable after boot for app starts for dynamic use */
     OCMRAM_MCU1_1 	(RWIX) 	: ORIGIN = 0x41C40000, LENGTH = 0x40000-0x2000
 
-    /* Internal Memory for MCU1_0 for shared memory buffers [ size 128 KB ] */
-    MSMC_MCU1_0              ( RWIX ) : ORIGIN = 0x70000000 , LENGTH = 0x80000
-    /* Internal Memory for MCU1_1 for shared memory buffers [ size 128 KB ] */
-    MSMC_MCU1_1              ( RWIX ) : ORIGIN = 0x70080000 , LENGTH = 0x40000
+    /* Internal Memory for MCU1_0 for shared memory buffers [ size 640 KB ] */
+    MSMC_MCU1_0              ( RWIX ) : ORIGIN = 0x70000000 , LENGTH = 0xA0000
+    /* Internal Memory for MCU1_1 for shared memory buffers [ size 384 KB ] */
+    MSMC_MCU1_1              ( RWIX ) : ORIGIN = 0x700A0000 , LENGTH = 0x60000
 
     /* DDR for MCU1_0 for Linux IPC [ size 1024.00 KB ] */
     DDR_MCU1_0_IPC           ( RWIX ) : ORIGIN = 0xA0000000 , LENGTH = 0x00100000

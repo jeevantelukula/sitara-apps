@@ -35,6 +35,7 @@
 --fill_value=0
 --stack_size=0x2000
 --heap_size=0x1000
+--retain="*(.startupCopyVecsToAtcm)"
 
 /*----------------------------------------------------------------------------*/
 /* Section Configuration                                                      */
@@ -51,17 +52,18 @@ SECTIONS
     .text:xdc_runtime_Startup_reset__I     : {} palign(8) > R5F0_BTCM
     .text:ti_sysbios_family_arm_v7r_Cache* : {} palign(8) > R5F0_BTCM
     .text:ti_sysbios_family_arm_MPU*       : {} palign(8) > R5F0_BTCM
+    .startupCopyVecsToAtcm                 : {} palign(8) > R5F0_BTCM
 
-    .text       : {} palign(8)   > DDR_MCU1_0
-    .cinit      : {} palign(8)   > DDR_MCU1_0
+    .text       : {} palign(8)   > MSMC_MCU1_0
+    .cinit      : {} palign(8)   > MSMC_MCU1_0
     .bss        : {} align(8)    > DDR_MCU1_0
-    .far        : {} align(8)    > DDR_MCU1_0
-    .const      : {} palign(8)   > DDR_MCU1_0
-    .data       : {} palign(128) > DDR_MCU1_0
-    .sysmem     : {} align(8)    > DDR_MCU1_0
-    .stack      : {} align(4)    > DDR_MCU1_0
+    .far        : {} align(8)    > MSMC_MCU1_0
+    .const      : {} palign(8)   > MSMC_MCU1_0
+    .data       : {} palign(128) > MSMC_MCU1_0
+    .sysmem     : {} align(8)    > MSMC_MCU1_0
+    .stack      : {} align(4)    > MSMC_MCU1_0
 
-    .bss:taskStackSection > DDR_MCU1_0
+    .bss:taskStackSection > MSMC_MCU1_0
     .resource_table : {
         __RESOURCE_TABLE = .;
     } > DDR_MCU1_0_RESOURCE_TABLE
