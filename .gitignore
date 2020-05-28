@@ -1,0 +1,11 @@
+*.sw?
+*~
+*.bak
+*.orig
+**/out/
+gen/
+*array.h
+**/build/src/
+.settings/
+.xdchelp
+**/ccs_proj/.gitignore
