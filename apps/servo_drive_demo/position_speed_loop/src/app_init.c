@@ -82,9 +82,20 @@ static pinmuxPerCfg_t gFsiPinCfg[] =
     {PINMUX_END}
 };
 
+/*
+ * IPC MSG Handler called from MBX ISR context
+ * to copy the MSG from HW MBX to local memory
+ */
+
+void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
+{
+    /* TODO - when integrate with MC loop */
+}
+
 int32_t appInit()
 {
     int32_t status = 0;
+    app_mbxipc_init_prm_t mbxipc_init_prm;
 
     #ifdef ENABLE_BOARD
     {
@@ -105,6 +116,21 @@ int32_t appInit()
     status = appSciclientInit();
     APP_ASSERT_SUCCESS(status);
 
+    /* initialize CSL Mbx IPC */
+    appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
+    mbxipc_init_prm.master_cpu_id = MAILBOX_IPC_CPUID_MCU1_0;
+    mbxipc_init_prm.self_cpu_id = MAILBOX_IPC_CPUID_MCU1_1;
+    mbxipc_init_prm.num_cpus = 0;
+    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = MAILBOX_IPC_CPUID_MCU1_0;
+    mbxipc_init_prm.num_cpus++;
+    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = MAILBOX_IPC_CPUID_MCU1_1;
+    mbxipc_init_prm.num_cpus++;
+    /* IPC CPU sync check works only when appMbxIpcInit() called from both R5Fs */
+    status = appMbxIpcInit(&mbxipc_init_prm);
+    APP_ASSERT_SUCCESS(status);
+    /* Register Application callback to invoke on receiving a notify message */
+    appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) appMbxIpcMsgHandler);
+
     appLogPrintf("APP: Init ... Done !!!\n");
 
     return status;
@@ -113,6 +139,8 @@ int32_t appInit()
 void appDeInit()
 {
     appLogPrintf("APP: Deinit ... !!!\n");
+
+    appMbxIpcDeInit();
 
     appSciclientDeInit();
 

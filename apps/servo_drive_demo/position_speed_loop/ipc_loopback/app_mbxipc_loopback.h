@@ -31,17 +31,47 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_INIT_H_
-#define APP_INIT_H_
+#ifndef APP_MBXIPC_LOOPBACK_H_
+#define APP_MBXIPC_LOOPBACK_H_
 
 #include <stdint.h>
-#include <ti/csl/tistdtypes.h>
+#include <stdio.h>
 #include <app_mbx_ipc.h>
 
-#define APP_ASSERT_SUCCESS(x)  { if((x)!=0) while(1); }
+/* IPC CPU ID should match with EtherCAT CPU configuration */
+#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
+#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
 
-int32_t appInit();
-void appDeInit();
-void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload);
+/* MAX number of independent axis supported */
+#define MAX_NUM_AXIS           (3)
 
-#endif /* APP_INIT_H_ */
+/* IPC message objects to send/receive motor control parameters   */
+/* Below send and receive data structures should be in align with */ 
+/* the receive and send data structures of ethercat_loop          */
+typedef struct {
+    int32_t i32TargetVelocity;
+    int32_t i32TargetPosition;
+    int16_t i16ModesOfOperation;
+    int16_t i16State;
+    uint16_t axisIndex;
+} receive_msg_obj_t;
+
+typedef struct {
+    int32_t i32VelocityActualValue;
+    int32_t i32PositionActualValue;
+    uint16_t axisIndex;
+} send_msg_obj_t;
+
+typedef struct {
+    /* Remove volatile qualifier once this moved to TCM & enable write through */
+    volatile int32_t isMsgReceived;
+    send_msg_obj_t sendObj;
+    receive_msg_obj_t receiveObj;
+} app_ipc_axis_obj_t;
+
+typedef struct {
+    app_ipc_axis_obj_t axisObj[MAX_NUM_AXIS];
+} app_ipc_mc_obj_t;
+
+
+#endif /* APP_MBXIPC_LOOPBACK_H_ */
