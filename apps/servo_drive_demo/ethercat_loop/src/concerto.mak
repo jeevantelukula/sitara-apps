@@ -66,7 +66,7 @@ STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_servo_drive_ethcat_beckhoff_ssc
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_common
 STATIC_LIBS += app_servo_drive_ethcat_osal
-
+STATIC_LIBS += app_libs_copy_vecs_to_atcm
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f

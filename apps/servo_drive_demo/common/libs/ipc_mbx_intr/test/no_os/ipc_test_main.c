@@ -68,6 +68,7 @@ int main(void)
     mbxipc_init_prm.num_cpus++;
     /* IPC CPU sync check works only when appMbxIpcInit() called from both R5Fs */
     appMbxIpcInit(&mbxipc_init_prm);
+    /* Register Application callback to invoke on receiving a notify message */
     appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) mbxIpcMsgTestHandler);
 
     do

@@ -58,12 +58,12 @@
 #include <app_mbx_ipc_test.h>
 
 /* Simulated ECAT timer */
+#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
 #define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
 #define SIM_ECAT_TIMER_PERIOD_USEC  ( 125*8 )       /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 38 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
+#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
 
 /* Timer -- simulate ECAT interrupt */
-#define TIMER_ID ( TimerP_ANY ) /* Timer ID */
 void timerTickFxn(void *arg);   /* Timer tick function */
 uint32_t gTimerIsrCnt=0;
 int32_t  gStatus = 0;
@@ -90,7 +90,7 @@ int32_t timerInit(void)
     timerParams.intNum = SIM_ECAT_TIMER_INTNUM;
 
     /* Create timer -- simulate ECAT interrupt */
-    gTimerHandle = TimerP_create(TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
+    gTimerHandle = TimerP_create(SIM_ECAT_TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
     if (gTimerHandle == NULL)
     {
         status = -1;
@@ -141,6 +141,7 @@ static void taskMain(UArg arg0, UArg arg1)
     mbxipc_init_prm.num_cpus++;
     /* IPC CPU sync check works only when appMbxIpcInit() called from both R5Fs */
     appMbxIpcInit(&mbxipc_init_prm);
+    /* Register Application callback to invoke on receiving a notify message */
     appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) mbxIpcMsgTestHandler);
     timerInit();
 

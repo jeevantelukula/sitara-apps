@@ -56,11 +56,11 @@ MEMORY
     R5F1_ATCM (RWIX)		: ORIGIN = 0x41400100, LENGTH = 0x8000 - 0x100
     R5F1_BTCM (RWIX)		: ORIGIN = 0x41410000, LENGTH = 0x8000
 
-	/* Will have to split OCMRAM into banks due to DMA spanning issue.         */
-	/* DMA can't read contiguous buffer acrosss bank boundary so by splitting  */
-	/* OCRAM into banks in *.cmd it prevents the problem (and also allows      */
-	/* placement into banks for performance reasons).                          */
-    /* Fully avaialble for apps. Used by SBL to load SYSFW */
+    /* The OCRAM is split into its component banks as defined by the hardware. */
+    /* The BCDMA cannot span banks with a single TR or a single TR descriptor. */
+    /* The separate banks prevent this from occuring, and allows data to be    */
+    /* explicitly placed into separate banks to improve performance as each    */
+    /* bank can service a memory request every memory cycle.                   */
     OCMRAM_MCU1_0 	(RWIX) 	: ORIGIN = 0x41C00400, LENGTH = 0x40000-0x400
     /* MCU0 memory used for SBL. Avaiable after boot for app starts for dynamic use */
     OCMRAM_MCU1_1 	(RWIX) 	: ORIGIN = 0x41C40000, LENGTH = 0x40000-0x2000

@@ -70,7 +70,7 @@ SECTIONS
 /* a range of +\- 16 MB                                                       */
     .intvecs 	: {} palign(8) 		> MCU1_1_VECTORS
     .intc_text 	: {} palign(8) 		> MCU1_1_VECTORS
-    .rstvectors 	: {} palign(8) 		> MCU1_1_RESET_VECTORS
+    .rstvectors : {} palign(8) 		> R5F_ATCM_SBL_RSVD
     .bootCode      : {} palign(8)      > MSMC_MCU1_1
     .startupCode   : {} palign(8)      > MSMC_MCU1_1
     .startupData   : {} palign(8)      > MSMC_MCU1_1, type = NOINIT
@@ -86,9 +86,6 @@ SECTIONS
 
     /* USB ram disk dev-msc example */
     .bss:extMemCache:ramdisk : {} align (32)     > MSMC_MCU1_1
-
-    /* USB or any other LLD buffer for benchmarking */
-    .benchmark_buffer (NOLOAD) {} ALIGN (8) > MSMC_MCU1_1
 
     .stack  	: {} align(4)		> MSMC_MCU1_1  (HIGH)
     .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> MSMC_MCU1_1  (HIGH)
@@ -109,6 +106,7 @@ SECTIONS
 
 /* Additional sections settings 	*/
 
+    .bss:ipcMCBuffSection > R5F_ATCM
     .bss:l3mem              (NOLOAD)(NOINIT) : {} > MSMC_MCU1_1
     .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_1_SHARED_MEM
 

@@ -53,7 +53,7 @@
 
 #define MAILBOX_SCICLIENT_TIMEOUT  (0xffffffffu)
 
-#define TEST_VIM_BASE_ADDR         (CSL_MCU_DOMAIN_VIM_BASE_ADDR)
+#define VIM_BASE_ADDR              (CSL_MCU_DOMAIN_VIM_BASE_ADDR)
 
 /* ========================================================================== */
 /*                            Global Variables                                */

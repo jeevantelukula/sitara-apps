@@ -45,7 +45,7 @@ SECTIONS
 {
     .vecs       : {
          *(.vecs)
-    } palign(8) > R5F_ATCM
+    } palign(8) > R5F0_BTCM
     .text_boot {
         *boot.aer5f<*boot.o*>(.text)
      }  palign(8)   > R5F0_BTCM
@@ -63,6 +63,7 @@ SECTIONS
     .sysmem     : {} align(8)    > MSMC_MCU1_0
     .stack      : {} align(4)    > MSMC_MCU1_0
 
+    .bss:ipcMCBuffSection > R5F_ATCM
     .bss:taskStackSection > MSMC_MCU1_0
     .resource_table : {
         __RESOURCE_TABLE = .;

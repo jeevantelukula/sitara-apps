@@ -55,7 +55,7 @@
 #define LOCAL_DELAY_COUNT              (0x10)
 #define MAILBOX_APP_SYNC_MESSAGE       (0xBABEFACE)
 #define MAILBOX_APP_ACK_MESSAGE        (0xC00DC00D)
-
+#define MAILBOX_INT_PRIORITY           (0x1U)
 #define IS_CPU_ENABLED(x) (appMbxIpcIsCpuEnabled(x) && (appMbxIpcGetSelfCpuId()==x))
 
 /* ========================================================================== */
@@ -124,10 +124,14 @@ void appMbxIpcInitPrmSetDefault(app_mbxipc_init_prm_t *prm)
 
 int32_t appMbxIpcRegisterNotifyHandler(app_mbxipc_notify_handler_f handler)
 {
-    int32_t status = 0;
+    int32_t status = -1;
     app_mbxipc_obj_t *obj = &g_app_mbxipc_obj;
 
-    obj->mbxipc_notify_handler = handler;
+    if(handler)
+    {
+        obj->mbxipc_notify_handler = handler;
+        status = 0;
+    }
 
     return status;
 }
@@ -173,12 +177,12 @@ int32_t appMbxIpcInterruptInit(uint32_t intNum, uint16_t remoteId)
     /* Register Mailbox interrupt using VIM direct INT registration */
     if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_1))
     {
-        CSL_vimCfgIntr((CSL_vimRegs *)(uintptr_t)TEST_VIM_BASE_ADDR, intNum,
-                   0x1U,
-                   (CSL_VimIntrMap)0u,
+        CSL_vimCfgIntr((CSL_vimRegs *)(uintptr_t)VIM_BASE_ADDR, intNum,
+                   MAILBOX_INT_PRIORITY,
+                   (CSL_VimIntrMap)CSL_VIM_INTR_MAP_IRQ,
                    CSL_VIM_INTR_TYPE_LEVEL,
                    (uint32_t)mailboxIsrArray[remoteId] );
-        CSL_vimSetIntrEnable((CSL_vimRegs *)(uintptr_t)TEST_VIM_BASE_ADDR,
+        CSL_vimSetIntrEnable((CSL_vimRegs *)(uintptr_t)VIM_BASE_ADDR,
                          intNum, true );   /* Enable interrupt in vim */
         Intc_SystemEnable();
     }
@@ -191,8 +195,8 @@ int32_t appMbxIpcInterruptInit(uint32_t intNum, uint16_t remoteId)
 
         Osal_RegisterInterrupt_initParams(&intrPrms);
         intrPrms.corepacConfig.arg          = (uintptr_t)remoteId;
-        intrPrms.corepacConfig.priority     = 1U;
-        intrPrms.corepacConfig.corepacEventNum = 0U; /* NOT USED */
+        intrPrms.corepacConfig.priority     = MAILBOX_INT_PRIORITY;
+        intrPrms.corepacConfig.corepacEventNum = CSL_VIM_INTR_MAP_IRQ; /* NOT USED */
         intrPrms.corepacConfig.isrRoutine   = (Osal_IsrRoutine) &appMailboxIsr;
         intrPrms.corepacConfig.intVecNum    = intNum;
 
@@ -217,7 +221,7 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
     struct tisci_msg_rm_get_resource_range_resp res;
     struct tisci_msg_rm_get_resource_range_req  req;
     uint16_t intStartNum, intRangeNum;
-    uint16_t intNum;
+    uint16_t intNum, dst_input;
     uint32_t selfId;
     app_mbxipc_obj_t *obj = &g_app_mbxipc_obj;
     obj->prm = *prm;
@@ -236,16 +240,16 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
 
     if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_0))
     {
-        req.type           = TISCI_DEV_MCU_ARMSS0_CPU0;
-        req.subtype        = TISCI_RESASG_SUBTYPE_MCU_ARMSS0_CPU0_INTR_IRQ_GROUP0_FROM_MAIN2MCU_LVL_INTRTR0;
+        req.type           = TISCI_DEV_MAIN2MCU_LVL_INTRTR0;
+        req.subtype        = TISCI_RESASG_SUBTYPE_IR_OUTPUT;
         req.secondary_host = (uint8_t)TISCI_HOST_ID_R5_0;
     }
 
     if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_1))
     {
-        req.type           = TISCI_DEV_MCU_ARMSS0_CPU1;
-        req.subtype        = TISCI_RESASG_SUBTYPE_MCU_ARMSS0_CPU1_INTR_IRQ_GROUP0_FROM_MAIN2MCU_LVL_INTRTR0;
-        req.secondary_host = (uint8_t)TISCI_HOST_ID_R5_1;
+        req.type           = TISCI_DEV_MAIN2MCU_LVL_INTRTR0;
+        req.subtype        = TISCI_RESASG_SUBTYPE_IR_OUTPUT;
+        req.secondary_host = (uint8_t)TISCI_HOST_ID_R5_2;
     }
 
     /* Get interrupt number range */
@@ -263,10 +267,10 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
                  &res,
                  MAILBOX_SCICLIENT_TIMEOUT);
     }
-    /* WA to avoid interrupt number resource conflict
-       with EtherCAT slave which uses the first 17 */
-    res.range_num = res.range_num >> 1;
-    res.range_start += res.range_num;
+    /* Add an offset of 24 to avoid interrupt number resource
+       conflict with EtherCAT slave which uses the first 17 */
+    res.range_start += 24;
+    res.range_num = res.range_num - 24;
 
     if (CSL_PASS == retVal)
     {
@@ -276,12 +280,6 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
         if (intRangeNum == 0)
         {
             retVal = -1;
-        }
-        else if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_1))
-        {
-            intRangeNum = (intRangeNum >> 1);
-            intStartNum += intRangeNum;
-
         }
     }
 
@@ -313,8 +311,23 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
 			}
 
             intNum = intStartNum + interruptOffset;
+
+            if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_0))
+            {
+                retVal = Sciclient_rmIrqTranslateIrOutput(
+                            TISCI_DEV_MAIN2MCU_LVL_INTRTR0,
+                            intNum, TISCI_DEV_MCU_ARMSS0_CPU0,&dst_input);
+            }
+
+            if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_1))
+            {
+                retVal = Sciclient_rmIrqTranslateIrOutput(
+                            TISCI_DEV_MAIN2MCU_LVL_INTRTR0,
+                            intNum, TISCI_DEV_MCU_ARMSS0_CPU1,&dst_input);
+            }
+
             /* Store the interrupt number */
-            gMailboxIpc_MailboxInterruptInfo[remoteId] = intNum;
+            gMailboxIpc_MailboxInterruptInfo[remoteId] = dst_input;
 
             if (retVal == 0)
             {
@@ -329,7 +342,7 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
                                           | TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID;
                 rmIrqReq.src_id         = gMailboxIpc_MailboxClusterIdArray[gMailboxIpc_MailboxInfo[selfId][remoteId].rx.cluster];
                 rmIrqReq.src_index      = gMailboxIpc_MailboxInfo[selfId][remoteId].rx.user;
-                rmIrqReq.dst_host_irq   = intNum;
+                rmIrqReq.dst_host_irq   = dst_input;
 
                 /* Config event */
                 retVal = Sciclient_rmIrqSet(
@@ -339,7 +352,7 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
             if (retVal == 0)
             {
                 /* Configure and initalize interrupt handler */
-                retVal = appMbxIpcInterruptInit(intNum, remoteId);
+                retVal = appMbxIpcInterruptInit(dst_input, remoteId);
             }
 
             if (retVal == 0)
@@ -358,7 +371,14 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
         }
     }
 
-    appLogPrintf("MBX-IPC: Init ... Done !!!\n");
+    if (retVal)
+    {
+        appLogPrintf("MBX-IPC: Init ... Failed !!!\n");
+    }
+    else
+    {
+        appLogPrintf("MBX-IPC: Init ... Done !!!\n");
+    }
 
     return retVal;
 }
@@ -405,11 +425,11 @@ void appMailboxIsr(void *handle)
     MailboxClrNewMsgStatus(baseAddr, fifo, user);
     if (IS_CPU_ENABLED(MAILBOX_IPC_CPUID_MCU1_1))
     {
-        CSL_vimClrIntrPending((CSL_vimRegs *)(uintptr_t)TEST_VIM_BASE_ADDR,
+        CSL_vimClrIntrPending((CSL_vimRegs *)(uintptr_t)VIM_BASE_ADDR,
                     gMailboxIpc_MailboxInterruptInfo[remoteId]);
         /* Acknowledge interrupt servicing */
-        CSL_vimAckIntr((CSL_vimRegs *)(uintptr_t)TEST_VIM_BASE_ADDR, \
-                    (CSL_VimIntrMap)0u );
+        CSL_vimAckIntr((CSL_vimRegs *)(uintptr_t)VIM_BASE_ADDR, \
+                    (CSL_VimIntrMap)CSL_VIM_INTR_MAP_IRQ );
     }
 }
 
@@ -493,15 +513,15 @@ int appMbxIpcSync(void)
 void appMbxIpcSendNotify(uint32_t remoteId, uint32_t payload)
 {
     uint32_t remoteBaseAddr, remoteFifo;
-	uint32_t selfId = appMbxIpcGetSelfCpuId();
+    uint32_t selfId = appMbxIpcGetSelfCpuId();
 
     remoteBaseAddr = gMailboxIpc_MailboxBaseAddressArray[gMailboxIpc_MailboxInfo[remoteId][selfId].rx.cluster];
     remoteFifo = gMailboxIpc_MailboxInfo[remoteId][selfId].rx.fifo;
 
-	MailboxWriteMessage(remoteBaseAddr,
-					   remoteFifo,
-					   (uint32_t) payload);
-	return;
+    MailboxWriteMessage(remoteBaseAddr,
+                        remoteFifo,
+                        (uint32_t) payload);
+    return;
 }
 
 

@@ -114,6 +114,7 @@ int main(void)
     mbxipc_init_prm.num_cpus++;
     /* IPC CPU sync check works only when appMbxIpcInit() called from both R5Fs */
     appMbxIpcInit(&mbxipc_init_prm);
+    /* Register Application callback to invoke on receiving a notify message */
     appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) appMbxIpcMsgHandler);
     for (i=0; i< MAX_NUM_AXIS; i++){
         gAppIpcMsgObj.axisObj[i].isMsgReceived = 0;
@@ -129,13 +130,16 @@ int main(void)
         {
             for (i=0; i< MAX_NUM_AXIS; i++)
             {
+                key = HwiP_disable();
                 if (1==gAppIpcMsgObj.axisObj[i].isMsgReceived)
                 {
-                    key = HwiP_disable();
                     gAppIpcMsgObj.axisObj[i].isMsgReceived = 0;
-                    HwiP_restore(key);
                     axisIndex = i;
                     isMsgFound = 1;
+                }
+                HwiP_restore(key);
+                if (isMsgFound)
+                {
                     break;
                 }
             }

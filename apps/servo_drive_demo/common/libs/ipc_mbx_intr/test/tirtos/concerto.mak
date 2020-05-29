@@ -19,7 +19,6 @@ TARGETTYPE  := exe
 # Provide list of C files by using built-in macro
 CSOURCES    := $(call all-c-files)
 CSOURCES    += ../app_mbx_ipc_test.c
-ASSEMBLY    := copyVecsToATCM.S
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/../../../../..)
@@ -48,6 +47,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/common/config/$(SITARA_DEMO_SOC))
 STATIC_LIBS += app_libs_logs
 STATIC_LIBS += app_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
+STATIC_LIBS += app_libs_copy_vecs_to_atcm
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f
