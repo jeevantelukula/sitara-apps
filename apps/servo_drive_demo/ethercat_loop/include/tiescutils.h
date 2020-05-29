@@ -46,16 +46,52 @@
 #include <SwiP.h>
 #include <ti/osal/SemaphoreP.h>
 #include <ti/osal/TimerP.h>
+#include "cia402appl.h"
 
-
-#define APPL_BUILD_VER  "3.3.0"
 #include <ti/osal/CacheP.h>
 
-#ifdef iceAMIC11x_onChip_mem_mode
-void task1(uint32_t arg0, uint32_t arg1) __attribute__((section(".tasks")));
-#else
+/* Flag to enable TI AM6xx based CiA402 3-axis MC application */
+#define TI_CiA402_3AXIS_MOTOR_CONTROL
+
+#define APP_ASSERT_SUCCESS(x)  { if((x)!=0) while(1); }
+
+/* IPC CPU ID should match with PSL MC CPU configuration */
+#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
+#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
+
+/* MAX number of independent axis supported */
+#define MAX_NUM_AXIS           (3)
+
+/* IPC message objects to send/receive motor control parameters   */
+/* Below send and receive data structures should be in align with */ 
+/* the receive and send data structures of position_speed_loop    */
+typedef struct {
+    int32_t i32TargetVelocity;
+    int32_t i32TargetPosition;
+    int16_t i16ModesOfOperation;
+    int16_t i16State;
+    uint16_t axisIndex;
+} send_msg_obj_t;
+
+typedef struct {
+    int32_t i32VelocityActualValue;
+    int32_t i32PositionActualValue;
+    uint16_t axisIndex;
+} receive_msg_obj_t;
+
+typedef struct {
+    /* Remove volatile qualifier once this moved to TCM & enable write through */
+    volatile int32_t isMsgReceived;
+    send_msg_obj_t sendObj;
+    receive_msg_obj_t receiveObj;
+} app_ipc_axis_obj_t;
+
+typedef struct {
+    app_ipc_axis_obj_t axisObj[MAX_NUM_AXIS];
+} app_ipc_mc_obj_t;
+
+
 void task1(uint32_t arg0, uint32_t arg1);
-#endif
 
 #ifdef ENABLE_PDI_TASK
 void PDItask(uint32_t arg1, uint32_t arg2);
@@ -65,24 +101,22 @@ void HW_EcatIsr(void);
 #endif
 void LEDtask(uint32_t arg0, uint32_t arg1);
 
-#ifdef ENABLE_SPIA_TASK
-void SPIAMaster_statusTask(uint32_t arg0, uint32_t arg1);
-#endif
-
-#ifdef ENABLE_GPMC_TASK
-void GPMC_statusTask(uint32_t arg0, uint32_t arg1);
-#endif
-
 #ifdef ENABLE_SYNC_TASK
 void Sync0task(uint32_t arg1, uint32_t arg2);
 #endif
 
+#ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
+void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex);
+#endif
+
+void CiA402_DummyMotionControl(TCiA402Axis *pCiA402Axis);
+
+void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload);
+
 void common_main();
-
-
 
 #ifdef ENABLE_ONLINE_FIRMWARE_UPGRADE
 void relocate_reload_code();
 #endif
 
-#endif //_TIESC_UTILS_H_
+#endif /* _TIESC_UTILS_H_ */

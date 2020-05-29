@@ -35,6 +35,9 @@ IDIRS+=$(APPDIR)/include
 IDIRS+=$(APPDIR)/ti_osal
 IDIRS+=$(APPDIR)/beckhoff_ssc
 IDIRS+=$(APPDIR)/ti_board/include
+IDIRS+=$(APPDIR)/../common/libs/logs/include
+IDIRS+=$(APPDIR)/../common/libs/sciclient/include
+IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
@@ -57,6 +60,9 @@ IDIRS+=$(COMMON_CONFIG)/mem_map
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 #STATIC_LIBS += app_common_mcu1_0
+STATIC_LIBS += app_libs_logs
+STATIC_LIBS += app_libs_sciclient
+STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_servo_drive_ethcat_beckhoff_ssc
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_common
 STATIC_LIBS += app_servo_drive_ethcat_osal

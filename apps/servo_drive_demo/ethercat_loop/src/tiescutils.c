@@ -37,7 +37,11 @@
 
 #include <TaskP.h>
 #include <ti/osal/HwiP.h>
+#include <ti/osal/CacheP.h>
 #include <OSP.h>
+
+#include <app_sciclient.h>
+#include <app_mbx_ipc.h>
 
 #include <tiescutils.h>
 #include <tiesc_soc.h>
@@ -51,6 +55,7 @@
 #include <ti/drv/uart/UART_stdio.h>
 #endif
 #include <ti/board/board.h>
+#include <ti/osal/HwiP.h>
 
 #include <board_gpioLed.h>
 #include <board_i2cLed.h>
@@ -59,21 +64,6 @@
 /* Please note: Baremetal mode is not validated on AM6xx devices */
 #ifdef BARE_METAL
 #include <tiesc_baremetal.h>
-
-#ifdef ENABLE_SPIA_TASK
-#include <board_mcspi.h>
-#include <ti/drv/spi/soc/SPI_v1.h>
-#include <ti/drv/spi/src/SPI_osal.h>
-#include <ti/drv/spi/soc/SPI_soc.h>
-#endif
-
-#ifdef ENABLE_GPMC_TASK
-#include <board_gpmc.h>
-#include <ti/csl/src/ip/gpmc/V1/gpmc.h>
-#include <ti/drv/gpmc/GPMC.h>
-#include <ti/drv/gpmc/soc/GPMC_soc.h>
-#endif
-
 #endif //BARE_METAL
 
 //#define PROFILE_ECAT_STACK
@@ -104,15 +94,6 @@ PRUICSS_Handle pruIcss0Handle;
 /* ========================================================================== */
 /*                            Global Variables                                */
 /* ========================================================================== */
-#ifdef ENABLE_SPIA_TASK
-uint16_t SPIA_txBuffer[16];
-uint16_t SPIA_rxBuffer[16];
-#endif
-
-#ifdef ENABLE_GPMC_TASK
-uint8_t GPMC_txBuffer[32];
-uint8_t GPMC_rxBuffer[32];
-#endif
 
 #if CiA402_DEVICE
 extern UINT16 APPL_GenerateMapping(UINT16 *pInputSize, UINT16 *pOutputSize);
@@ -141,6 +122,13 @@ TaskP_Handle sync1Task; // ECAT SYNC1 ISR
 void Sync1task(uint32_t arg0, uint32_t arg1);
 #endif
 uint32_t appState = 0;
+
+/* Global data MSG object used in IPC communication */
+static app_ipc_mc_obj_t gAppIpcMsgObj
+__attribute__ ((section(".bss:ipcMCBuffSection")))
+__attribute__ ((aligned(128)))={0}
+    ;
+
 
 uint8_t task1_init()
 {
@@ -172,9 +160,6 @@ uint8_t task1_init()
     {
         UART_printf("\n\rNon-EtherCAT Device");
     }
-
-    UART_printf("\n\rSYS/BIOS EtherCAT Internal application ");
-    UART_printf(APPL_BUILD_VER);
 #endif
 
     bsp_soc_evm_init();
@@ -219,18 +204,6 @@ uint8_t task1_init()
     sync1Task = TaskP_create(Sync1task, &taskParams);
 #endif
 
-#ifdef ENABLE_SPIA_TASK
-    TaskP_Params_init(&taskParams);
-    taskParams.priority = 4;
-    TaskP_create(SPIAMaster_statusTask, &taskParams);
-#endif
-
-#ifdef ENABLE_GPMC_TASK
-    TaskP_Params_init(&taskParams);
-    taskParams.priority = 4;
-    TaskP_create(GPMC_statusTask, &taskParams);
-#endif
-
     TaskP_Params_init(&taskParams);
     taskParams.priority = 4;
     taskParams.stacksize = 1512*TIESC_TASK_STACK_SIZE_MUL;
@@ -241,11 +214,36 @@ uint8_t task1_init()
 
 void task1(uint32_t arg0, uint32_t arg1)
 {
+    int32_t i;
+    uint8_t u8Err = 0;
     static int task1init = FALSE;
+    app_mbxipc_init_prm_t mbxipc_init_prm;
+
+    /* initialize SCICLIENT */
+    u8Err = appSciclientInit();
+    /* initialize CSL Mbx IPC */
+    appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
+    mbxipc_init_prm.master_cpu_id = IPC_ETHERCAT_CPU_ID;
+    mbxipc_init_prm.self_cpu_id = IPC_ETHERCAT_CPU_ID;
+    mbxipc_init_prm.num_cpus = 0;
+    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = IPC_ETHERCAT_CPU_ID;
+    mbxipc_init_prm.num_cpus++;
+    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = IPC_PSL_MC_CPU_ID;
+    mbxipc_init_prm.num_cpus++;
+    /* IPC cpu sync check works only when appMbxIpcInit() called from both R5Fs */
+    u8Err |= appMbxIpcInit(&mbxipc_init_prm);
+    /* Register Application callback to invoke on receiving a notify message */
+    appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) appMbxIpcMsgHandler);
+    for (i=0; i< MAX_NUM_AXIS; i++){
+        gAppIpcMsgObj.axisObj[i].isMsgReceived = 0;
+    }
+
     if(!task1init)
     {
-        task1_init();
+        u8Err |= task1_init();
         task1init = TRUE;
+        /* If task1_init() fails, better loop here as system will not work */
+        while (u8Err);
     }
     bRunApplication = TRUE;
 #ifndef BARE_METAL
@@ -292,6 +290,10 @@ void task1(uint32_t arg0, uint32_t arg1)
     HW_Release();
 
     OSAL_OS_exit(0);
+
+    appMbxIpcDeInit();
+
+    appSciclientDeInit();
 }
 
 
@@ -457,53 +459,6 @@ void LEDtask(uint32_t arg0, uint32_t arg1)
     }
 }
 
-#ifdef ENABLE_SPIA_TASK
-void SPIAMaster_statusTask(uint32_t arg0, uint32_t arg1)
-{
-    static int SPIAMaster_init = 0;
-    static SPI_Transaction transaction;
-    static SPI_Handle masterASpi;
-    if (!SPIAMaster_init)
-    {
-        masterASpi = SPIAMaster_open();
-        SPIAMaster_init = 1;
-    }
-
-    transaction.count = 16; /* Number of frames */
-    transaction.txBuf = &SPIA_txBuffer[0];
-    transaction.rxBuf = &SPIA_rxBuffer[0];
-    SPI_transfer(masterASpi, &transaction);
-}
-#endif
-
-#ifdef ENABLE_GPMC_TASK
-void GPMC_statusTask(uint32_t arg0, uint32_t arg1)
-{
-    static int gpmc_init = 0;
-    static GPMC_Transaction g_transaction;
-    static GPMC_Params     gpmcParams;  /* GPMC params structure */
-    static GPMC_Handle     gpmcHandle;  /* GPMC handle */
-
-    if (!gpmc_init)
-    {
-        GPMC_initConfig();
-        GPMC_init();
-
-        /* Use default GPMC config params if no params provided */
-        GPMC_Params_init(&gpmcParams);
-        gpmcHandle = (GPMC_Handle)GPMC_open(BOARD_GPMC_INSTANCE, &gpmcParams);
-        gpmc_init = 1;
-    }
-
-    g_transaction.offset = 0x200;
-    g_transaction.txBuf  = (void *)&GPMC_txBuffer[0];
-    g_transaction.rxBuf  = NULL;
-    g_transaction.count  = 32; /* Number of bytes */
-    GPMC_transfer(gpmcHandle, &g_transaction);
-}
-#endif
-
-
 #ifdef ENABLE_SYNC_TASK
 void Sync0task(uint32_t arg1, uint32_t arg2)
 {
@@ -589,6 +544,11 @@ void Sync1task(uint32_t arg1, uint32_t arg2)
 }
 #endif
 
+/* Added for debug purpose when load and run via SBL.
+ * set enableDebug = 1 and build for debug.
+ * Once started running connect CCS and reset enableDebug=0
+ * to proceed with single-step from the beginning
+ */
 void StartupEmulatorWaitFxn (void)
 {
     volatile uint32_t enableDebug = 0;
@@ -601,6 +561,7 @@ void common_main()
 {
     TaskP_Params taskParams;
 	
+    /* This is for debug purpose - see the description of function header */
     StartupEmulatorWaitFxn();
 
     Board_init(BOARD_INIT_PINMUX_CONFIG | BOARD_INIT_MODULE_CLOCK |
@@ -611,4 +572,84 @@ void common_main()
     tsk1 = TaskP_create(task1, &taskParams);
     OSAL_OS_start();
 }
+
+/* ISR callback that is invoke when current CPU receives a MSG */
+void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
+{
+    uint16_t axisIndex;
+    receive_msg_obj_t *rxobj;
+    receive_msg_obj_t *payload_ptr = (receive_msg_obj_t*)payload;
+
+    CacheP_Inv(payload_ptr, sizeof(receive_msg_obj_t));
+    axisIndex = payload_ptr->axisIndex;
+    if (axisIndex < MAX_NUM_AXIS)
+    {
+        rxobj = &gAppIpcMsgObj.axisObj[axisIndex].receiveObj;
+        if (src_cpu_id==IPC_PSL_MC_CPU_ID)
+        {
+            *rxobj = *payload_ptr;
+            gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived = 1;
+        }
+    }
+}
+
+#ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
+void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
+{
+    uintptr_t key;
+    uint32_t payload;
+    send_msg_obj_t *txobj;
+    receive_msg_obj_t *rxobj;
+
+    if (axisIndex < MAX_NUM_AXIS)
+    {
+        txobj = &gAppIpcMsgObj.axisObj[axisIndex].sendObj;
+        rxobj = &gAppIpcMsgObj.axisObj[axisIndex].receiveObj;
+        payload = (uint32_t)txobj;
+
+        /* In EthCAT IPC loopback application, send Actual values calculated */
+        /* by CiA402_DummyMotionControl() to Motor Control R5F and receiving */
+        /* back on EtherCAT R5F.  This will be later modified to make use of */
+        /* Position-speed MC algo on MC R5F to calculate the Actual Values.  */
+        CiA402_DummyMotionControl(pCiA402Axis);
+        txobj->i32TargetPosition = pCiA402Axis->Objects.objPositionActualValue;
+        txobj->i32TargetVelocity = pCiA402Axis->Objects.objVelocityActualValue;
+        txobj->i16ModesOfOperation = pCiA402Axis->Objects.objModesOfOperation;
+        txobj->i16State = pCiA402Axis->i16State;
+        txobj->axisIndex = axisIndex;
+        CacheP_wb(txobj, sizeof(send_msg_obj_t));
+
+        if (appMbxIpcGetSelfCpuId()==IPC_ETHERCAT_CPU_ID)
+        {
+            appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, payload);
+        }
+
+        /* Wait for IPC MSG from MC R5F with updated actual MC parameters */
+        do
+        {
+            TaskP_yield();
+        } while (1!=gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived);
+
+        key = HwiP_disable();
+        gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived = 0;
+        HwiP_restore(key);
+        /* Copy updated actual MC parameters to CiA402 Axis data object */
+        if (axisIndex==rxobj->axisIndex)
+        {
+            pCiA402Axis->Objects.objPositionActualValue = rxobj->i32PositionActualValue;
+            pCiA402Axis->Objects.objVelocityActualValue = rxobj->i32VelocityActualValue;
+        }
+        else
+        {
+            APP_ASSERT_SUCCESS(1);
+        }
+    }
+    else
+    {
+        APP_ASSERT_SUCCESS(1);
+    }
+
+}
+#endif
+
 
