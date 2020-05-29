@@ -54,7 +54,11 @@
 /*                            Global Variables                                */
 /* ========================================================================== */
 
-static app_mbxipc_test_obj_t gTestMsgObj={0};
+/* MSG object used in IPC communication */
+static app_mbxipc_test_obj_t gTestMsgObj
+__attribute__ ((section(".bss:ipcMCBuffSection")))
+__attribute__ ((aligned(128)))={0}
+    ;
 
 /* ========================================================================== */
 /*                          Function Definitions                              */
@@ -127,6 +131,12 @@ int32_t ipcTestRun(int32_t iterationCnt)
         txobj->i32Position = POSITION+selfId;
         txobj->i16State = STATE+selfId;
         CacheP_wb(txobj, sizeof(test_msg_obj_t));
+		
+        /* Translate the ATCM local view addr to SoC view addr */
+        if (MBXIPC_TEST_CPU_1 == appMbxIpcGetSelfCpuId())
+            payload = CPU0_ATCM_SOCVIEW(payload);
+        if (MBXIPC_TEST_CPU_2 == appMbxIpcGetSelfCpuId())
+            payload = CPU1_ATCM_SOCVIEW(payload);
 
         appMbxIpcSendNotify(remoteId, payload);
     }

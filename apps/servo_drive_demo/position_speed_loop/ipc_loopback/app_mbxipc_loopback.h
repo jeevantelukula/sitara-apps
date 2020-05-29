@@ -42,6 +42,9 @@
 #define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
 #define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
 
+/* Translate the ATCM local view addr to SoC view addr */
+#define CPU1_ATCM_SOCVIEW(x)   (0x41400000+x)
+
 /* MAX number of independent axis supported */
 #define MAX_NUM_AXIS           (3)
 

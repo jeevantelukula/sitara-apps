@@ -621,7 +621,7 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
 
         if (appMbxIpcGetSelfCpuId()==IPC_ETHERCAT_CPU_ID)
         {
-            appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, payload);
+            appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, CPU0_ATCM_SOCVIEW(payload));
         }
 
         /* Wait for IPC MSG from MC R5F with updated actual MC parameters */

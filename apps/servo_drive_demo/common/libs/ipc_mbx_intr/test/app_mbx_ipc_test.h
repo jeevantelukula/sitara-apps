@@ -46,6 +46,10 @@
 #define MBXIPC_TEST_CPU_1    (MAILBOX_IPC_CPUID_MCU1_0)
 #define MBXIPC_TEST_CPU_2    (MAILBOX_IPC_CPUID_MCU1_1)
 
+/* Translate the ATCM local view addr to SoC view addr */
+#define CPU0_ATCM_SOCVIEW(x) (0x41000000+x)
+#define CPU1_ATCM_SOCVIEW(x) (0x41400000+x)
+
 #define MAX_ITERATION_COUNT  (10000)
 
 /* Sample MC parameter values */
