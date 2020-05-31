@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,5 +35,17 @@
 #define APP_CFG_H_
 
 #define ENABLE_BOARD
+
+#define MAX_NUM_AXES            ( 3 )           /* MAX number of independent axis supported */
+
+/* IPC CPU ID should match with EtherCAT CPU configuration */
+#define IPC_ETHERCAT_CPU_ID     ( MAILBOX_IPC_CPUID_MCU1_0 )
+#define IPC_PSL_MC_CPU_ID       ( MAILBOX_IPC_CPUID_MCU1_1 )
+
+/* Simulated ECAT timer */
+#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
+#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
+#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125 )         /* Timer period (usec.) */
+#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
 
 #endif /* APP_CFG_H_ */

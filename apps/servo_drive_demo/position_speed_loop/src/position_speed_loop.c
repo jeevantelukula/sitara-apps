@@ -48,14 +48,17 @@
 #include "cfg_mcu_intr.h"
 #include "PRU_FSI_Transmit.h"		/* FSI Transmit image data */
 #include "PRU_FSI_Receive.h"		/* FSI Receive image data */
+#include "app_psl_mbxipc.h"
 #include "position_speed_loop_if.h"
 
 // debug
 #include <ti/drv/gpio/GPIO.h>
 #include "GPIO_board.h"
 
+/* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
+//#define _CTRL_SYN_ENABLE
+
 /* Timer -- simulate ECAT interrupt */
-#define TIMER_ID ( TimerP_ANY ) /* Timer ID */
 void timerTickFxn(void *arg);   /* Timer tick function */
 uint32_t gTimerIsrCnt=0;
 
@@ -110,10 +113,15 @@ int32_t appPositionSpeedLoopInit(void)
 
     // initialize system parameters
 #if (BUILDLEVEL >= FCL_LEVEL5 && BUILDLEVEL <= FCL_LEVEL9)
-    // If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE)
+#ifndef _CTRL_SYN_ENABLE
+    sysVars.ctrlSynSet = CTRL_SYN_DISABLE;
+    sysVars.ecatCtrlSet = ECAT_CTRL_DISABLE;
+#else
+    /* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
     sysVars.ctrlSynSet = CTRL_SYN_ENABLE;
     sysVars.ecatCtrlSet = ECAT_CTRL_DISABLE;
-#endif 
+#endif /* _CTRL_SYN_ENABLE */
+#endif
     initSysParameters(&sysVars);
     
     {
@@ -241,7 +249,7 @@ int32_t appPositionSpeedLoopInit(void)
     timerParams.intNum = SIM_ECAT_TIMER_INTNUM;
     
     /* Create timer -- simulate ECAT interrupt */
-    gTimerHandle = TimerP_create(TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
+    gTimerHandle = TimerP_create(SIM_ECAT_TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
     if (gTimerHandle == NULL)
     {
         return POSITION_SPEED_LOOP_SERR_INIT;
@@ -261,6 +269,7 @@ int32_t appPositionSpeedLoopInit(void)
 /* Entry point function */
 int32_t appPositionSpeedLoopStart(void)
 {
+    SysNode_e nodeIdx;
     volatile uint8_t run_flag = 1;
 
     appLogPrintf("APP: Position Speed Loop demo started !!!\n");
@@ -277,11 +286,18 @@ int32_t appPositionSpeedLoopStart(void)
     appLogPrintf("APP: Timer started !!!\n");
 
     /* move to background task */
-    while(run_flag){
-        runController(SYS_NODE1);    
-        runController(SYS_NODE2);    
-        runController(SYS_NODE3);    
-        runController(SYS_NODE4);    
+    while (run_flag) {
+        for (nodeIdx = SYS_NODE1; nodeIdx <= SYS_NODE4; nodeIdx++)
+        {
+            /* Rx MC message from EthCAT */
+            appPslMbxIpcRxMsg(nodeIdx);
+            
+            /* Run controller */
+            runController(nodeIdx);
+            
+            /* Tx MC message to EthCAT */
+            appPslMbxIpcTxMsg(nodeIdx);
+        }
     }
     
     return POSITION_SPEED_LOOP_SOK;
@@ -307,6 +323,11 @@ void timerTickFxn(void *arg)
 
     FSI_startTxTransmit(gFsiTxBase);
     
+    /* Inform background task to transmit latest actual values to EtherCAT   */
+    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
+    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
+    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
+
     // debug
     GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH);
 }

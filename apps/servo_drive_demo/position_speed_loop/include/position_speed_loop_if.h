@@ -45,11 +45,6 @@
 #define POSITION_SPEED_LOOP_SERR_INIT  ( -1 )       /* initialization error */
 #define POSITION_SPEED_LOOP_SERR_START ( -2 )       /* start error */
 
-/* Simulated ECAT timer */
-#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125 )         /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 38 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
-
 /* ICSS instance for FSI PRU FW */
 #define FSI_ICSS_INST_ID            ( PRUICCSS_INSTANCE_THREE )
 /* PRU instance IDs for FSI PRU FWs */

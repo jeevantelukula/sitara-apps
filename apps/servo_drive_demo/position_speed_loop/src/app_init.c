@@ -44,8 +44,9 @@
 #include <sciclient/include/app_sciclient.h>
 #include <logs/include/app_log.h>
 
-#include "app_init.h"
+#include "app_psl_mbxipc.h"
 #include "app_cfg.h"
+#include "app_init.h"
 
 static pinmuxPerCfg_t gFsiPinCfg[] =
 {
@@ -82,25 +83,15 @@ static pinmuxPerCfg_t gFsiPinCfg[] =
     {PINMUX_END}
 };
 
-/*
- * IPC MSG Handler called from MBX ISR context
- * to copy the MSG from HW MBX to local memory
- */
-
-void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
-{
-    /* TODO - when integrate with MC loop */
-}
-
 int32_t appInit()
 {
+    appPslMbxIpcCfg_t pslMbxIpcCfg;
     int32_t status = 0;
-    app_mbxipc_init_prm_t mbxipc_init_prm;
 
     #ifdef ENABLE_BOARD
     {
 	Board_initCfg boardCfg;
-
+    
 	/* Pad configurations */
 	boardCfg = BOARD_INIT_UNLOCK_MMR | BOARD_INIT_UART_STDIO |
               BOARD_INIT_MODULE_CLOCK | BOARD_INIT_PINMUX_CONFIG;
@@ -116,20 +107,15 @@ int32_t appInit()
     status = appSciclientInit();
     APP_ASSERT_SUCCESS(status);
 
-    /* initialize CSL Mbx IPC */
-    appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
-    mbxipc_init_prm.master_cpu_id = MAILBOX_IPC_CPUID_MCU1_0;
-    mbxipc_init_prm.self_cpu_id = MAILBOX_IPC_CPUID_MCU1_1;
-    mbxipc_init_prm.num_cpus = 0;
-    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = MAILBOX_IPC_CPUID_MCU1_0;
-    mbxipc_init_prm.num_cpus++;
-    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = MAILBOX_IPC_CPUID_MCU1_1;
-    mbxipc_init_prm.num_cpus++;
-    /* IPC CPU sync check works only when appMbxIpcInit() called from both R5Fs */
-    status = appMbxIpcInit(&mbxipc_init_prm);
+    /* Initialize MBX IPC */
+    pslMbxIpcCfg.appMbxIpcInitPrm.self_cpu_id = IPC_PSL_MC_CPU_ID;
+    pslMbxIpcCfg.appMbxIpcInitPrm.master_cpu_id = IPC_ETHERCAT_CPU_ID;
+    pslMbxIpcCfg.appMbxIpcInitPrm.num_cpus = 2;
+    pslMbxIpcCfg.appMbxIpcInitPrm.enabled_cpu_id_list[0] = IPC_ETHERCAT_CPU_ID;
+    pslMbxIpcCfg.appMbxIpcInitPrm.enabled_cpu_id_list[1] = IPC_PSL_MC_CPU_ID;
+    pslMbxIpcCfg.appMbxIpcMsgHandler = appMbxIpcMsgHandler;
+    status = appPslMbxIpcInit(&pslMbxIpcCfg);
     APP_ASSERT_SUCCESS(status);
-    /* Register Application callback to invoke on receiving a notify message */
-    appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) appMbxIpcMsgHandler);
 
     appLogPrintf("APP: Init ... Done !!!\n");
 

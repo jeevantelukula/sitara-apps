@@ -33,6 +33,7 @@ IDIRS+=$(COMMON_LIB)
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
+IDIRS+=$(APPDIR)/../ethercat_loop/beckhoff_ssc
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
