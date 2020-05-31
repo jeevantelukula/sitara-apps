@@ -55,7 +55,7 @@
  * Definitions for FSI interrupts 
  */
 /* FSI Rx Int1 */
-#define FSI_RX_INT1_INT_NUM         ( 162 ) 
+#define FSI_RX_INT1_INT_NUM         ( 192 ) 
 #define FSI_RX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_RX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
 #define FSI_RX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
@@ -65,7 +65,7 @@
     (  294 )
 
 /* FSI Rx Int2 */
-#define FSI_RX_INT2_INT_NUM         ( 163 )
+#define FSI_RX_INT2_INT_NUM         ( 193 )
 #define FSI_RX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_RX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
 #define FSI_RX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
@@ -75,7 +75,7 @@
     (  295 )
     
 /* FSI Tx Int1 */
-#define FSI_TX_INT1_INT_NUM         ( 164 )
+#define FSI_TX_INT1_INT_NUM         ( 194 )
 #define FSI_TX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_TX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
 #define FSI_TX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
@@ -85,7 +85,7 @@
     (  296 )
 
 /* FSI Tx Int2 */
-#define FSI_TX_INT2_INT_NUM         ( 165 )
+#define FSI_TX_INT2_INT_NUM         ( 195 )
 #define FSI_TX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_TX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
 #define FSI_TX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
@@ -103,7 +103,5 @@ int32_t appPositionSpeedLoopDeinit(void);
 
 /* ICSSG handle */
 extern PRUICSS_Handle gPruIcssHandle;
-/* Simulated FSI base pointer */
-extern uint32_t gFsiBase;
 
 #endif /* _POSITION_SPEED_LOOP_IF_H_ */
