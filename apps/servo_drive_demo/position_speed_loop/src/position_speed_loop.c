@@ -218,10 +218,10 @@ int32_t appPositionSpeedLoopInit(void)
     }    
            
     /* Enable Host interrupts for events from PRU */
-    McuIntc_enableIntr(MCU_INTR_IDX(0));
-    McuIntc_enableIntr(MCU_INTR_IDX(1));
-    McuIntc_enableIntr(MCU_INTR_IDX(2));
-    McuIntc_enableIntr(MCU_INTR_IDX(3));
+    McuIntc_enableIntr(MCU_INTR_IDX(0), true);
+    McuIntc_enableIntr(MCU_INTR_IDX(1), true);
+    McuIntc_enableIntr(MCU_INTR_IDX(2), true);
+    McuIntc_enableIntr(MCU_INTR_IDX(3), true);
     
     /*
         Set up timer -- simulate ECAT interrupt

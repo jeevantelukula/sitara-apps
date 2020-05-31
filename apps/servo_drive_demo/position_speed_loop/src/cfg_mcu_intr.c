@@ -186,7 +186,8 @@ int32_t McuIntc_cfgIntr(
 
 /* MCU INTC, Enable MCU interrupt */
 int32_t McuIntc_enableIntr(
-    uint8_t mcuIntrIdx              /* MCU interrupt index (0..NUM_MCU_INTR) */
+    uint8_t mcuIntrIdx,             /* MCU interrupt index (0..NUM_MCU_INTR) */
+    bool bEnable                    /* whether to enable/disable interrupt (true/false: enable/disable) */
 )
 {
     McuIntrCfg *pMcuIntrCfg;
@@ -200,7 +201,7 @@ int32_t McuIntc_enableIntr(
     
     /* Enable the interrupt */
     CSL_vimSetIntrEnable( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
-        pMcuIntrCfg->mcuIntrRegPrms.intrNum, true );    
+        pMcuIntrCfg->mcuIntrRegPrms.intrNum, bEnable );
     
     return CFG_MCU_INTR_SOK;
 }

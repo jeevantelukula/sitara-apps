@@ -78,9 +78,10 @@ int32_t McuIntc_cfgIntr(
     uint8_t mcuIntrIdx                  /* MCU interrupt index */
 );
 
-/* Enable MCU interrupt */
+/* Enable/disable MCU interrupt */
 int32_t McuIntc_enableIntr(
-    uint8_t mcuIntrIdx                  /* MCU interrupt index (0..NUM_MCU_INTR) */
+    uint8_t mcuIntrIdx,                 /* MCU interrupt index (0..NUM_MCU_INTR) */
+    bool bEnable                        /* whether to enable/disable interrupt (true/false: enable/disable) */
 );
 
 /* VIM registers base address */
