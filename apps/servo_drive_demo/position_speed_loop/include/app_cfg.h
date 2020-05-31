@@ -34,7 +34,9 @@
 #ifndef APP_CFG_H_
 #define APP_CFG_H_
 
-#define ENABLE_BOARD
+#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
+
+//#define ENABLE_BOARD
 
 #define MAX_NUM_AXES            ( 3 )           /* MAX number of independent axis supported */
 
@@ -46,6 +48,8 @@
 #define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
 #define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
 #define SIM_ECAT_TIMER_PERIOD_USEC  ( 125 )         /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
+#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, MCU_TIMER_2_INT */
+
+extern pinmuxPerCfg_t gFsiPinCfg[];
 
 #endif /* APP_CFG_H_ */

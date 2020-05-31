@@ -35,64 +35,38 @@
 #include <ti/csl/soc.h>
 #include <ti/board/board.h>
 #include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
-#include <ti/drv/uart/UART.h>
-#include <ti/drv/uart/UART_stdio.h>
 
-#include <misc/include/app_misc.h>
-#include <sciclient/include/app_sciclient.h>
-#include <logs/include/app_log.h>
-
-#include "app_psl_mbxipc.h"
-#include "app_cfg.h"
-#include "app_init.h"
-
-int32_t appInit()
+pinmuxPerCfg_t gFsiPinCfg[] =
 {
-    appPslMbxIpcCfg_t pslMbxIpcCfg;
-    int32_t status = 0;
-
-    #ifdef ENABLE_BOARD
+    /* PRG2_PRU0_GPO12 -> N23 */
     {
-	Board_initCfg boardCfg;
-    
-	/* Pad configurations */
-	boardCfg = BOARD_INIT_UNLOCK_MMR | BOARD_INIT_UART_STDIO |
-              BOARD_INIT_MODULE_CLOCK | BOARD_INIT_PINMUX_CONFIG;
-	Board_init(boardCfg);
-    }
-
-	/* PINMUX configurations */
-	appSetPinmux(gFsiPinCfg);
-    #endif
-
-    appLogPrintf("APP: Init ... !!!\n");
-
-    /* Initialize Sciclient */
-    status = appSciclientInit();
-    APP_ASSERT_SUCCESS(status);
-
-    /* Initialize MBX IPC */
-    pslMbxIpcCfg.appMbxIpcInitPrm.self_cpu_id = IPC_PSL_MC_CPU_ID;
-    pslMbxIpcCfg.appMbxIpcInitPrm.master_cpu_id = IPC_ETHERCAT_CPU_ID;
-    pslMbxIpcCfg.appMbxIpcInitPrm.num_cpus = 2;
-    pslMbxIpcCfg.appMbxIpcInitPrm.enabled_cpu_id_list[0] = IPC_ETHERCAT_CPU_ID;
-    pslMbxIpcCfg.appMbxIpcInitPrm.enabled_cpu_id_list[1] = IPC_PSL_MC_CPU_ID;
-    pslMbxIpcCfg.appMbxIpcMsgHandler = appMbxIpcMsgHandler;
-    status = appPslMbxIpcInit(&pslMbxIpcCfg);
-    APP_ASSERT_SUCCESS(status);
-
-    appLogPrintf("APP: Init ... Done !!!\n");
-
-    return status;
-}
-
-void appDeInit()
-{
-    appLogPrintf("APP: Deinit ... !!!\n");
-
-    appMbxIpcDeInit();
-
-    appSciclientDeInit();
-
-    appLogPrintf("APP: Deinit ... Done !!!\n");
-}
+        PIN_GPMC0_AD8, PIN_MODE(3) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* PRG2_PRU0_GPO13 -> N24 */
+    {
+        PIN_GPMC0_AD9, PIN_MODE(3) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* PRG2_PRU1_GPI12 -> N26 */
+    {
+        PIN_GPMC0_AD12, PIN_MODE(4) | \
+        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
+    },
+    /* PRG2_PRU1_GPI13 -> N25 */
+    {
+        PIN_GPMC0_AD13, PIN_MODE(4) | \
+        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
+    },
+    /* GPIO0_14 -> P24 */
+    {   
+        PIN_GPMC0_AD14, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* GPIO0_15 -> R27 */
+    {
+        PIN_GPMC0_AD15, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    {PINMUX_END}
+};
