@@ -39,7 +39,6 @@
 #include <ti/csl/arch/csl_arch.h>
 #include <ti/osal/osal.h>
 #include <ti/board/board.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
 
@@ -47,6 +46,7 @@
 #include <app_mbx_ipc.h>
 #include <app_sciclient.h>
 #include <app_misc.h>
+#include <app_misc_soc_am65x.h>
 
 #include "cia402appl.h"
 

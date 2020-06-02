@@ -31,8 +31,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_UTILS_MISC_H_
-#define APP_UTILS_MISC_H_
+#ifndef APP_UTILS_MISC_SOC_AM65X_H_
+#define APP_UTILS_MISC_SOC_AM65X_H_
 
 /**
  * \defgroup group_apps_utils_misc Miscellaneous utility APIs (TI-RTOS only)
@@ -45,27 +45,17 @@
  */
 
 #include <stdint.h>
+#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 
 /**
- * \brief Tell TI-RTOS what is the CPU frequency
+ * \brief API to set to set pinmux required for running basic apps
  *
- * NOTE, this does not set the actuall CPU Hz in PSC, this just tells
- * SysBIOS what is the CPU Hz so that its timestamp API returns value in
- * correct units
- */
-int32_t appUtilsSetCpuHz(uint32_t freq);
-
-/**
- * \brief API to set to DLFO bit in ACTRL register of R5F
- *
- * This API uses assembly instruction to set DLFO bit in ACTRL register
- * of R5F.
- * This should be called from the Core reset callback.
+ * It internally uses Board API to configure Pinmux.
  *
  */
-void appUtilsSetDLFOBitInACTRLReg(void);
+void appSetPinmux(pinmuxPerCfg_t *pInstanceData);
 
 /* @} */
 
-#endif
+#endif /* APP_UTILS_MISC_SOC_AM65X_H_ */
 
