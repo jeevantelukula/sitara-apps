@@ -49,11 +49,18 @@
 #include "profile.h"
 #include "test_data.h"
 #include "cfft.h"
+#include "ipc_setup.h"
+#include "benchmark_stat.h"
+#include <ti/csl/arch/csl_arch.h>
+
+/* declare the core statistic variables */
+core_stat gCoreStat;
+CSL_ArmR5CPUInfo cpuInfo;
 
 void main(void) 
 {
     uint16_t i, j;
-    
+
 #ifndef IO_CONSOLE
 	Board_initCfg boardCfg;
 #endif
@@ -74,11 +81,15 @@ void main(void)
     MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
 #endif    
 	
+	/* Initializes the SCI Client driver */
+    MCBENCH_log("\n Initializes the SCI Client driver\n");
+	ipc_initSciclient();
+	
 	/* Initialize Sine wave input array */
 	cfftInit();
-    
+
     MCBENCH_log("\n START CFFT benchmark\n");
-    /* Iterate through all FFT sizes from 16 through 2048 */
+    /* Iterate through all FFT size for 1024 */
     for (i = 1024; i <= 1024; i *= 2)
     {
         for (j = 0; j < NUM_CFFT_LOOP_ITER; j++)
@@ -100,6 +111,8 @@ void main(void)
     }
     MCBENCH_log("\n END CFFT benchmark\n");
 
-    /* End of Benchmark */
-    while(1);
+    /* Set up the IPC RPMsg */
+    /* Start the IPC RPMsg loop */
+    MCBENCH_log("\n Set up the IPC RPMsg\n");
+    ipc_rpmsg_func();
 }

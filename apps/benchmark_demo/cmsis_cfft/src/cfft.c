@@ -50,6 +50,8 @@
 #include "benchmark_log.h"
 #include "profile.h"
 #include "test_data.h"
+#include "benchmark_stat.h"
+#include <ti/csl/arch/csl_arch.h>
 
 float32_t cfftInData[2048] __attribute__((aligned(128), section(".testInData")));
 float32_t cfftMagData[1024] __attribute__((aligned(128), section(".testInData")));
@@ -61,6 +63,9 @@ float d __attribute__((section(".testInData"))) = 9.5;
 float e __attribute__((section(".testInData"))) = 7.6; 
 float f __attribute__((section(".testInData"))) = 120.5; 
 volatile float g __attribute__((section(".testInData"))) = 283.185;  	
+
+extern core_stat gCoreStat;
+extern CSL_ArmR5CPUInfo cpuInfo;
 
 /* initialize FFT complex array */
 void cfftInit(void)
@@ -74,6 +79,7 @@ void cfftInit(void)
         cfftInData[i+1] = 0;
         cfftMagData[i/2] = 0;
 	}
+	memset(&gCoreStat, 0, sizeof(gCoreStat));
 }
 
 /* execute Complex FFT */
@@ -106,6 +112,24 @@ void cfft_bench(uint16_t fftSize)
     arm_cfft_f32(S, cfftInData, 0, 1);
     gEndTime = readPmu();
     gTotalTime = gEndTime - gStartTime - gOverheadTime;
+    /* populate the core stat */
+	gCoreStat.payload_num = 0;
+	gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(int64_t));
+	gCoreStat.input.app = 1;
+	gCoreStat.input.freq = 1;
+	gCoreStat.input.mod_flag = 0;
+	gCoreStat.output.ave_count = 10;
+	/* get Group and CPU ID */
+	CSL_armR5GetCpuID(&cpuInfo);
+	/* compute core number */
+	gCoreStat.output.core_num = cpuInfo.grpId*2 + cpuInfo.cpuID;
+	gCoreStat.output.app = 1;
+	gCoreStat.output.freq = 1;
+	gCoreStat.output.ccploop.ave = gTotalTime;
+	gCoreStat.output.ccploop.max = gTotalTime;
+	gCoreStat.output.cload.cur = gTotalTime*100/CPU_FREQUNCY;
+	gCoreStat.output.cload.ave = gTotalTime*100/CPU_FREQUNCY;
+	gCoreStat.output.cload.max = gTotalTime*100/CPU_FREQUNCY;
 	/* Process the data through the Complex Magnitude Module for 
 	   calculating the magnitude at each bin */
     arm_cmplx_mag_f32(cfftInData, cfftMagData, fftSize);

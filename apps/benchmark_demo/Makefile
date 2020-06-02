@@ -3,6 +3,7 @@ DEMO_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # define the CMSIS library path
 CMSIS_LIB ?= $(DEMO_ROOT)/../common/libs/cmsis
+RPMSG_DIR = $(DEMO_ROOT)/../common/ipc_rpmsg
 
 # User-supplied paths to dependencies
 include $(MAKEENV)
@@ -14,7 +15,7 @@ BUILD_TARGET ?= $(CONCERTO_ROOT)/build_targets/processor-sdk/target.mak
 BUILD_PLATFORM :=
 
 # Recursively find all concerco.mak in the following directory list.
-DIRECTORIES = $(HOST_ROOT)
+DIRECTORIES = $(HOST_ROOT) $(RPMSG_DIR)
 
 # Targe combos supported in this demo
 TARGET_COMBOS ?= AM65X:NO_OS:R5F:2:release:TIARMCGT
