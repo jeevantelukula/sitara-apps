@@ -31,21 +31,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_CFG_H_
-#define APP_CFG_H_
+#include <ti/csl/tistdtypes.h>
+#include <ti/csl/soc.h>
+#include <ti/board/board.h>
+#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 
-//#define ENABLE_BOARD
-
-#define MAX_NUM_AXES                ( 3 )           /* MAX number of independent axis supported */
-
-/* IPC CPU ID should match with EtherCAT CPU configuration */
-#define IPC_ETHERCAT_CPU_ID         ( MAILBOX_IPC_CPUID_MCU1_0 )
-#define IPC_PSL_MC_CPU_ID           ( MAILBOX_IPC_CPUID_MCU1_1 )
-
-/* Simulated ECAT timer */
-#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
-#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125 )         /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, MCU_TIMER_2_INT */
-
-#endif /* APP_CFG_H_ */
+pinmuxPerCfg_t gFsiPinCfg[] =
+{
+    /* PRG2_PRU0_GPO12 -> N23 */
+    {
+        PIN_GPMC0_AD8, PIN_MODE(3) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* PRG2_PRU0_GPO13 -> N24 */
+    {
+        PIN_GPMC0_AD9, PIN_MODE(3) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* PRG2_PRU1_GPI12 -> N26 */
+    {
+        PIN_GPMC0_AD12, PIN_MODE(4) | \
+        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
+    },
+    /* PRG2_PRU1_GPI13 -> N25 */
+    {
+        PIN_GPMC0_AD13, PIN_MODE(4) | \
+        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
+    },
+    /* GPIO0_14 -> P24 */
+    {   
+        PIN_GPMC0_AD14, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* GPIO0_15 -> R27 */
+    {
+        PIN_GPMC0_AD15, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    {PINMUX_END}
+};

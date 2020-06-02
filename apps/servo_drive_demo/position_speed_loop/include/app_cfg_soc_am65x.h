@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <ti/csl/tistdtypes.h>
-#include <ti/csl/soc.h>
+#ifndef APP_CFG_SOC_AM65X_H_
+#define APP_CFG_SOC_AM65X_H_
+
 #include <ti/board/board.h>
 #include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 
-pinmuxPerCfg_t gFsiPinCfg[] =
-{
-    /* PRG2_PRU0_GPO12 -> N23 */
-    {
-        PIN_GPMC0_AD8, PIN_MODE(3) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* PRG2_PRU0_GPO13 -> N24 */
-    {
-        PIN_GPMC0_AD9, PIN_MODE(3) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* PRG2_PRU1_GPI12 -> N26 */
-    {
-        PIN_GPMC0_AD12, PIN_MODE(4) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* PRG2_PRU1_GPI13 -> N25 */
-    {
-        PIN_GPMC0_AD13, PIN_MODE(4) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* GPIO0_14 -> P24 */
-    {   
-        PIN_GPMC0_AD14, PIN_MODE(7) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* GPIO0_15 -> R27 */
-    {
-        PIN_GPMC0_AD15, PIN_MODE(7) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    {PINMUX_END}
-};
+extern pinmuxPerCfg_t gFsiPinCfg[];
+
+#endif /* APP_CFG_SOC_AM65X_H_ */

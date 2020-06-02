@@ -22,7 +22,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 COMMON_LIB = $(abspath $(APPDIR)/../common/libs)
 
 # Provide list of C files by using built-in macro
-CSOURCES    := app_cfg.c app_init.c app_psl_mbxipc.c cfg_icss.c cfg_mcu_intr.c GPIO_board.c main.c multi_axis_master_comms.c multi_axis_master_ctrl.c multi_axis_master_ctrl_user.c position_speed_loop.c
+CSOURCES    := app_init.c app_psl_mbxipc.c cfg_icss.c cfg_mcu_intr.c GPIO_board.c main.c multi_axis_master_comms.c multi_axis_master_ctrl.c multi_axis_master_ctrl_user.c position_speed_loop.c app_cfg_soc_am65x.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
