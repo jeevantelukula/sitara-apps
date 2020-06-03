@@ -61,7 +61,7 @@ void ConsoleUtilsInit(void);
  ************************** Macros ************************************
  **********************************************************************/
 /* Enable the below macro to have prints on the IO Console */
-//#define IO_CONSOLE
+#define IO_CONSOLE
 
 #ifndef IO_CONSOLE
 #define MCBENCH_log                UART_printf
