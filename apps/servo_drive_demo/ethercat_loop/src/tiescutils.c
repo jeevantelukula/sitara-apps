@@ -600,6 +600,14 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
     uint32_t payload;
     send_msg_obj_t *txobj;
     receive_msg_obj_t *rxobj;
+	static uint8_t msgsent=0U;
+	
+	if(msgsent == 0U)
+	{
+		/* Send a message to Partner Core that R5F is up and running. */
+		Send_BootComplete_Message_To_Partner();
+		msgsent = 1U;
+	}
 
     if (axisIndex < MAX_NUM_AXIS)
     {

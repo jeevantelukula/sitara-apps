@@ -706,3 +706,10 @@ void tiesc_mii_pinmuxConfig (void)
 
     return;
 }
+
+/* This is a dummy function in context of AM65x as there is no partner. */
+void Send_BootComplete_Message_To_Partner()
+{
+	/* In AM65x, there is no partner. */
+	return;
+}

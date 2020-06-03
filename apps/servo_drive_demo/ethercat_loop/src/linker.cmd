@@ -53,8 +53,8 @@ SECTIONS
     .text:ti_sysbios_family_arm_v7r_Cache* : {} palign(8) > R5F0_BTCM
     .text:ti_sysbios_family_arm_MPU*       : {} palign(8) > R5F0_BTCM
     .startupCopyVecsToAtcm                 : {} palign(8) > R5F0_BTCM
-
-    .text       : {} palign(8)   > MSMC_MCU1_0
+    
+	.text       : {} palign(8)   > MSMC_MCU1_0
     .cinit      : {} palign(8)   > MSMC_MCU1_0
     .bss        : {} align(8)    > DDR_MCU1_0
     .far        : {} align(8)    > MSMC_MCU1_0
@@ -62,6 +62,8 @@ SECTIONS
     .data       : {} palign(128) > MSMC_MCU1_0
     .sysmem     : {} align(8)    > MSMC_MCU1_0
     .stack      : {} align(4)    > MSMC_MCU1_0
+
+    .safedata   : {} palign(8)  > MSMC_MCU1_0
 
     .bss:ipcMCBuffSection > R5F_ATCM
     .bss:taskStackSection > MSMC_MCU1_0

@@ -30,6 +30,13 @@ STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM65xx
 LDIRS += $(APPDIR)/lib/am65xx/r5f
 endif
 
+ifeq ($(TARGET_PLATFORM),AM64X)
+CSOURCES += tiesc_soc_am64x.c
+ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM64xx_r5f.lib
+STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM64xx
+LDIRS += $(APPDIR)/lib/am64xx/r5f
+endif
+
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
 IDIRS+=$(APPDIR)/ti_osal
@@ -38,6 +45,8 @@ IDIRS+=$(APPDIR)/ti_board/include
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
+# Path for files where common info is shared between M4F and other cores.
+IDIRS+=$(APPDIR)/../safety_app/include
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl

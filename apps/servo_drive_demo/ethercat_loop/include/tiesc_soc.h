@@ -157,6 +157,8 @@ void display_esc_version(uint16_t revision, uint16_t build);
 
 void initSpinlock();
 
+void Send_BootComplete_Message_To_Partner(void);
+
 #ifdef SOC_AM65XX
 void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes);
 void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
