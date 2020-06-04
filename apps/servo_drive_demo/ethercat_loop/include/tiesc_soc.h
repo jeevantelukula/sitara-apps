@@ -143,6 +143,8 @@
 
 uint8_t isEtherCATDevice(void);
 
+void tiesc_mii_pinmuxConfig (void);
+
 int16_t getARMInterruptOffset();
 
 uint32_t getSpinlockClkCtrlOffset();

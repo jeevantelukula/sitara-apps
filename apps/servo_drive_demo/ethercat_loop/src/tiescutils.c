@@ -221,6 +221,10 @@ void task1(uint32_t arg0, uint32_t arg1)
 
     /* initialize SCICLIENT */
     u8Err = appSciclientInit();
+    
+    /* Perform PAD configuration */
+    tiesc_mii_pinmuxConfig();
+    
     /* initialize CSL Mbx IPC */
     appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
     mbxipc_init_prm.master_cpu_id = IPC_ETHERCAT_CPU_ID;

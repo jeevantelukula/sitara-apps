@@ -166,8 +166,6 @@ void bsp_soc_evm_init()
     I2C_HwAttrs   i2c_cfg;
 #endif
 
-    tiesc_mii_pinmuxConfig();
-
     GPIO_init();
 
     Board_init(BOARD_INIT_ICSS_ETH_PHY);
