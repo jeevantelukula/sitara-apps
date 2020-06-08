@@ -31,38 +31,17 @@
  *
  */
 
-#include <stdint.h>
+#ifndef APPMBOX_H_
+#define APPMBOX_H_
 
-/* TI CSL Includes */
-#include <ti/csl/soc.h>
-#include <ti/csl/arch/csl_arch.h>
+/* Commands List for R5F <=> M4F Comms */
+#define CMD_MAILBOX_MSG_BOOT_COMPLETE     		2U  /* Command to indicate R5F Boot Complete*/
+#define CMD_MAILBOX_MSG_APPLY_STO	      		5U  /* Apply STO*/
+#define CMD_MAILBOX_MSG_LIFT_STO	      		6U  /* Lift STO*/
+#define CMD_MAILBOX_MSG_BLACKCHANNEL_DATA 		9U  /* Black Channel/FSoE Data Available*/
+#define CMD_MAILBOX_MSG_EXTERNAL_ESTOP   	    15U /* External emergency stop*/
 
-/* Application Functions and Macros */
-#include "app.h"
-#include "esmcfg.h"
-#include "ratcfg.h"
+#define MAILBOX_R5F0_CPUID                      1U  /* R5F0_1 */
+#define MAILBOX_M4F_CPUID                       3U  /* M4F_0 */
 
-int main(void)
-{
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
-
-    /* Register Address Translation will re-maps 64-bit
-         SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
-
-    /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
-        software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
-
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
-
-    application_loop();
-
-    return 0;
-}
-
+#endif /* APPMBOX_H_ */

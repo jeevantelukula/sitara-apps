@@ -32,37 +32,29 @@
  */
 
 #include <stdint.h>
+#include "blackchannel.h"
 
-/* TI CSL Includes */
-#include <ti/csl/soc.h>
-#include <ti/csl/arch/csl_arch.h>
+/* defined at OCSRAM5 in linker.cmd */
+#pragma DATA_SECTION(BlackChannel, ".safedata")
+blackChannel_t BlackChannel;
 
-/* Application Functions and Macros */
-#include "app.h"
-#include "esmcfg.h"
-#include "ratcfg.h"
-
-int main(void)
+uint8_t black_channel_get_data()
 {
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
+    uint8_t rcvd_size;
 
-    /* Register Address Translation will re-maps 64-bit
-         SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
+    rcvd_size = BlackChannel.num_bytes;
 
-    /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
-        software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
+    /* do not overflow */
+    if (rcvd_size > CHANNEL_BUFFER_SIZE)
+        rcvd_size = CHANNEL_BUFFER_SIZE;
 
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
+    /* SITSW-231: usage example to be updated
+     * UART_printf("received bytes: %i \n", rcvd_size);
+     * uint8_t i;
+     * for (i = 0; i < rcvd_size; i++)
+     *    UART_printf("data[%d] = %d \n", i, BlackChannel.data[i]);
+     */
 
-    application_loop();
-
-    return 0;
+    return rcvd_size;
 }
 

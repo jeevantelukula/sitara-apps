@@ -31,38 +31,12 @@
  *
  */
 
-#include <stdint.h>
+#ifndef ESMCFG_H_
+#define ESMCFG_H_
 
-/* TI CSL Includes */
-#include <ti/csl/soc.h>
-#include <ti/csl/arch/csl_arch.h>
+#include <stdbool.h>
 
-/* Application Functions and Macros */
-#include "app.h"
-#include "esmcfg.h"
-#include "ratcfg.h"
+bool configure_esm();
+bool main_esm_clear_error();
 
-int main(void)
-{
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
-
-    /* Register Address Translation will re-maps 64-bit
-         SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
-
-    /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
-        software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
-
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
-
-    application_loop();
-
-    return 0;
-}
-
+#endif /* ESMCFG_H_*/

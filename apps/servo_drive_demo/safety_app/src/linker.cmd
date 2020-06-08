@@ -31,10 +31,13 @@ MEMORY
     IRAM_M4F_INTC_MEM:     org = 0x00000040 len = 0x400 - 0x040
     /* Memory assigned to move vector table for M4F core */
     IRAM_M4F_VTBL:   org = 0x00000400 len = 0x800
+
     /* M4F internal memory locations */
-    IRAM_M4F_MEM   (RWIX)          : origin=0x0C00 length=0x30000 - 0xC00
-    DRAM_M4F_MEM   (RWIX)          : origin=0x30000  length=0x10000
-    DDR0           (RWIX)          : origin=0x80000000 length=0x80000000      /* 2GB */
+    IRAM_M4F_MEM   (RWIX)          : origin=0x00000C00  length=0x30000 - 0xC00
+    DRAM_M4F_MEM   (RWIX)          : origin=0x00030000  length=0x10000
+
+    /* AM64x On-Chip SRAM Bank #5 */
+    OCSRAM5        (RWIX)          : origin=0x70140000  length=0x40000
 }
 
 /* SPECIFY THE SECTIONS ALLOCATION INTO MEMORY */
@@ -58,10 +61,7 @@ SECTIONS
     .data          : {} palign(128)    > DRAM_M4F_MEM
     .boardcfg_data : {} palign(128)    > DRAM_M4F_MEM
     .sysmem        : {}                > DRAM_M4F_MEM
-    .data_buffer   : {} palign(128)    > DRAM_M4F_MEM
-
-    /* USB or any other LLD buffer for benchmarking */
-    .benchmark_buffer (NOLOAD) {} ALIGN (8) > DDR0
+    .safedata      : {} palign(8)      > OCSRAM5
 
     .stack      : {} align(4)       > DRAM_M4F_MEM
     .irqStack   : {. = . + __IRQ_STACK_SIZE;} align(4)      > DRAM_M4F_MEM

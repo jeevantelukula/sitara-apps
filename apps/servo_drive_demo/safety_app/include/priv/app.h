@@ -31,38 +31,18 @@
  *
  */
 
-#include <stdint.h>
+#ifndef APP_H_
+#define APP_H_
 
-/* TI CSL Includes */
-#include <ti/csl/soc.h>
-#include <ti/csl/arch/csl_arch.h>
+void configure_nvic();
+void configure_isolation();
 
-/* Application Functions and Macros */
-#include "app.h"
-#include "esmcfg.h"
-#include "ratcfg.h"
+void main_warm_rst_req_isr();
+void mcu_esm_error_isr();
+void pru_protocol_ack_isr();
+void mailbox_isr();
 
-int main(void)
-{
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
+void application_loop();
 
-    /* Register Address Translation will re-maps 64-bit
-         SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
-
-    /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
-        software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
-
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
-
-    application_loop();
-
-    return 0;
-}
+#endif /* APP_H_ */
 

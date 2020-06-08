@@ -31,38 +31,23 @@
  *
  */
 
-#include <stdint.h>
+#ifndef RATCFG_H_
+#define RATCFG_H_
 
-/* TI CSL Includes */
-#include <ti/csl/soc.h>
-#include <ti/csl/arch/csl_arch.h>
+#include <stdbool.h>
 
-/* Application Functions and Macros */
-#include "app.h"
-#include "esmcfg.h"
-#include "ratcfg.h"
+/* ti/csl/arch/m4/src/startup.c */
+/* MCU CTRL MMR at 0x04000000, M4F addr 0x64000000 */
+#define MCU_RAT_OFFSET0     (uint32_t) 0x60000000
+/* OC-SRAM at 0x70000000, M4F addr 0x70000000 */
+#define MCU_RAT_OFFSET1     (uint32_t) 0x00000000
 
-int main(void)
-{
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
+/* defined in configure_rat() */
+/* MAIN ESM at 0x00420000, M4F accesses 0x60420000 */
+#define MCU_RAT_OFFSET6     (uint32_t) 0x60000000
+/* Mailboxes at 0x29000000, M4F accesses at 0x69000000 */
+#define MCU_RAT_OFFSET7     (uint32_t) 0x40000000
 
-    /* Register Address Translation will re-maps 64-bit
-         SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
+bool configure_rat();
 
-    /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
-        software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
-
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
-
-    application_loop();
-
-    return 0;
-}
-
+#endif /* RATCFG_H_*/

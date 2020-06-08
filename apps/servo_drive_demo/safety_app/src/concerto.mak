@@ -25,6 +25,7 @@ APPDIR := $(abspath $(SDIR)/..)
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
+IDIRS+=$(APPDIR)/include/priv
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,

@@ -32,37 +32,39 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* TI CSL Includes */
 #include <ti/csl/soc.h>
 #include <ti/csl/arch/csl_arch.h>
+#include <ti/csl/csl_rat.h>
 
-/* Application Functions and Macros */
-#include "app.h"
-#include "esmcfg.h"
 #include "ratcfg.h"
 
-int main(void)
+/* ti/csl/soc/am64x/src/cslr_mcu_m4fss0_baseaddress.h */
+#define MCU_RAT_MMR_BASE    0x44200000UL
+
+bool configure_rat()
 {
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
+    /* return false on success */
+    bool retVal = false;
+    CSL_ratRegs * MCU_RAT_MMR = (CSL_ratRegs *) MCU_RAT_MMR_BASE;
 
-    /* Register Address Translation will re-maps 64-bit
-         SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
+    /* ti/csl/arch/m4/src/startup.c */
+    /* CSL already uses regions 0 - 6 by default */
+    retVal |= !CSL_ratDisableRegionTranslation(MCU_RAT_MMR, 6);    // re-defining for MAIN ESM
+    retVal |= !CSL_ratDisableRegionTranslation(MCU_RAT_MMR, 7);    // using for MAIN Mailbox
 
-    /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
-        software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
+    /* sizeInBytes, baseAddress, translatedAddress */
+    /* { byte size, 32-bit local M4F memory map, 64-bit SoC memory map */
+    CSL_RatTranslationCfgInfo ratCfg6 = { 0x00001000, 
+        CSL_ESM0_CFG_BASE + MCU_RAT_OFFSET6, CSL_ESM0_CFG_BASE };  // 4kB for ESM
+    CSL_RatTranslationCfgInfo ratCfg7 = { 0x00080000,
+        CSL_MAILBOX0_REGS0_BASE + MCU_RAT_OFFSET7, CSL_MAILBOX0_REGS0_BASE }; // 512kB for Mailboxes
 
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
+    retVal |= !CSL_ratConfigRegionTranslation(MCU_RAT_MMR, 6, &ratCfg6);
+    retVal |= !CSL_ratConfigRegionTranslation(MCU_RAT_MMR, 7, &ratCfg7);
 
-    application_loop();
-
-    return 0;
+    return retVal;
 }
 
