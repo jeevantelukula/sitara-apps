@@ -23,3 +23,25 @@ TARGET_COMBOS ?= AM65X:NO_OS:R5F:2:release:TIARMCGT
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
 
+# By default, only build linux userspace apps if we are not on Windows, but also
+# allow users to choose on commandline.
+BUILD_LINUX_APPS = 1
+ifeq ($(HOST_OS),Windows_NT)
+BUILD_LINUX_APPS = 0
+endif
+
+ifeq ($(BUILD_LINUX_APPS),1)
+all: rpmsg_json_app
+clean: rpmsg_json_app_clean
+
+RPMSG_JSON_APP_BUILDDIR = webserver_app/linux_app/
+
+rpmsg_json_app:
+	. $(LINUX_ENV_SETUP); \
+	make -C $(RPMSG_JSON_APP_BUILDDIR)
+
+rpmsg_json_app_clean:
+	. $(LINUX_ENV_SETUP); \
+	make -C $(RPMSG_JSON_APP_BUILDDIR) clean
+
+endif
