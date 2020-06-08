@@ -32,7 +32,7 @@ endif
 
 ifeq ($(BUILD_LINUX_APPS),1)
 all: rpmsg_json_app
-clean: rpmsg_json_app_clean
+clean:: rpmsg_json_app_clean
 
 RPMSG_JSON_APP_BUILDDIR = webserver_app/linux_app/
 
