@@ -27,8 +27,8 @@ IDIRS+=$(APPDIR)/include
 IDIRS+=$(APPDIR)/ti_osal
 IDIRS+=$(APPDIR)/ti_board/include
 IDIRS+=$(APPDIR)/../firmware/include
-IDIRS+=$(APPDIR)/../firmware/gen
 IDIRS+=$(APPDIR)/../driver/include
+IDIRS+=$(APPDIR)/../firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
