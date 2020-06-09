@@ -15,7 +15,6 @@ APPDIR := $(abspath $(SDIR)/..)
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
-IDIRS+=$(APPDIR)/../../benchmark_demo/common/include
 
 CSOURCES    := ipc_rpmsg_baremetal.c ipc_trace.c ipcapp_baremetal.c
 

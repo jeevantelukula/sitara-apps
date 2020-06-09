@@ -67,8 +67,6 @@
 #endif
 #endif
 
-#include "benchmark_stat.h"
-
 /* Size of message */
 #define MSGSIZE  256U
 /* Service name to be registered for the end point */
@@ -111,8 +109,6 @@ uint8_t  gSysVqBuf[VQ_BUF_SIZE]  __attribute__ ((section ("ipc_data_buffer"), al
 uint8_t  gRspBuf[RPMSG_DATA_SIZE]  __attribute__ ((section ("ipc_data_buffer"), aligned (8)));
 
 volatile uint32_t gMessagesReceived = 0;
-
-extern core_stat gCoreStat;
 
 #ifdef BUILD_MPU1_0
 #define NUM_CHRDEV_SERVICES (1)
@@ -164,7 +160,7 @@ bool g_exitRespTsk = 0;
  * This function waits for a "ping" message from any processor
  * then replies with a "pong" message.
  */
-void rpmsg_responderFxn(uintptr_t arg0, uintptr_t arg1)
+void rpmsg_responderFxn(uintptr_t arg0, uintptr_t arg1, void *msg, uint16_t msg_size)
 {
     RPMessage_Handle handle;
     RPMessage_Params params;
@@ -179,7 +175,7 @@ void rpmsg_responderFxn(uintptr_t arg0, uintptr_t arg1)
     uint32_t         emptyReceiveCalls = 0;
 
     uint32_t            bufSize = rpmsgDataSize;
-    char                str[MSGSIZE], *strPtr;
+    char                str[MSGSIZE];
 
     buf = gRspBuf;
     if(buf == NULL)
@@ -259,8 +255,7 @@ void rpmsg_responderFxn(uintptr_t arg0, uintptr_t arg1)
                           str, len, Ipc_mpGetSelfName(),
                           Ipc_mpGetName(remoteProcId));
 #endif
-            strPtr = (char *)&gCoreStat;
-			status = RPMessage_send(handle, remoteProcId, remoteEndPt, myEndPt, strPtr, sizeof(gCoreStat));
+			status = RPMessage_send(handle, remoteProcId, remoteEndPt, myEndPt, msg, msg_size);
             if (status != IPC_SOK)
             {
                 System_printf("RecvTask: Sending msg \"%s\" len %d from %s to %s failed!!!\n",
@@ -404,7 +399,7 @@ int32_t IpcAppConfigureInterruptHandlers(void)
  *       Only the receiver function does a echo back of incoming messages
  */
 /* ==========================================*/
-int32_t ipc_rpmsg_func(void)
+int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size)
 {
     uint32_t          t;
     uint32_t          numProc = gNumRemoteProc;
@@ -510,7 +505,7 @@ int32_t ipc_rpmsg_func(void)
 
     /* run responder function to receive and reply messages back */
     System_printf("\nStart rpmsg_responderFxn\n");
-    rpmsg_responderFxn(0,0);
+    rpmsg_responderFxn(0, 0, msg, msg_size);
 
     return 1;
 }

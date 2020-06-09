@@ -61,7 +61,7 @@ extern "C" {
 
 void ipc_initSciclient(void);
 
-int32_t ipc_rpmsg_func(void);
+int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size);
 
 #ifdef __cplusplus
 }
