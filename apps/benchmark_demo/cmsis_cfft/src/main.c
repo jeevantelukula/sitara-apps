@@ -114,5 +114,5 @@ void main(void)
     /* Set up the IPC RPMsg */
     /* Start the IPC RPMsg loop */
     MCBENCH_log("\n Set up the IPC RPMsg\n");
-    ipc_rpmsg_func();
+    ipc_rpmsg_func(&gCoreStat, sizeof(gCoreStat));
 }
