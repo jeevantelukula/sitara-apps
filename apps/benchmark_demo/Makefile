@@ -3,7 +3,7 @@ DEMO_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # define the CMSIS library path
 CMSIS_LIB ?= $(DEMO_ROOT)/../common/libs/cmsis
-RPMSG_DIR = $(DEMO_ROOT)/../common/ipc_rpmsg
+RPMSG_DIR = $(DEMO_ROOT)/../common/ipc_rpmsg_lib
 
 # User-supplied paths to dependencies
 include $(MAKEENV)

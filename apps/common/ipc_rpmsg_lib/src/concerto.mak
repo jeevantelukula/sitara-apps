@@ -2,7 +2,7 @@ ifeq ($(TARGET_OS),NO_OS)
 ifeq ($(TARGET_CPU),R5F)
 
 include $(PRELUDE)
-TARGET      := ipc_rpmsg
+TARGET      := ipc_rpmsg_lib
 TARGETTYPE  := library
 
 # Define local compiler options

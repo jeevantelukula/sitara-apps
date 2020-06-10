@@ -35,7 +35,7 @@ IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/DSP/Include
 IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/Core/Include
 IDIRS+=$(APPDIR)/../common/include/r5f
 IDIRS+=$(APPDIR)/../common/include
-IDIRS+=$(APPDIR)/../../common/ipc_rpmsg/include
+IDIRS+=$(APPDIR)/../../common/ipc_rpmsg_lib/include
 
 # Add directory to library search path
 LDIRS+=$(CMSIS_LIB)/lib_prebuild/release
@@ -53,7 +53,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 STATIC_LIBS += profile
-STATIC_LIBS += ipc_rpmsg
+STATIC_LIBS += ipc_rpmsg_lib
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
