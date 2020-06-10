@@ -36,44 +36,18 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <app_mbx_ipc.h>
+#include "ipc_motorcontrol_if.h"
 
-/* IPC CPU ID should match with EtherCAT CPU configuration */
-#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
-#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
-
-/* Translate the ATCM local view addr to SoC view addr */
-#define CPU1_ATCM_SOCVIEW(x)   (0x41400000+x)
-
-/* MAX number of independent axis supported */
-#define MAX_NUM_AXIS           (3)
-
-/* IPC message objects to send/receive motor control parameters   */
-/* Below send and receive data structures should be in align with */ 
-/* the receive and send data structures of ethercat_loop          */
-typedef struct {
-    int32_t i32TargetVelocity;
-    int32_t i32TargetPosition;
-    int16_t i16ModesOfOperation;
-    int16_t i16State;
-    uint16_t axisIndex;
-} receive_msg_obj_t;
-
-typedef struct {
-    int32_t i32VelocityActualValue;
-    int32_t i32PositionActualValue;
-    uint16_t axisIndex;
-} send_msg_obj_t;
 
 typedef struct {
     /* Remove volatile qualifier once this moved to TCM & enable write through */
     volatile int32_t isMsgReceived;
-    send_msg_obj_t sendObj;
-    receive_msg_obj_t receiveObj;
+    mc2ecat_msg_obj_t sendObj;
+    ecat2mc_msg_obj_t receiveObj;
 } app_ipc_axis_obj_t;
 
 typedef struct {
-    app_ipc_axis_obj_t axisObj[MAX_NUM_AXIS];
+    app_ipc_axis_obj_t axisObj[MAX_NUM_AXES];
 } app_ipc_mc_obj_t;
 
 

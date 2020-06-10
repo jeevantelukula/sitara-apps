@@ -43,7 +43,6 @@
 #include <ti/sysbios/knl/Task.h>
 
 #include <app_log.h>
-#include <app_mbx_ipc.h>
 #include <app_sciclient.h>
 #include <app_misc.h>
 #include <app_misc_soc.h>
@@ -52,7 +51,6 @@
 
 #include "app_pslctrl_cfg.h"
 #include "app_pslctrl_mbxipc.h"
-#include "app_pslctrl_misc.h"
 #include "app_pslctrl_save_data.h"
 
 /* Status codes */
@@ -102,7 +100,7 @@ volatile bool gRunState = TRUE;
 /* Timer tick function -- IPC gen interrupt */
 void timerTickFxn(void *arg)
 {
-    appPslCtrlSendObj_t *txobj;
+    ecat2mc_msg_obj_t *txobj;
     uint32_t payload;
     uint16_t axisIdx;
 
@@ -114,11 +112,11 @@ void timerTickFxn(void *arg)
         {
             /* Fill in Tx data */
             txobj = &gAppPslCtrlTxMsgAxes[axisIdx].sendObj;
-            txobj->i32VelocityTarget = gVelocityTarget;
-            txobj->i32PositionTarget = gPositionTarget;
+            txobj->i32TargetVelocity = gVelocityTarget;
+            txobj->i32TargetPosition = gPositionTarget;
             txobj->i16ModesOfOperation = gModesOfOperation;
             txobj->i16State = gCtrlState;
-            txobj->axisIdx = axisIdx;
+            txobj->u16AxisIndex = axisIdx;
             CacheP_wb(txobj, sizeof(appPslCtrlSendMsgObj_t));
 
             /* Translate the ATCM local view addr to SoC view addr */
@@ -195,7 +193,7 @@ void taskPslCtrl(uint32_t arg0, uint32_t arg1)
 {
     appPslCtrlMbxIpcCfg_t appPslCtrlMbxIpcCfg;
     TimerP_Status timerStatus;
-    appPslCtrlReceiveObj_t *rxobj;
+    mc2ecat_msg_obj_t *rxobj;
     bool isMsgFound = FALSE;
     uint16_t i;
     uint16_t axisIdx;
@@ -252,7 +250,7 @@ void taskPslCtrl(uint32_t arg0, uint32_t arg1)
         isMsgFound = FALSE;
 
         rxobj = &gAppPslCtrlRxMsgAxes[i].receiveObj;
-        if (axisIdx != rxobj->axisIdx)
+        if (axisIdx != rxobj->u16AxisIndex)
         {
             APP_ASSERT_SUCCESS(1);
         }

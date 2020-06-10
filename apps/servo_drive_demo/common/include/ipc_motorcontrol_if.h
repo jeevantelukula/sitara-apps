@@ -1,9 +1,5 @@
-/**
- * tiescutils.h
- *
-*/
 /*
- * Copyright (c) 2015, Texas Instruments Incorporated
+ * Copyright (c) 2020, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,49 +30,45 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
  
-#ifndef _TIESC_UTILS_H_
-#define _TIESC_UTILS_H_
+#ifndef _IPC_MOTORCONTROL_IF_H_
+#define _IPC_MOTORCONTROL_IF_H_
 
-#include <tiescbsp.h>
-#include <tieschw.h>
+#include <ti/csl/soc.h>
+#include <app_mbx_ipc.h>
 
-#include <MiscP.h>
-#include <ClockP.h>
-#include <TaskP.h>
-#include <SwiP.h>
-#include <ti/osal/SemaphoreP.h>
-#include <ti/osal/TimerP.h>
-#include "cia402appl.h"
+#define APP_ASSERT_SUCCESS(x)  { if((x)!=0) while(1); }
 
-#include <ti/osal/CacheP.h>
+/* IPC CPU ID should match with PSL MC CPU configuration */
+#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
+#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
 
-/* Flag to enable TI AM6xx based CiA402 3-axis MC application */
-#define TI_CiA402_3AXIS_MOTOR_CONTROL
+/* Translate the ATCM local view addr to SoC view addr */
+#define CPU0_ATCM_SOCVIEW(x)   (CSL_MCU_ARMSS0_CORE0_ATCM_BASE+x)
+#define CPU1_ATCM_SOCVIEW(x)   (CSL_MCU_ARMSS0_CORE1_ATCM_BASE+x)
 
-void task1(uint32_t arg0, uint32_t arg1);
+/* MAX number of independent axis supported */
+#define MAX_NUM_AXES           (3)
 
-#ifdef ENABLE_PDI_TASK
-void PDItask(uint32_t arg1, uint32_t arg2);
-#endif
-#if AL_EVENT_ENABLED
-void HW_EcatIsr(void);
-#endif
-void LEDtask(uint32_t arg0, uint32_t arg1);
+/* IPC message objects to send/receive motor control parameters   */
+/* Below send and receive data structures should be in align with */
+/* the receive and send data structures of its counterpart        */
+/* IPC message object to send motor control parameters */
+/* from EtherCAT slave to Motor control loop           */
+typedef struct {
+    int32_t i32TargetVelocity;
+    int32_t i32TargetPosition;
+    int16_t i16ModesOfOperation;
+    int16_t i16State;
+    uint16_t u16AxisIndex;
+} ecat2mc_msg_obj_t;
 
-#ifdef ENABLE_SYNC_TASK
-void Sync0task(uint32_t arg1, uint32_t arg2);
-#endif
+/* IPC message object to send motor control parameters */
+/* from Motor control loop to EtherCAT slave           */
+typedef struct {
+    int32_t i32VelocityActual;
+    int32_t i32PositionActual;
+    uint16_t u16AxisIndex;
+} mc2ecat_msg_obj_t;
 
-#ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
-void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex);
-#endif
 
-void CiA402_DummyMotionControl(TCiA402Axis *pCiA402Axis);
-
-void common_main();
-
-#ifdef ENABLE_ONLINE_FIRMWARE_UPGRADE
-void relocate_reload_code();
-#endif
-
-#endif /* _TIESC_UTILS_H_ */
+#endif /* _IPC_MOTORCONTROL_IF_H_ */

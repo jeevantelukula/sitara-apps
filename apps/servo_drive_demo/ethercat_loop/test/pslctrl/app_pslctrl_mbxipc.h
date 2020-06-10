@@ -36,7 +36,7 @@
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/soc.h>
-#include <app_mbx_ipc.h>
+#include "ipc_motorcontrol_if.h"
 #include "app_pslctrl_cfg.h"
 
 /* Status return codes */
@@ -44,36 +44,16 @@
 #define APP_PSLCTRL_MBXIPC_SERR_MBXINIT     ( -1 )
 #define APP_PSLCTRL_MBXIPC_SERR_REGISR      ( -2 )
 
-/* Translate the ATCM local view addr to SoC view addr */
-#define CPU0_ATCM_SOCVIEW(x)                (CSL_MCU_ARMSS0_CORE0_ATCM_BASE+x)
-#define CPU1_ATCM_SOCVIEW(x)                (CSL_MCU_ARMSS0_CORE1_ATCM_BASE+x)
-
-/* IPC message object to receive motor control parameters */
-typedef struct {
-    int32_t     i32VelocityActual;
-    int32_t     i32PositionActual;
-    uint16_t    axisIdx;
-} appPslCtrlReceiveObj_t;
-
 /* IPC message object to receive motor control parameters */
 typedef struct {
     volatile int32_t         isMsgReceived;  /* remove volatile qualifier once this moved to TCM & enable write through */
-    appPslCtrlReceiveObj_t   receiveObj;
+    mc2ecat_msg_obj_t        receiveObj;
 } appPslCtrlReceiveMsgObj_t;
 
 /* IPC message object to send motor control parameters */
 typedef struct {
-    int32_t     i32VelocityTarget;
-    int32_t     i32PositionTarget;
-    int16_t     i16ModesOfOperation;
-    int16_t     i16State;
-    uint16_t    axisIdx;
-} appPslCtrlSendObj_t;
-
-/* IPC message object to send motor control parameters */
-typedef struct {
     volatile int32_t        isMsgSend;
-    appPslCtrlSendObj_t     sendObj;
+    ecat2mc_msg_obj_t       sendObj;
 } appPslCtrlSendMsgObj_t;
 
 /* PSL Control MBX IPC configuration */

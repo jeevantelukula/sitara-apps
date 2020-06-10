@@ -36,9 +36,8 @@
 
 #include <stdint.h>
 #include <ti/csl/tistdtypes.h>
-#include <app_mbx_ipc.h>
+#include <ipc_motorcontrol_if.h>
 
-#define APP_ASSERT_SUCCESS(x)  { if((x)!=0) while(1); }
 
 int32_t appInit();
 void appDeInit();

@@ -41,7 +41,7 @@
 #include <OSP.h>
 
 #include <app_sciclient.h>
-#include <app_mbx_ipc.h>
+#include <tiescipc.h>
 
 #include <tiescutils.h>
 #include <tiesc_soc.h>
@@ -238,7 +238,7 @@ void task1(uint32_t arg0, uint32_t arg1)
     u8Err |= appMbxIpcInit(&mbxipc_init_prm);
     /* Register Application callback to invoke on receiving a notify message */
     appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) appMbxIpcMsgHandler);
-    for (i=0; i< MAX_NUM_AXIS; i++){
+    for (i=0; i< MAX_NUM_AXES; i++){
         gAppIpcMsgObj.axisObj[i].isMsgReceived = 0;
     }
 
@@ -581,12 +581,12 @@ void common_main()
 void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
 {
     uint16_t axisIndex;
-    receive_msg_obj_t *rxobj;
-    receive_msg_obj_t *payload_ptr = (receive_msg_obj_t*)payload;
+    mc2ecat_msg_obj_t *rxobj;
+    mc2ecat_msg_obj_t *payload_ptr = (mc2ecat_msg_obj_t*)payload;
 
-    CacheP_Inv(payload_ptr, sizeof(receive_msg_obj_t));
-    axisIndex = payload_ptr->axisIndex;
-    if (axisIndex < MAX_NUM_AXIS)
+    CacheP_Inv(payload_ptr, sizeof(mc2ecat_msg_obj_t));
+    axisIndex = payload_ptr->u16AxisIndex;
+    if (axisIndex < MAX_NUM_AXES)
     {
         rxobj = &gAppIpcMsgObj.axisObj[axisIndex].receiveObj;
         if (src_cpu_id==IPC_PSL_MC_CPU_ID)
@@ -602,8 +602,8 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
 {
     uintptr_t key;
     uint32_t payload;
-    send_msg_obj_t *txobj;
-    receive_msg_obj_t *rxobj;
+    ecat2mc_msg_obj_t *txobj;
+    mc2ecat_msg_obj_t *rxobj;
 	static uint8_t msgsent=0U;
 	
 	if(msgsent == 0U)
@@ -613,7 +613,7 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
 		msgsent = 1U;
 	}
 
-    if (axisIndex < MAX_NUM_AXIS)
+    if (axisIndex < MAX_NUM_AXES)
     {
         txobj = &gAppIpcMsgObj.axisObj[axisIndex].sendObj;
         rxobj = &gAppIpcMsgObj.axisObj[axisIndex].receiveObj;
@@ -628,8 +628,8 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
         txobj->i32TargetVelocity = pCiA402Axis->Objects.objVelocityActualValue;
         txobj->i16ModesOfOperation = pCiA402Axis->Objects.objModesOfOperation;
         txobj->i16State = pCiA402Axis->i16State;
-        txobj->axisIndex = axisIndex;
-        CacheP_wb(txobj, sizeof(send_msg_obj_t));
+        txobj->u16AxisIndex = axisIndex;
+        CacheP_wb(txobj, sizeof(ecat2mc_msg_obj_t));
 
         if (appMbxIpcGetSelfCpuId()==IPC_ETHERCAT_CPU_ID)
         {
@@ -646,10 +646,10 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
         gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived = 0;
         HwiP_restore(key);
         /* Copy updated actual MC parameters to CiA402 Axis data object */
-        if (axisIndex==rxobj->axisIndex)
+        if (axisIndex==rxobj->u16AxisIndex)
         {
-            pCiA402Axis->Objects.objPositionActualValue = rxobj->i32PositionActualValue;
-            pCiA402Axis->Objects.objVelocityActualValue = rxobj->i32VelocityActualValue;
+            pCiA402Axis->Objects.objPositionActualValue = rxobj->i32PositionActual;
+            pCiA402Axis->Objects.objVelocityActualValue = rxobj->i32VelocityActual;
         }
         else
         {

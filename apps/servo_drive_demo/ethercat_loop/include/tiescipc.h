@@ -1,9 +1,5 @@
-/**
- * tiescutils.h
- *
-*/
 /*
- * Copyright (c) 2015, Texas Instruments Incorporated
+ * Copyright (c) 2020, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,49 +30,25 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
  
-#ifndef _TIESC_UTILS_H_
-#define _TIESC_UTILS_H_
+#ifndef _TIESC_IPC_H_
+#define _TIESC_IPC_H_
 
-#include <tiescbsp.h>
-#include <tieschw.h>
+#include "ipc_motorcontrol_if.h"
 
-#include <MiscP.h>
-#include <ClockP.h>
-#include <TaskP.h>
-#include <SwiP.h>
-#include <ti/osal/SemaphoreP.h>
-#include <ti/osal/TimerP.h>
-#include "cia402appl.h"
 
-#include <ti/osal/CacheP.h>
+/* IPC message objects to send/receive motor control parameters   */
+typedef struct {
+    volatile int32_t isMsgReceived;
+    ecat2mc_msg_obj_t sendObj;
+    mc2ecat_msg_obj_t receiveObj;
+} app_ipc_axis_obj_t;
 
-/* Flag to enable TI AM6xx based CiA402 3-axis MC application */
-#define TI_CiA402_3AXIS_MOTOR_CONTROL
+/* IPC message objects for all 3-axis  */
+typedef struct {
+    app_ipc_axis_obj_t axisObj[MAX_NUM_AXES];
+} app_ipc_mc_obj_t;
 
-void task1(uint32_t arg0, uint32_t arg1);
+void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload);
 
-#ifdef ENABLE_PDI_TASK
-void PDItask(uint32_t arg1, uint32_t arg2);
-#endif
-#if AL_EVENT_ENABLED
-void HW_EcatIsr(void);
-#endif
-void LEDtask(uint32_t arg0, uint32_t arg1);
 
-#ifdef ENABLE_SYNC_TASK
-void Sync0task(uint32_t arg1, uint32_t arg2);
-#endif
-
-#ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
-void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex);
-#endif
-
-void CiA402_DummyMotionControl(TCiA402Axis *pCiA402Axis);
-
-void common_main();
-
-#ifdef ENABLE_ONLINE_FIRMWARE_UPGRADE
-void relocate_reload_code();
-#endif
-
-#endif /* _TIESC_UTILS_H_ */
+#endif /* _TIESC_IPC_H_ */

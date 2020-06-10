@@ -40,6 +40,7 @@ IDIRS+=$(APPDIR)/include
 IDIRS+=$(APPDIR)/ti_osal
 IDIRS+=$(APPDIR)/beckhoff_ssc
 IDIRS+=$(APPDIR)/ti_board/include
+IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include

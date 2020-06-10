@@ -36,6 +36,7 @@
 
 #include <ti/csl/tistdtypes.h>
 #include "app_pslctrl_cfg.h"
+#include "ipc_motorcontrol_if.h"
 
 #define APP_PSL_CTRL_SAVE_DATA_SZ   ( 64 )
 

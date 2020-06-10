@@ -24,6 +24,7 @@ APPDIR := $(abspath $(SDIR)/../..)
 
 # Add directory to include search path
 #IDIRS+=$(APPDIR)/include
+IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include

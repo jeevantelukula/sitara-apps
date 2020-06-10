@@ -33,7 +33,6 @@
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/osal/osal.h>
-#include <app_mbx_ipc.h>
 #include "hw_types.h"
 #include "fcl_enum.h"
 #include "cia402appl.h"
@@ -43,12 +42,12 @@
 
 /* Translate Rx MC parameters, write to control variables for node */
 static int32_t xlateRxMcParams(
-    appPslReceiveObj_t *rxobj, 
+    ecat2mc_msg_obj_t *rxobj, 
     CTRL_Vars_t *pCtrl
 );
 /* Translate MC feedback variables for node, write to control Tx MC parameters */
 static inline int32_t xlateTxMcParams(
-    appPslSendObj_t *txobj, 
+    mc2ecat_msg_obj_t *txobj, 
     CTRL_Vars_t *pCtrl
 );
 
@@ -111,13 +110,13 @@ int32_t appPslMbxIpcInit(
 
 /* Translate Rx MC parameters, write to control variables for node */
 static int32_t xlateRxMcParams(
-    appPslReceiveObj_t *rxobj, 
+    ecat2mc_msg_obj_t *rxobj, 
     CTRL_Vars_t *pCtrl
 )
 {
     /* Update target speed & position */
-    pCtrl->speedSet = ECAT_puToFloat(rxobj->i32VelocityTarget);
-    pCtrl->positionSet = ECAT_puToFloat(rxobj->i32PositionTarget);
+    pCtrl->speedSet = ECAT_puToFloat(rxobj->i32TargetVelocity);
+    pCtrl->positionSet = ECAT_puToFloat(rxobj->i32TargetPosition);
 
     if (rxobj->i16ModesOfOperation == CYCLIC_SYNC_VELOCITY_MODE) {
         /* CSV mode */
@@ -153,7 +152,7 @@ int32_t appPslMbxIpcRxMsg(
 )
 {
     uintptr_t key;
-    appPslReceiveObj_t *rxobj;    
+    ecat2mc_msg_obj_t *rxobj;    
     uint16_t mcAxisIdx;
 
     /* Translate slave node index to MBX IPC mailbox index */
@@ -185,7 +184,7 @@ int32_t appPslMbxIpcRxMsg(
 
 /* Translate MC feedback variables for node, write to control Tx MC parameters */
 static inline int32_t xlateTxMcParams(
-    appPslSendObj_t *txobj, 
+    mc2ecat_msg_obj_t *txobj, 
     CTRL_Vars_t *pCtrl
 )
 {
@@ -202,7 +201,7 @@ int32_t appPslMbxIpcTxMsg(
 )
 {
     uint32_t payload;
-    appPslSendObj_t *txobj;
+    mc2ecat_msg_obj_t *txobj;
     uint16_t mcAxisIdx;
 
     /* Translate slave node index to MBX IPC mailbox index */
@@ -231,8 +230,8 @@ int32_t appPslMbxIpcTxMsg(
         /* Re-enable FSI Rx interrupts for critical section */
         McuIntc_enableIntr(MCU_INTR_IDX(mcAxisIdx), true);
         
-        txobj->axisIdx = mcAxisIdx;
-        CacheP_wb(txobj, sizeof(appPslSendObj_t));
+        txobj->u16AxisIndex = mcAxisIdx;
+        CacheP_wb(txobj, sizeof(mc2ecat_msg_obj_t));
         
         /* Translate the ATCM local view addr to SoC view addr */
         payload = (uint32_t)txobj;
@@ -247,17 +246,17 @@ int32_t appPslMbxIpcTxMsg(
 /* Mailbox IPC Rx message handler */
 void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
 {
-    appPslReceiveObj_t *payload_ptr;
-    appPslReceiveObj_t *rxobj;
+    ecat2mc_msg_obj_t *payload_ptr;
+    ecat2mc_msg_obj_t *rxobj;
     uint16_t axisIdx;
     
     gTotMbxIpcRxMsgCnt++;
 
     if (src_cpu_id == IPC_ETHERCAT_CPU_ID)
     {
-        payload_ptr = (appPslReceiveObj_t *)payload;
-        CacheP_Inv(payload_ptr, sizeof(appPslReceiveObj_t));
-        axisIdx = payload_ptr->axisIdx;
+        payload_ptr = (ecat2mc_msg_obj_t *)payload;
+        CacheP_Inv(payload_ptr, sizeof(ecat2mc_msg_obj_t));
+        axisIdx = payload_ptr->u16AxisIndex;
 
         if (axisIdx < MAX_NUM_AXES)
         {

@@ -33,7 +33,6 @@
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/osal/CacheP.h>
-#include <app_mbx_ipc.h>
 #include "app_pslctrl_mbxipc.h"
 
 /* Global data MSG objects used in IPC communication */
@@ -96,17 +95,17 @@ int32_t appPslCtrlMbxIpcInit(
 /* Mailbox IPC Rx message handler */
 void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
 {
-    appPslCtrlReceiveObj_t *rxobj;
-    appPslCtrlReceiveObj_t *payload_ptr;
+    mc2ecat_msg_obj_t *rxobj;
+    mc2ecat_msg_obj_t *payload_ptr;
     uint16_t axisIdx;
     
     gTotMbxIpcRxMsgCnt++;
 
     if (src_cpu_id == IPC_PSL_MC_CPU_ID)
     {
-        payload_ptr = (appPslCtrlReceiveObj_t *)payload;
-        CacheP_Inv(payload_ptr, sizeof(appPslCtrlReceiveObj_t));
-        axisIdx = payload_ptr->axisIdx;
+        payload_ptr = (mc2ecat_msg_obj_t *)payload;
+        CacheP_Inv(payload_ptr, sizeof(mc2ecat_msg_obj_t));
+        axisIdx = payload_ptr->u16AxisIndex;
 
         if (axisIdx < MAX_NUM_AXES)
         {

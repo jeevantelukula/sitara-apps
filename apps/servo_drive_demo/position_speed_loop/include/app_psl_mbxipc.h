@@ -36,7 +36,7 @@
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/soc.h>
-#include <app_mbx_ipc.h>
+#include "ipc_motorcontrol_if.h"
 #include "hw_types.h"
 #include "multi_axis_master_ctrl.h"
 #include "app_cfg.h"
@@ -46,10 +46,6 @@
 #define APP_PSL_MBXIPC_SERR_MBXINIT     ( -1 )
 #define APP_PSL_MBXIPC_SERR_REGISR      ( -2 )
 
-/* Translate the ATCM local view addr to SoC view addr */
-#define CPU0_ATCM_SOCVIEW(x)            (CSL_MCU_ARMSS0_CORE0_ATCM_BASE+x)
-#define CPU1_ATCM_SOCVIEW(x)            (CSL_MCU_ARMSS0_CORE1_ATCM_BASE+x)
-
 /* Axis indices */
 #define ECAT_MC_AXIS_IDX0               ( SYS_NODE1 - 1 )
 #define ECAT_MC_AXIS_IDX1               ( SYS_NODE2 - 1 )
@@ -57,30 +53,14 @@
 
 /* IPC message object to send motor control parameters */
 typedef struct {
-    int32_t     i32VelocityActual;
-    int32_t     i32PositionActual;
-    uint16_t    axisIdx;
-} appPslSendObj_t;
-
-/* IPC message object to send motor control parameters */
-typedef struct {
     volatile int32_t        isMsgSend;
-    appPslSendObj_t         sendObj;
+    mc2ecat_msg_obj_t       sendObj;
 } appPslSendMsgObj_t;
-
-/* IPC object to receive motor control parameters */
-typedef struct {
-    int32_t     i32VelocityTarget;
-    int32_t     i32PositionTarget;
-    int16_t     i16ModesOfOperation;
-    int16_t     i16State;
-    uint16_t    axisIdx;
-} appPslReceiveObj_t;
 
 /* IPC message object to receive motor control parameters */
 typedef struct {
     volatile int32_t        isMsgReceived;
-    appPslReceiveObj_t      receiveObj;
+    ecat2mc_msg_obj_t       receiveObj;
 } appPslReceiveMsgObj_t;
 
 /* PSL MBX IPC configuration */
