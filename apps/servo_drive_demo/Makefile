@@ -13,13 +13,17 @@ BUILD_PLATFORM :=
 # Recursively find all concerco.mak in the following directory list.
 DIRECTORIES = $(HOST_ROOT)
 
-# Targe combos supported in this demo
+# Target combos supported in this demo
+ifeq ($(TARGET_PLATFORM),AM65X)
 TARGET_COMBOS ?= AM65X:SYSBIOS:R5F:2:release:TIARMCGT \
                  AM65X:SYSBIOS:R5F:2:debug:TIARMCGT \
                  AM65X:NO_OS:R5F:2:release:TIARMCGT \
-                 AM65X:NO_OS:R5F:2:debug:TIARMCGT \
-                 AM64X:NO_OS:M4F:2:release:TIARMCGT \
+                 AM65X:NO_OS:R5F:2:debug:TIARMCGT
+endif
+ifeq ($(TARGET_PLATFORM),AM64X)
+TARGET_COMBOS ?= AM64X:NO_OS:M4F:2:release:TIARMCGT \
                  AM64X:NO_OS:M4F:2:debug:TIARMCGT
+endif
 
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
