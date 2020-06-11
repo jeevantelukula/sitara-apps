@@ -1,24 +1,21 @@
 ifeq ($(TARGET_OS),NO_OS)
 ifeq ($(TARGET_CPU),R5F)
 
-include $(PRELUDE)
-TARGET      := ipc_rpmsg_lib
+TARGET      := ipc_rpmsg_lib_mcu$(MCUNUM)
 TARGETTYPE  := library
 
 # Define local compiler options
-DEFS+=BUILD_MCU1_0
+DEFS+=BUILD_MCU$(MCUNUM)
 DEFS+=MPU_LINUX_OS
 DEFS+=BAREMETAL
 
 # Define application's root directory
-APPDIR := $(abspath $(SDIR)/..)
+APPDIR := $(abspath $(SDIR)/../..)
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
 
-CSOURCES    := ipc_rpmsg_baremetal.c ipc_trace.c ipcapp_baremetal.c
-
-include $(FINALE)
+CSOURCES    := ../ipc_rpmsg_baremetal.c ../ipc_trace.c ../ipcapp_baremetal.c
 
 endif
 endif
