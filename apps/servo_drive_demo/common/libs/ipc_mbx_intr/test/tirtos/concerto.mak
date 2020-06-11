@@ -76,7 +76,7 @@ XDC_PLATFORM = $(SITARA_XDC_PLATFORM)
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
 LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(APPDIR)/ethercat_loop/src/linker.cmd
+LINKER_CMD_FILES +=  $(APPDIR)/ethercat_loop/src/linker_$(SITARA_DEMO_SOC).cmd
 
 # End concerto module declarations
 include $(FINALE)

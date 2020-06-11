@@ -30,7 +30,7 @@ endif
 ifeq ($(TARGET_CPU),R5F)
 CSOURCES += app_r5f_init.c
 
-CSOURCES += am65x/app_pinmux.c
+CSOURCES += $(SITARA_DEMO_SOC)/app_pinmux.c
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 
