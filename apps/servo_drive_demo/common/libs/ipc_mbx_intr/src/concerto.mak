@@ -13,9 +13,7 @@ IDIRS+=$(LIBDIR)/include
 IDIRS+=$(LIBDIR)/../logs/include
 
 # This CSL based Mailbox + Interrupt IPC Validated only for AM65xx
-ifeq ($(TARGET_PLATFORM),AM65X)
-CSOURCES    += app_mailbox_ipc.c mailbox_config_am65x.c
-endif
+CSOURCES    += $(SITARA_DEMO_SOC)/app_mailbox_ipc.c $(SITARA_DEMO_SOC)/mailbox_config.c
 
 include $(FINALE)
 

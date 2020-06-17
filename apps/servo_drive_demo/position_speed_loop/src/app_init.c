@@ -37,14 +37,14 @@
 #include <ti/drv/uart/UART.h>
 #include <ti/drv/uart/UART_stdio.h>
 
-#include <misc/include/app_misc.h>
-#include <misc/include/app_misc_soc_am65x.h>
+#include <app_misc.h>
+#include <app_misc_soc.h>
 #include <sciclient/include/app_sciclient.h>
 #include <logs/include/app_log.h>
 
 #include "app_psl_mbxipc.h"
 #include "app_cfg.h"
-#include "app_cfg_soc_am65x.h"
+#include "app_cfg_soc.h"
 #include "app_init.h"
 
 int32_t appInit()

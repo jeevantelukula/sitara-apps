@@ -7,7 +7,7 @@
 include $(PRELUDE)
 
 MCUNUM := 1_0
-include ${SDIR}/../cfft_concerto_inc.mak
+include ${SDIR}/../../cfft_concerto_inc.mak
 
 # End concerto module declarations
 include $(FINALE)

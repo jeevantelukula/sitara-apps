@@ -22,14 +22,17 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 COMMON_LIB = $(abspath $(APPDIR)/../common/libs)
 
 # Provide list of C files by using built-in macro
-CSOURCES    := app_init.c app_psl_mbxipc.c cfg_icss.c cfg_mcu_intr.c GPIO_board.c main.c multi_axis_master_comms.c multi_axis_master_ctrl.c multi_axis_master_ctrl_user.c position_speed_loop.c app_cfg_soc_am65x.c
+CSOURCES    := app_init.c app_psl_mbxipc.c cfg_icss.c cfg_mcu_intr.c GPIO_board.c main.c multi_axis_master_comms.c multi_axis_master_ctrl.c multi_axis_master_ctrl_user.c position_speed_loop.c $(SITARA_DEMO_SOC)/app_cfg_soc.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
 
 # Add directory to include search path
+IDIRS+=$(APPDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/include
 IDIRS+=$(COMMON_LIB)
+IDIRS+=$(COMMON_LIB)/misc/include
+IDIRS+=$(COMMON_LIB)/misc/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
@@ -65,7 +68,7 @@ SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
 LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(SDIR)/linker_$(SITARA_DEMO_SOC).cmd
+LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/linker.cmd
 
 # End concerto module declarations
 include $(FINALE)

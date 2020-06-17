@@ -60,11 +60,7 @@
 #include "ipc_trace.h"
 #include "ipcapp_baremetal.h"
 #ifndef BUILD_MPU1_0
-#if defined(SOC_AM65XX)
-#include "ipc_am65xx_rsctable.h"
-#else
 #include "ipc_rsctable.h"
-#endif
 #endif
 
 /* Size of message */

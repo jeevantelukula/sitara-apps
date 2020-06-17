@@ -27,6 +27,7 @@ APPDIR := $(abspath $(SDIR)/../..)
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
+IDIRS+=$(APPDIR)/../common/libs/misc/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/misc/include
 IDIRS+=$(APPDIR)/beckhoff_ssc
 
@@ -86,7 +87,7 @@ XDC_PLATFORM = $(SITARA_XDC_PLATFORM)
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
 LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(SDIR)/linker_$(SITARA_DEMO_SOC).cmd
+LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/linker.cmd
 
 # End concerto module declarations
 include $(FINALE)

@@ -6,8 +6,8 @@
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
-MCUNUM := 1_0
-include ${SDIR}/../ipc_concerto_inc.mak
+MCUNUM := 1_1
+include ${SDIR}/../../ipc_concerto_inc.mak
 
 # End concerto module declarations
 include $(FINALE)

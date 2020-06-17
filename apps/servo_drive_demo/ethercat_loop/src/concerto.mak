@@ -17,21 +17,19 @@ TARGET      := app_tirtos_mcu1_0_servo_drive_ethcat
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
-CSOURCES    := tiescutils.c
+CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
 
 # FIXME
 ifeq ($(TARGET_PLATFORM),AM65X)
-CSOURCES += tiesc_soc_am65x.c
 ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM65xx_r5f.lib
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM65xx
 LDIRS += $(APPDIR)/lib/am65xx/r5f
 endif
 
 ifeq ($(TARGET_PLATFORM),AM64X)
-CSOURCES += tiesc_soc_am64x.c
 ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM64xx_r5f.lib
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM64xx
 LDIRS += $(APPDIR)/lib/am64xx/r5f
@@ -108,7 +106,7 @@ XDC_PLATFORM = $(SITARA_XDC_PLATFORM)
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
 LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(SDIR)/linker_$(SITARA_DEMO_SOC).cmd
+LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/linker.cmd
 
 # End concerto module declarations
 include $(FINALE)

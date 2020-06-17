@@ -46,7 +46,7 @@
 #include <app_log.h>
 #include <app_mbx_ipc.h>
 
-#include "mailbox_config_am65x.h"
+#include "mailbox_config.h"
 
 /* ========================================================================== */
 /*                                 Macros                                     */

@@ -41,8 +41,10 @@ MEMORY
     /* it breaks the coherence needed to make multicore work). SoC view to */
     /* load/run usecase or dma usecase for SoC, and otherwise use local.   */
     /* MCU0/1_R5F local view */
+#ifdef R5F
     R5F_ATCM_SBL_RSVD		(    X )	: ORIGIN = 0x00000000 , LENGTH = 0x00000100
     R5F_ATCM			(    X ) 	: ORIGIN = 0x00000100 , LENGTH = 0x00008000 - 0x100
+#endif
 
     /* MCU0_R5F_0 SoC view */
     MCU0_R5F0_ATCM 		( RWIX )	: ORIGIN = 0x78000000, LENGTH = 0x8000
@@ -60,6 +62,7 @@ MEMORY
     MCU1_R5F1_ATCM		( RWIX )	: ORIGIN = 0x78600000, LENGTH = 0x8000
     MCU1_R5F1_BTCM 		( RWIX )	: ORIGIN = 0x78700000, LENGTH = 0x8000
 
+#ifdef M4F
     /*******************************************************/
     /*                     M4F Memory                      */
     /*******************************************************/
@@ -70,6 +73,7 @@ MEMORY
     /* M4F internal memory locations */
     IRAM_M4F_MEM		( RWIX )	: ORIGIN = 0x00000C00 , LENGTH = 0x30000 - 0xC00
     DRAM_M4F_MEM		( RWIX )	: ORIGIN = 0x00030000 , LENGTH = 0x10000
+#endif
 
     /*******************************************************/
     /*               On-chip SRAM  Memory                  */

@@ -46,7 +46,7 @@
 #include <app_mbx_ipc.h>
 #include <app_sciclient.h>
 #include <app_misc.h>
-#include <app_misc_soc_am65x.h>
+#include <app_misc_soc.h>
 
 #include "cia402appl.h"
 
