@@ -24,22 +24,6 @@ __ABORT_STACK_SIZE = 0x1000;
 __UND_STACK_SIZE = 0x1000;
 __SVC_STACK_SIZE = 0x1000;
 
-/* Memory Map */
-MEMORY
-{
-    VECS_M4F_MEM:     org = 0x00000000 len = 0x040
-    IRAM_M4F_INTC_MEM:     org = 0x00000040 len = 0x400 - 0x040
-    /* Memory assigned to move vector table for M4F core */
-    IRAM_M4F_VTBL:   org = 0x00000400 len = 0x800
-
-    /* M4F internal memory locations */
-    IRAM_M4F_MEM   (RWIX)          : origin=0x00000C00  length=0x30000 - 0xC00
-    DRAM_M4F_MEM   (RWIX)          : origin=0x00030000  length=0x10000
-
-    /* AM64x On-Chip SRAM Bank #5 */
-    OCSRAM5        (RWIX)          : origin=0x70140000  length=0x40000
-}
-
 /* SPECIFY THE SECTIONS ALLOCATION INTO MEMORY */
 
 SECTIONS

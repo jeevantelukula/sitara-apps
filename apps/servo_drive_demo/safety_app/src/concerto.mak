@@ -52,8 +52,9 @@ SYS_STATIC_LIBS += rtsv7M4_T_le_v4SPD16_eabi
 
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
-#LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(SDIR)/linker_$(SITARA_DEMO_SOC).cmd
+LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
+LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/linker.cmd
+
 
 # End concerto module declarations
 include $(FINALE)
