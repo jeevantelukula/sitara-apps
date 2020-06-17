@@ -86,6 +86,16 @@ __attribute__((interrupt("IRQ")))     void appMailboxIsr_0(void);
 __attribute__((interrupt("IRQ")))     void appMailboxIsr_1(void);
 __attribute__((interrupt("IRQ")))     void appMailboxIsr_2(void);
 
+/* Below pragma CODE_STATE overrides the compilation state of a file,
+   at the function level. File is compiled in thumb2/16bit mode, but
+   we want ISR functions in that file to be compiled in 32-bit mode.
+   This is an ARM architecture requirement for Thumb2 mode to work.
+   The ARM C/C++ compiler supports CODE_STATE pragma.
+ */
+#pragma CODE_STATE (appMailboxIsr_0,32)
+#pragma CODE_STATE (appMailboxIsr_1,32)
+#pragma CODE_STATE (appMailboxIsr_2,32)
+
 void appMailboxIsr_0(void)
 {
     appMailboxIsr((void *)0u);

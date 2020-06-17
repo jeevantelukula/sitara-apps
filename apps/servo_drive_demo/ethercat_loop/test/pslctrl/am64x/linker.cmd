@@ -48,7 +48,7 @@ SECTIONS
          *(.vecs)
     } palign(256) > R5F_ATCM_SBL_RSVD
     .text_boot {
-        *boot.aer5f<*boot.o*>(.text)
+        *boot.aer5f*<*boot.o*>(.text)
      }  palign(8)   > R5F_BTCM
     .text:xdc_runtime_Startup_reset__I     : {} palign(8) > R5F_BTCM
     .text:ti_sysbios_family_arm_v7r_Cache* : {} palign(8) > R5F_BTCM

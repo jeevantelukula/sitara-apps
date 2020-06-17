@@ -31,4 +31,4 @@
  *
  */
 
-var R5F           = xdc.useModule('ti.targets.arm.elf.R5F');
+var R5F           = xdc.useModule('ti.targets.arm.elf.R5Ft');

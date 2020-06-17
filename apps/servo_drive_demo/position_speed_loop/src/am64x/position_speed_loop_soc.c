@@ -62,6 +62,18 @@ __attribute__((interrupt("IRQ")))   void fsiTxInt2IrqHandler(void);
 /* Time Sync IRQ handler */
 __attribute__((interrupt("IRQ")))   void tsIrqHandler(void);
 
+/* Below pragma CODE_STATE overrides the compilation state of a file,
+   at the function level. File is compiled in thumb2/16bit mode, but
+   we want ISR functions in that file to be compiled in 32-bit mode.
+   This is an ARM architecture requirement for Thumb2 mode to work.
+   The ARM C/C++ compiler supports CODE_STATE pragma.
+ */
+#pragma CODE_STATE (fsiRxInt1IrqHandler,32)
+#pragma CODE_STATE (fsiRxInt2IrqHandler,32)
+#pragma CODE_STATE (fsiTxInt1IrqHandler,32)
+#pragma CODE_STATE (fsiTxInt2IrqHandler,32)
+#pragma CODE_STATE (tsIrqHandler,32)
+
 /* FSI interrupt statistics counters */
 uint32_t gFsiRxInt1IsrCnt=0;
 uint32_t gFsiRxInt2IsrCnt=0;
