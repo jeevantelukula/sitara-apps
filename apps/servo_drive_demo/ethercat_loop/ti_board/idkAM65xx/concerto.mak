@@ -3,6 +3,10 @@ ifeq ($(TARGET_CPU),R5F)
 
 include $(PRELUDE)
 
+ifeq ($(TARGET_PLATFORM),AM64X)
+SKIPBUILD=1
+endif
+
 TARGET      := app_servo_drive_ethcat_tiboard_idkAM65xx
 TARGETTYPE  := library
 CSOURCES    := board_gpioLed.c board_i2cLed.c board_spi.c board_phy.c tiescphy_dp83867.c

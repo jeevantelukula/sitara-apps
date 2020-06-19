@@ -11,6 +11,10 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
+ifeq ($(TARGET_PLATFORM),AM64X)
+SKIPBUILD=1
+endif
+
 # Define object name (TARGET) and type (TARGET_TYPE)
 TARGET      := app_no_os_mcu1_1_servo_drive_pscontrol
 TARGETTYPE  := exe
