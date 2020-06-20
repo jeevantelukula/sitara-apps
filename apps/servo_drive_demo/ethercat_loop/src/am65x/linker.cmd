@@ -35,7 +35,7 @@
 --fill_value=0
 --stack_size=0x2000
 --heap_size=0x1000
---retain="*(.startupCopyVecsToAtcm)"
+--retain="*(.utilsCopyVecsToAtcm)"
 
 /*----------------------------------------------------------------------------*/
 /* Section Configuration                                                      */
@@ -52,7 +52,7 @@ SECTIONS
     .text:xdc_runtime_Startup_reset__I     : {} palign(8) > R5F0_BTCM
     .text:ti_sysbios_family_arm_v7r_Cache* : {} palign(8) > R5F0_BTCM
     .text:ti_sysbios_family_arm_MPU*       : {} palign(8) > R5F0_BTCM
-    .startupCopyVecsToAtcm                 : {} palign(8) > R5F0_BTCM
+    .utilsCopyVecsToAtcm                   : {} palign(8) > R5F0_BTCM
     
 	.text       : {} palign(8)   > MSMC_MCU1_0
     .cinit      : {} palign(8)   > MSMC_MCU1_0

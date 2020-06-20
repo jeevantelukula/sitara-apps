@@ -79,7 +79,6 @@ STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_servo_drive_ethcat_beckhoff_ssc
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_common
 STATIC_LIBS += app_servo_drive_ethcat_osal
-STATIC_LIBS += app_libs_copy_vecs_to_atcm
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f
@@ -92,6 +91,7 @@ ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
+ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
