@@ -20,6 +20,7 @@ LIBDIR := $(abspath $(SDIR)/..)
 COMMON_LIB = $(abspath $(LIBDIR)/../)
 
 # Add directory to include search path
+IDIRS+=$(LIBDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(LIBDIR)/include
 IDIRS+=$(COMMON_LIB)
 

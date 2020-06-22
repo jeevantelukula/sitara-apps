@@ -31,31 +31,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_MISC_SOC_H_
-#define APP_MISC_SOC_H_
-
-/**
- * \defgroup group_apps_utils_misc Miscellaneous utility APIs (TI-RTOS only)
- *
- * \brief This section contains miscellaneous utility APIs
- *
- * \ingroup group_apps_utils
- *
- * @{
- */
-
-#include <stdint.h>
+#include <ti/csl/tistdtypes.h>
+#include <ti/csl/soc.h>
+#include <ti/board/board.h>
 #include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 
-/**
- * \brief API to set to set pinmux required for running basic apps
- *
- * It internally uses Board API to configure Pinmux.
- *
- */
-void appSetPinmux(pinmuxPerCfg_t *pInstanceData);
-
-/* @} */
-
-#endif /* APP_MISC_SOC_H_ */
-
+pinmuxPerCfg_t gFsiPinCfg[] =
+{
+    /* PRG2_PRU0_GPO12 -> N23 */
+    {
+        PIN_GPMC0_AD8, PIN_MODE(3) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* PRG2_PRU0_GPO13 -> N24 */
+    {
+        PIN_GPMC0_AD9, PIN_MODE(3) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* PRG2_PRU1_GPI12 -> N26 */
+    {
+        PIN_GPMC0_AD12, PIN_MODE(4) | \
+        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
+    },
+    /* PRG2_PRU1_GPI13 -> N25 */
+    {
+        PIN_GPMC0_AD13, PIN_MODE(4) | \
+        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
+    },
+    /* GPIO0_14 -> P24 */
+    {
+        PIN_GPMC0_AD14, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    /* GPIO0_15 -> R27 */
+    {
+        PIN_GPMC0_AD15, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },
+    {PINMUX_END}
+};

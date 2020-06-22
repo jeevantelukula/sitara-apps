@@ -31,8 +31,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_UTILS_MISC_H_
-#define APP_UTILS_MISC_H_
+#ifndef APP_MISC_H_
+#define APP_MISC_H_
 
 /**
  * \defgroup group_apps_utils_misc Miscellaneous utility APIs (TI-RTOS only)

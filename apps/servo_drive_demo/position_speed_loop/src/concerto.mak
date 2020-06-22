@@ -39,6 +39,7 @@ IDIRS+=$(COMMON_LIB)/misc/include
 IDIRS+=$(COMMON_LIB)/misc/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
+IDIRS+=$(APPDIR)/../common/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include

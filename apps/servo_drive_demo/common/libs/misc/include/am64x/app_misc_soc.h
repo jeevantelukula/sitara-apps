@@ -45,7 +45,7 @@
  */
 
 #include <stdint.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
+#include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
 
 /**
  * \brief API to set to set pinmux required for running basic apps

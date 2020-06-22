@@ -36,7 +36,7 @@
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/soc.h>
-#include "ipc_motorcontrol_if.h"
+#include <ipc_motorcontrol_if.h>
 #include "app_pslctrl_cfg.h"
 
 /* Status return codes */

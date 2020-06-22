@@ -30,6 +30,7 @@ APPDIR := $(abspath $(SDIR)/..)
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
+IDIRS+=$(APPDIR)/../common/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include

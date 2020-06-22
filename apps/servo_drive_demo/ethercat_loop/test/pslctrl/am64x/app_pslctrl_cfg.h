@@ -31,31 +31,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_MISC_SOC_H_
-#define APP_MISC_SOC_H_
+#ifndef APP_PSL_CTRL_CFG_H_
+#define APP_PSL_CTRL_CFG_H_
 
-/**
- * \defgroup group_apps_utils_misc Miscellaneous utility APIs (TI-RTOS only)
- *
- * \brief This section contains miscellaneous utility APIs
- *
- * \ingroup group_apps_utils
- *
- * @{
- */
+#include <ti/csl/tistdtypes.h>
+#include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
 
-#include <stdint.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
+#define ENABLE_BOARD
 
-/**
- * \brief API to set to set pinmux required for running basic apps
- *
- * It internally uses Board API to configure Pinmux.
- *
- */
-void appSetPinmux(pinmuxPerCfg_t *pInstanceData);
+#define TASK_PSL_CTRL_PRI       ( 1 )           /* Task PSL Control priority */
+#define TASK_PSL_CTRL_SZ        ( 2048 )        /* Task PSL Control stack size */
 
-/* @} */
+/* Timer parameters -- simulated SYNC pulse */
+#define TIMER_ID                ( 0 )           /* Timer ID */
+#define TIMER_FREQ_HZ           ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
+#define TIMER_PERIOD_USEC       ( 1000 )        /* Timer period (usec.) */
+#define TIMER_INTNUM            ( 152 )         /* Timer interrupt, R5F1_0 DMTIMER0 INT */
 
-#endif /* APP_MISC_SOC_H_ */
+extern pinmuxPerCfg_t gFsiPinCfg;
 
+#endif /* APP_PSL_CTRL_CFG_H_ */

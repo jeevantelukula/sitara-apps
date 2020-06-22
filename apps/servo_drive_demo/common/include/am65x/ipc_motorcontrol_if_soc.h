@@ -29,42 +29,14 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
- 
-#ifndef _IPC_MOTORCONTROL_IF_H_
-#define _IPC_MOTORCONTROL_IF_H_
 
-#include <app_mbx_ipc.h>
-#include <ipc_motorcontrol_if_soc.h>
+#ifndef _IPC_MOTORCONTROL_IF_SOC_H_
+#define _IPC_MOTORCONTROL_IF_SOC_H_
 
-#define APP_ASSERT_SUCCESS(x)  { if((x)!=0) while(1); }
+#include <ti/csl/soc.h>
 
-/* IPC CPU ID should match with PSL MC CPU configuration */
-#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
-#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
-
-/* MAX number of independent axis supported */
-#define MAX_NUM_AXES           (3)
-
-/* IPC message objects to send/receive motor control parameters   */
-/* Below send and receive data structures should be in align with */
-/* the receive and send data structures of its counterpart        */
-/* IPC message object to send motor control parameters */
-/* from EtherCAT slave to Motor control loop           */
-typedef struct {
-    int32_t i32TargetVelocity;
-    int32_t i32TargetPosition;
-    int16_t i16ModesOfOperation;
-    int16_t i16State;
-    uint16_t u16AxisIndex;
-} ecat2mc_msg_obj_t;
-
-/* IPC message object to send motor control parameters */
-/* from Motor control loop to EtherCAT slave           */
-typedef struct {
-    int32_t i32VelocityActual;
-    int32_t i32PositionActual;
-    uint16_t u16AxisIndex;
-} mc2ecat_msg_obj_t;
-
+/* Translate the ATCM local view addr to SoC view addr */
+#define CPU0_ATCM_SOCVIEW(x)   (CSL_MCU_ARMSS0_CORE0_ATCM_BASE+(x))
+#define CPU1_ATCM_SOCVIEW(x)   (CSL_MCU_ARMSS0_CORE1_ATCM_BASE+(x))
 
 #endif /* _IPC_MOTORCONTROL_IF_H_ */

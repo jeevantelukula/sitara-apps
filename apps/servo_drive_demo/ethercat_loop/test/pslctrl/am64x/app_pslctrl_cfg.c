@@ -34,38 +34,38 @@
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/soc.h>
 #include <ti/board/board.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
+#include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
 
 pinmuxPerCfg_t gFsiPinCfg[] =
 {
-    /* PRG2_PRU0_GPO12 -> N23 */
+    /* GPMC0_BE1n (mode 0) -> FSI_TX0_CLK (mode 1) */
     {
-        PIN_GPMC0_AD8, PIN_MODE(3) | \
+        PIN_GPMC0_BE1N, PIN_MODE(1) | \
         ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
     },
-    /* PRG2_PRU0_GPO13 -> N24 */
+    /* GPMC0_AD14 (mode 0) -> FSI_TX0_D0 (mode 1) */
     {
-        PIN_GPMC0_AD9, PIN_MODE(3) | \
+        PIN_GPMC0_AD14, PIN_MODE(1) | \
         ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
     },
-    /* PRG2_PRU1_GPI12 -> N26 */
+    /* GPMC0_AD8 (mode 0) -> FSI_RX0_CLK (mode 1) */
     {
-        PIN_GPMC0_AD12, PIN_MODE(4) | \
+        PIN_GPMC0_AD8, PIN_MODE(1) | \
         ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
     },
-    /* PRG2_PRU1_GPI13 -> N25 */
+    /* GPMC0_AD9 (mode 0) -> FSI_RX0_D0 (mode 1) */
     {
-        PIN_GPMC0_AD13, PIN_MODE(4) | \
+        PIN_GPMC0_AD9, PIN_MODE(1) | \
         ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
     },
-    /* GPIO0_14 -> P24 */
-    {   
-        PIN_GPMC0_AD14, PIN_MODE(7) | \
+    /* GPMC0_AD0 -> GPIO0_15 */
+    {
+        PIN_GPMC0_AD0, PIN_MODE(7) | \
         ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
     },
-    /* GPIO0_15 -> R27 */
+    /* GPMC0_AD1 -> GPIO0_16 */
     {
-        PIN_GPMC0_AD15, PIN_MODE(7) | \
+        PIN_GPMC0_AD1, PIN_MODE(7) | \
         ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
     },
     {PINMUX_END}

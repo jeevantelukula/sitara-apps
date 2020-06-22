@@ -12,22 +12,19 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
-ifeq ($(TARGET_PLATFORM),AM64X)
-SKIPBUILD=1
-endif
-
 # Define object name (TARGET) and type (TARGET_TYPE)
 TARGET      := app_tirtos_mcu1_0_pslctrl
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
-CSOURCES    := app_pslctrl.c app_pslctrl_cfg.c app_pslctrl_mbxipc.c app_pslctrl_save_data.c
+CSOURCES    := app_pslctrl.c $(SITARA_DEMO_SOC)/app_pslctrl_cfg.c app_pslctrl_mbxipc.c app_pslctrl_save_data.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/../..)
 
 # Add directory to include search path
-#IDIRS+=$(APPDIR)/include
+IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
+IDIRS+=$(APPDIR)/../common/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include
@@ -69,7 +66,7 @@ ADDITIONAL_STATIC_LIBS += ti.csl.init.aer5f
 ADDITIONAL_STATIC_LIBS += ti.csl.aer5f
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
-ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+#ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
 

@@ -49,7 +49,7 @@
 
 #include "cia402appl.h"
 
-#include "app_pslctrl_cfg.h"
+#include <app_pslctrl_cfg.h>
 #include "app_pslctrl_mbxipc.h"
 #include "app_pslctrl_save_data.h"
 
