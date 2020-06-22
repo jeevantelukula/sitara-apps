@@ -73,9 +73,14 @@
 /*                          Function Definitions                              */
 /* ========================================================================== */
 
-// TODO: implement better API? See J7 Board lib, Board_pinmuxUpdate() API.
 void appSetPinmux(pinmuxPerCfg_t *pInstanceData)
 {
+    /* return immediately because AM64x pinmux isn't ready yet in CSL
+     * see comment for MAIN_PMUX_CTRL definition in board/src/am64x_evm/
+     * include/board_internal.h
+     */
+    return;
+    /*
     int32_t k;
     uint32_t rdRegVal;
 
@@ -86,4 +91,5 @@ void appSetPinmux(pinmuxPerCfg_t *pInstanceData)
         HW_WR_REG32((MAIN_PMUX_CTRL + pInstanceData[k].pinOffset),
                     (pInstanceData[k].pinSettings));
     }
+    */
 }
