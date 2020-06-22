@@ -46,14 +46,16 @@
 #include <ti/csl/cslr_gtc.h>
 
 /* In general , Get this from CSL, not available for AM65XX */
-#define MAILBOX_MAX_CLUSTER_CNT    (12U)
+#define MAILBOX_MAX_CLUSTER_CNT    (8U)
 
 #define MAILBOX_CLUSTER_INVALID    (0xFFU)
 #define MAILBOX_USER_INVALID       (0xFFU)
 
 #define MAILBOX_SCICLIENT_TIMEOUT  (0xffffffffu)
 
-#define VIM_BASE_ADDR              (CSL_MCU_DOMAIN_VIM_BASE_ADDR)
+#define VIM_BASE_ADDR              (CSL_MAIN_DOMAIN_VIM_BASE_ADDR)
+
+#define MAILBOX_IPC_R5F_CLUSTER0_INT_NUM   (96)
 
 /* ========================================================================== */
 /*                            Global Variables                                */
@@ -77,7 +79,6 @@ typedef struct mailboxIpc_MailboxInfo_s
 
 extern const mailboxIpc_MailboxInfo gMailboxIpc_MailboxInfo[MAILBOX_IPC_MAX_PROCS][MAILBOX_IPC_MAX_PROCS];
 extern const uint32_t gMailboxIpc_MailboxBaseAddressArray[MAILBOX_MAX_CLUSTER_CNT];
-extern const uint32_t gMailboxIpc_MailboxClusterIdArray[MAILBOX_MAX_CLUSTER_CNT];
 extern uint32_t gMailboxIpc_MailboxInterruptInfo[MAILBOX_IPC_MAX_PROCS];
 
 

@@ -40,62 +40,86 @@
 #include <ti/csl/csl_mailbox.h>
 #include <ti/csl/soc.h>
 #include <ti/csl/arch/csl_arch.h>
+#include <ti/osal/osal.h>
+#include <ti/drv/sciclient/sciclient.h>
 
 #include <app_log.h>
 #include <app_mbx_ipc.h>
-#include <app_sciclient.h>
-#include <app_mbx_ipc_test_soc.h>
-#include <app_mbx_ipc_test.h>
 
+#include "mailbox_config.h"
 
-int main(void)
+extern app_mbxipc_obj_t g_app_mbxipc_obj;
+extern int appMbxIpcSync(void);
+extern int32_t appMbxIpcInterruptInit(uint32_t intNum, uint16_t remoteId);
+
+int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
 {
-    int32_t status = -1;
-    int32_t iterationCnt=0;
-    app_mbxipc_init_prm_t mbxipc_init_prm;
+    int32_t retVal = 0;
+    uint16_t remoteId;
+    uint16_t interruptOffset;
+    uint32_t selfId;
+    app_mbxipc_obj_t *obj = &g_app_mbxipc_obj;
+    obj->prm = *prm;
+    obj->mbxipc_notify_handler = NULL;
 
-    appLogPrintf("MBX-IPC: Echo Test Started ... !!!\n");
+    appLogPrintf("MBX-IPC: Init ... !!!\n");
 
-    appSciclientInit();
+    selfId = appMbxIpcGetSelfCpuId();
 
-    /* initialize CSL Mbx IPC */
-    appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
-    mbxipc_init_prm.master_cpu_id = MBXIPC_TEST_CPU_1;
-    mbxipc_init_prm.self_cpu_id = MBXIPC_TEST_CPU_2;
-    mbxipc_init_prm.num_cpus = 0;
-    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = MBXIPC_TEST_CPU_1;
-    mbxipc_init_prm.num_cpus++;
-    mbxipc_init_prm.enabled_cpu_id_list[mbxipc_init_prm.num_cpus] = MBXIPC_TEST_CPU_2;
-    mbxipc_init_prm.num_cpus++;
-    /* IPC CPU sync check works only when appMbxIpcInit() called from both R5Fs */
-    appMbxIpcInit(&mbxipc_init_prm);
-    /* Register Application callback to invoke on receiving a notify message */
-    appMbxIpcRegisterNotifyHandler((app_mbxipc_notify_handler_f) mbxIpcMsgTestHandler);
-
-    do
+    retVal = appMbxIpcSync();
+    if ( retVal != 0)
     {
-        iterationCnt++;
-        status = ipcTestRun(iterationCnt);
-        if (status)
+        appLogPrintf("MBX-IPC: appMbxIpcSync() failed \r\n");
+        return -1;
+    }
+
+    if (retVal == 0)
+    {
+        interruptOffset = 0;
+        for (remoteId = 0; remoteId < MAILBOX_IPC_MAX_PROCS; remoteId++)
         {
-            break;
-        }
-	}while(MAX_ITERATION_COUNT > iterationCnt);
+            /* Skip self */
+            if (remoteId == selfId)
+            {
+                continue;
+            }
+            if (!appMbxIpcIsCpuEnabled(remoteId))
+            {
+                continue;
+            }
 
-    if (status)
+            /* Store the interrupt number */
+            gMailboxIpc_MailboxInterruptInfo[remoteId] = MAILBOX_IPC_R5F_CLUSTER0_INT_NUM;
+
+            /* Configure and initalize interrupt handler */
+            retVal = appMbxIpcInterruptInit(MAILBOX_IPC_R5F_CLUSTER0_INT_NUM, remoteId);
+
+            if (retVal == 0)
+            {
+                /* Enable Interrupt at the mailbox */
+                MailboxEnableNewMsgInt(gMailboxIpc_MailboxBaseAddressArray[gMailboxIpc_MailboxInfo[selfId][remoteId].rx.cluster],
+                                       gMailboxIpc_MailboxInfo[selfId][remoteId].rx.user,
+                                       gMailboxIpc_MailboxInfo[selfId][remoteId].rx.fifo);
+
+            }
+            if ( retVal != 0)
+            {
+                break;
+            }
+            interruptOffset++;
+        }
+    }
+
+    if (retVal)
     {
-        appLogPrintf("MBX-IPC: Echo Test Failed \n");
+        appLogPrintf("MBX-IPC: Init ... Failed !!!\n");
     }
     else
     {
-        appLogPrintf("MBX-IPC: Echo Test Passed \n");
+        appLogPrintf("MBX-IPC: Init ... Done !!!\n");
     }
-	
-    appMbxIpcDeInit();
-    appSciclientDeInit();
 
-    return 0;
+    return retVal;
 }
 
 /********************************* End of file ******************************/
-

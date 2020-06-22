@@ -26,8 +26,11 @@ APPDIR := $(abspath $(SDIR)/../../../../..)
 # Add directory to include search path
 IDIRS+=$(APPDIR)/common/libs/logs/include
 IDIRS+=$(APPDIR)/common/libs/sciclient/include
+IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include
+IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test
+IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -67,7 +70,7 @@ SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
 #- Linker CMD file
 XDC_BLD_FILE = $(APPDIR)/ethercat_loop/tirtos/config_r5f.bld
 XDC_IDIRS    = $(APPDIR)/ethercat_loop/tirtos/
-XDC_CFG_FILE = $(APPDIR)/ethercat_loop/tirtos/mcu1_0.cfg
+XDC_CFG_FILE = $(APPDIR)/ethercat_loop/tirtos/$(SITARA_DEMO_SOC)/mcu1_0.cfg
 
 # The default XDC_PLATFORM is provided by the concerto build target, and based
 # on TARGET_PLATFORM and TARGET_CPU

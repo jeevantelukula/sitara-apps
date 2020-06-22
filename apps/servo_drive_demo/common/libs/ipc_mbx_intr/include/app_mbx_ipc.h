@@ -35,28 +35,7 @@
 #define APP_MBX_IPC_H_
 
 #include <stdint.h>
-
-/**
- * \defgroup group_apps_utils_ipc Inter-processor communication (IPC) APIs
- *
- * \brief This section contains APIs for Inter-processor communication (IPC)
- *
- * \ingroup group_apps_utils
- *
- * @{
- */
-
-/* ========================================================================== */
-/*                                 Macros                                     */
-/* ========================================================================== */
-/** \brief Core definitions */
-#define    MAILBOX_IPC_CPUID_MPU1_0     (0)    /**< ARM A53 - VM0 */
-#define    MAILBOX_IPC_CPUID_MCU1_0     (1)    /**< ARM MCU  R5F - core0 */
-#define    MAILBOX_IPC_CPUID_MCU1_1     (2)    /**< ARM MCU  R5F - core1 */
-#define    MAILBOX_IPC_MAX_PROCS        (3)    /**< Maximum Processors */
-
-/** \brief Invalid CPU ID */
-#define APP_IPC_CPU_INVALID             (0xFFu)
+#include <app_mbx_ipc_soc.h>
 
 /**
  * \brief Callback that is invoke when current CPU receives a IPC notify
@@ -80,6 +59,15 @@ typedef struct {
     /**< List of CPU IDs enabled for IPC */
     uint32_t enabled_cpu_id_list[MAILBOX_IPC_MAX_PROCS];
 } app_mbxipc_init_prm_t;
+
+/**
+ * /brief IPC data object
+ */
+typedef struct {
+
+    app_mbxipc_init_prm_t prm;
+    app_mbxipc_notify_handler_f mbxipc_notify_handler;
+} app_mbxipc_obj_t;
 
 /**
  * \brief Set IPC init parameters to default state

@@ -25,7 +25,9 @@ APPDIR := $(abspath $(SDIR)/../../../../..)
 # Add directory to include search path
 IDIRS+=$(APPDIR)/common/libs/logs/include
 IDIRS+=$(APPDIR)/common/libs/sciclient/include
+IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include
+IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test
 
 # Define core ID as each core will host an application that provides a unique

@@ -30,56 +30,17 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-
-#ifndef MAILBOX_CONFIG_H_
-#define MAILBOX_CONFIG_H_
-
+#ifndef APP_IPC_TEST_MAIN_SOC_H_
+#define APP_IPC_TEST_MAIN_SOC_H_
 
 /* ========================================================================== */
-/*                             Include Files                                  */
-/* ========================================================================== */
-#include <stdint.h>
-
-#include <ti/csl/soc.h>
-#include <ti/drv/sciclient/sciclient.h>
-#include <app_mbx_ipc.h>
-#include <ti/csl/cslr_gtc.h>
-
-/* In general , Get this from CSL, not available for AM65XX */
-#define MAILBOX_MAX_CLUSTER_CNT    (12U)
-
-#define MAILBOX_CLUSTER_INVALID    (0xFFU)
-#define MAILBOX_USER_INVALID       (0xFFU)
-
-#define MAILBOX_SCICLIENT_TIMEOUT  (0xffffffffu)
-
-#define VIM_BASE_ADDR              (CSL_MCU_DOMAIN_VIM_BASE_ADDR)
-
-/* ========================================================================== */
-/*                            Global Variables                                */
+/*                                 Macros                                     */
 /* ========================================================================== */
 
-/* ========================================================================== */
-/*                                 Structures                                 */
-/* ========================================================================== */
+/* Simulated ECAT timer */
+#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
+#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
+#define SIM_ECAT_TIMER_PERIOD_USEC  ( 50 )          /* Timer period (usec.) */
+#define SIM_ECAT_TIMER_INTNUM       ( 154 )         /* Timer interrupt, R5F1_0 DMTIMER2 INT */
 
-typedef struct mailboxIpc_MailboxEntry_s
-{
-    uint32_t    cluster;
-    uint32_t    user;
-    uint32_t    fifo;
-} mailboxIpc_MailboxEntry;
-
-typedef struct mailboxIpc_MailboxInfo_s
-{
-    mailboxIpc_MailboxEntry    rx;
-} mailboxIpc_MailboxInfo;
-
-extern const mailboxIpc_MailboxInfo gMailboxIpc_MailboxInfo[MAILBOX_IPC_MAX_PROCS][MAILBOX_IPC_MAX_PROCS];
-extern const uint32_t gMailboxIpc_MailboxBaseAddressArray[MAILBOX_MAX_CLUSTER_CNT];
-extern const uint32_t gMailboxIpc_MailboxClusterIdArray[MAILBOX_MAX_CLUSTER_CNT];
-extern uint32_t gMailboxIpc_MailboxInterruptInfo[MAILBOX_IPC_MAX_PROCS];
-
-
-#endif /* MAILBOX_CONFIG_H_ */
-
+#endif

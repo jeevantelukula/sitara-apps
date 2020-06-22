@@ -47,6 +47,7 @@ IDIRS+=$(APPDIR)/ti_board/include
 IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/logs/include
 IDIRS+=$(APPDIR)/../common/libs/sciclient/include
+IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 # Path for files where common info is shared between M4F and other cores.
 IDIRS+=$(APPDIR)/../safety_app/include
@@ -102,7 +103,7 @@ SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
 #- Linker CMD file
 XDC_BLD_FILE = $(APPDIR)/tirtos/config_r5f.bld
 XDC_IDIRS    = $(APPDIR)/tirtos/
-XDC_CFG_FILE = $(APPDIR)/tirtos/mcu1_0.cfg
+XDC_CFG_FILE = $(APPDIR)/tirtos/$(SITARA_DEMO_SOC)/mcu1_0.cfg
 
 # The default XDC_PLATFORM is provided by the concerto build target, and based
 # on TARGET_PLATFORM and TARGET_CPU

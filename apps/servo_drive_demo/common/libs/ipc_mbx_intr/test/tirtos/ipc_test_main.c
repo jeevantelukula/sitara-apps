@@ -55,13 +55,9 @@
 #include <app_log.h>
 #include <app_mbx_ipc.h>
 #include <app_sciclient.h>
+#include <app_mbx_ipc_test_soc.h>
 #include <app_mbx_ipc_test.h>
-
-/* Simulated ECAT timer */
-#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
-#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125*8 )       /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
+#include <ipc_test_main_soc.h>
 
 /* Timer -- simulate ECAT interrupt */
 void timerTickFxn(void *arg);   /* Timer tick function */

@@ -31,45 +31,15 @@
  **/
 
 
-#ifndef APP_MBX_IPC_TEST_H_
-#define APP_MBX_IPC_TEST_H_
+#ifndef APP_MAILBOX_IPC_H_
+#define APP_MAILBOX_IPC_H_
 
-#include <stdint.h>
-#include <app_mbx_ipc.h>
+/** \brief Invalid CPU ID */
+#define APP_IPC_CPU_INVALID             (0xFFu)
 
+#define IS_CPU_ENABLED(x) (appMbxIpcIsCpuEnabled(x) && (appMbxIpcGetSelfCpuId()==x))
 
-/* ========================================================================== */
-/*                                 Macros                                     */
-/* ========================================================================== */
-
-/* Sample MC parameter values */
-#define VELOCITY  (50)
-#define POSITION  (200)
-#define STATE     (2)
-
-/* IPC test message object to mimic Motor control scenarios */
-typedef struct {
-    int32_t i32Velocity;
-    int32_t i32Position;
-    int16_t i16State;
-} test_msg_obj_t;
-
-typedef struct {
-    /* Remove volatile qualifier once this moved to TCM & enable write through */
-    volatile int32_t isMsgReceived;
-    uint32_t srcCpuId;
-    test_msg_obj_t sendObj;
-    test_msg_obj_t receiveObj;
-} app_mbxipc_test_obj_t;
-
-
-/* ========================================================================== */
-/*                 Function Declarations                             */
-/* ========================================================================== */
-
-void mbxIpcMsgTestHandler (uint32_t src_cpu_id, uint32_t payload);
-
-int32_t ipcTestRun(int32_t iterationCnt);
+/* @} */
 
 #endif
 

@@ -9,11 +9,13 @@ CSOURCES    :=
 # Define root directory
 LIBDIR := $(abspath $(SDIR)/..)
 
+IDIRS+=$(LIBDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(LIBDIR)/include
 IDIRS+=$(LIBDIR)/../logs/include
+IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
 
 # This CSL based Mailbox + Interrupt IPC Validated only for AM65xx
-CSOURCES    += $(SITARA_DEMO_SOC)/app_mailbox_ipc.c $(SITARA_DEMO_SOC)/mailbox_config.c
+CSOURCES    += app_mailbox_ipc.c $(SITARA_DEMO_SOC)/app_mailbox_ipc_soc.c $(SITARA_DEMO_SOC)/mailbox_config.c
 
 include $(FINALE)
 

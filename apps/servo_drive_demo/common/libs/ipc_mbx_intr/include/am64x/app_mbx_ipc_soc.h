@@ -31,45 +31,29 @@
  **/
 
 
-#ifndef APP_MBX_IPC_TEST_H_
-#define APP_MBX_IPC_TEST_H_
+#ifndef APP_MBX_IPC_SOC_H_
+#define APP_MBX_IPC_SOC_H_
 
-#include <stdint.h>
-#include <app_mbx_ipc.h>
-
+/**
+ * \defgroup group_apps_utils_ipc Inter-processor communication (IPC) APIs
+ *
+ * \brief This section contains APIs for Inter-processor communication (IPC)
+ *
+ * \ingroup group_apps_utils
+ *
+ * @{
+ */
 
 /* ========================================================================== */
 /*                                 Macros                                     */
 /* ========================================================================== */
+/** \brief Core definitions */
+#define    MAILBOX_IPC_CPUID_MPU1_0     (0)    /**< ARM A53 - VM0 */
+#define    MAILBOX_IPC_CPUID_MCU1_0     (1)    /**< ARM MCU  R5F0 - core0 */
+#define    MAILBOX_IPC_CPUID_MCU1_1     (2)    /**< ARM MCU  R5F1 - core0 */
+#define    MAILBOX_IPC_MAX_PROCS        (3)    /**< Maximum Processors */
 
-/* Sample MC parameter values */
-#define VELOCITY  (50)
-#define POSITION  (200)
-#define STATE     (2)
-
-/* IPC test message object to mimic Motor control scenarios */
-typedef struct {
-    int32_t i32Velocity;
-    int32_t i32Position;
-    int16_t i16State;
-} test_msg_obj_t;
-
-typedef struct {
-    /* Remove volatile qualifier once this moved to TCM & enable write through */
-    volatile int32_t isMsgReceived;
-    uint32_t srcCpuId;
-    test_msg_obj_t sendObj;
-    test_msg_obj_t receiveObj;
-} app_mbxipc_test_obj_t;
-
-
-/* ========================================================================== */
-/*                 Function Declarations                             */
-/* ========================================================================== */
-
-void mbxIpcMsgTestHandler (uint32_t src_cpu_id, uint32_t payload);
-
-int32_t ipcTestRun(int32_t iterationCnt);
+/* @} */
 
 #endif
 
