@@ -99,56 +99,7 @@ typedef struct IcssgTsDrv_TsDrvObj_s
 } IcssgTsDrv_TsDrvObj;
 
 /* Internal structure for managing TSs for each ICSSG */
-/* static */ IcssgTsDrv_TsDrvObj gTsDrvObj[ICSSG_TS_DRV__NUM_ICSSG * ICSSG_TS_DRV__NUM_PRU] = {
-    /* ICSSG0, PRU 0 */
-    { ICSSG_TS_DRV__ICSSG_ID_0,
-      ICSSG_TS_DRV__PRU_ID_0,
-     {(IcssgTsDrv_TsInfoRegs *)(CSL_PRU_ICSSG0_DRAM0_SLV_RAM_BASE + ICSSG_TS_FW_MAGIC_NUMBER_ADDR)},
-     {0, (IcssgTsDrv_TsCtrlRegs *)(CSL_PRU_ICSSG0_DRAM0_SLV_RAM_BASE + ICSSG_TS_TS_CTRL_ADDR)},
-     {{0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG0_DRAM0_SLV_RAM_BASE + ICSSG_TS_IEP0_TS_BASE_ADDR)},
-      {0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG0_DRAM0_SLV_RAM_BASE + ICSSG_TS_IEP1_TS_BASE_ADDR)}}
-    },
-    /* ICSSG0, PRU 1 */
-    { ICSSG_TS_DRV__ICSSG_ID_0,
-      ICSSG_TS_DRV__PRU_ID_1,
-     {(IcssgTsDrv_TsInfoRegs *)(CSL_PRU_ICSSG0_DRAM1_SLV_RAM_BASE + ICSSG_TS_FW_MAGIC_NUMBER_ADDR)},
-     {0, (IcssgTsDrv_TsCtrlRegs *)(CSL_PRU_ICSSG0_DRAM1_SLV_RAM_BASE + ICSSG_TS_TS_CTRL_ADDR)},
-     {{0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG0_DRAM1_SLV_RAM_BASE + ICSSG_TS_IEP0_TS_BASE_ADDR)},
-      {0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG0_DRAM1_SLV_RAM_BASE + ICSSG_TS_IEP1_TS_BASE_ADDR)}}
-    },
-    /* ICSSG1, PRU 0 */
-    { ICSSG_TS_DRV__ICSSG_ID_1,
-      ICSSG_TS_DRV__PRU_ID_0,
-     {(IcssgTsDrv_TsInfoRegs *)(CSL_PRU_ICSSG1_DRAM0_SLV_RAM_BASE + ICSSG_TS_FW_MAGIC_NUMBER_ADDR)},
-     {0, (IcssgTsDrv_TsCtrlRegs *)(CSL_PRU_ICSSG1_DRAM0_SLV_RAM_BASE + ICSSG_TS_TS_CTRL_ADDR)},
-     {{0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG1_DRAM0_SLV_RAM_BASE + ICSSG_TS_IEP0_TS_BASE_ADDR)},
-      {0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG1_DRAM0_SLV_RAM_BASE + ICSSG_TS_IEP1_TS_BASE_ADDR)}}
-    },
-    /* ICSSG1, PRU 1 */
-    { ICSSG_TS_DRV__ICSSG_ID_1,
-      ICSSG_TS_DRV__PRU_ID_1,
-     {(IcssgTsDrv_TsInfoRegs *)(CSL_PRU_ICSSG1_DRAM1_SLV_RAM_BASE + ICSSG_TS_FW_MAGIC_NUMBER_ADDR)},
-     {0, (IcssgTsDrv_TsCtrlRegs *)(CSL_PRU_ICSSG1_DRAM1_SLV_RAM_BASE + ICSSG_TS_TS_CTRL_ADDR)},
-     {{0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG1_DRAM1_SLV_RAM_BASE + ICSSG_TS_IEP0_TS_BASE_ADDR)},
-      {0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG1_DRAM1_SLV_RAM_BASE + ICSSG_TS_IEP1_TS_BASE_ADDR)}}
-    },
-    /* ICSSG2, PRU 0 */
-    { ICSSG_TS_DRV__ICSSG_ID_2,
-      ICSSG_TS_DRV__PRU_ID_0,
-     {(IcssgTsDrv_TsInfoRegs *)(CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE + ICSSG_TS_FW_MAGIC_NUMBER_ADDR)},
-     {0, (IcssgTsDrv_TsCtrlRegs *)(CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE + ICSSG_TS_TS_CTRL_ADDR)},
-     {{0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE + ICSSG_TS_IEP0_TS_BASE_ADDR)},
-      {0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE + ICSSG_TS_IEP1_TS_BASE_ADDR)}}
-    },
-    /* ICSSG2, PRU 1 */
-    { ICSSG_TS_DRV__ICSSG_ID_2,
-      ICSSG_TS_DRV__PRU_ID_1,
-     {(IcssgTsDrv_TsInfoRegs *)(CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE + ICSSG_TS_FW_MAGIC_NUMBER_ADDR)},
-     {0, (IcssgTsDrv_TsCtrlRegs *)(CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE + ICSSG_TS_TS_CTRL_ADDR)},
-     {{0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE + ICSSG_TS_IEP0_TS_BASE_ADDR)},
-      {0, (IcssgTsDrv_IepTsRegs *)(CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE + ICSSG_TS_IEP1_TS_BASE_ADDR)}}
-    },
-};
+/* static */ IcssgTsDrv_TsDrvObj gTsDrvObj;
 
 
 /* ------------------------------------------------------------------------- *
@@ -162,11 +113,43 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
 )
 {
     IcssgTsDrv_TsDrvObj *pTsDrvObj;
+    uint8_t slicePruId;
+    uint32_t baseAddr;
 
     if ((icssgId < ICSSG_TS_DRV__NUM_ICSSG) &&
         (pruId < ICSSG_TS_DRV__NUM_PRU))
     {
-        pTsDrvObj = &gTsDrvObj[icssgId * ICSSG_TS_DRV__NUM_PRU + pruId];
+        pTsDrvObj = &gTsDrvObj;
+        
+        /* Store ICSSG & PRU IDs */
+        pTsDrvObj->icssgId = icssgId;
+        pTsDrvObj->pruId = pruId;
+        
+        /* Determine PRU ID in slice */
+        slicePruId = pruId - (uint8_t)pruId/ICSSG_NUM_SLICE * ICSSG_NUM_SLICE;
+        
+        /* Determine DMEM base address */
+        if (icssgId == ICSSG_TS_DRV__ICSSG_ID_0)
+        {
+            baseAddr = (slicePruId == ICSSG_TS_DRV__SLICE_PRU_ID_0) ? CSL_PRU_ICSSG0_DRAM0_SLV_RAM_BASE : 
+                CSL_PRU_ICSSG0_DRAM1_SLV_RAM_BASE;
+        }
+        else if (icssgId == ICSSG_TS_DRV__ICSSG_ID_1)
+        {
+            baseAddr = (slicePruId == ICSSG_TS_DRV__SLICE_PRU_ID_0) ? CSL_PRU_ICSSG1_DRAM0_SLV_RAM_BASE : 
+                CSL_PRU_ICSSG1_DRAM1_SLV_RAM_BASE;
+        }
+        else if (icssgId == ICSSG_TS_DRV__ICSSG_ID_2)
+        {
+            baseAddr = (slicePruId == ICSSG_TS_DRV__SLICE_PRU_ID_0) ? CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE : 
+                CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE;
+        }
+        
+        /* Initialize TS driver object pointers */
+        pTsDrvObj->tsInfo.pTsInfoRegs = (IcssgTsDrv_TsInfoRegs *)(baseAddr + ICSSG_TS_FW_MAGIC_NUMBER_ADDR);
+        pTsDrvObj->tsCtrl.pTsCtrlRegs = (IcssgTsDrv_TsCtrlRegs *)(baseAddr + ICSSG_TS_TS_CTRL_ADDR);
+        pTsDrvObj->iepTsCtrl[ICSSG_TS_DRV__IEP_ID_0].pIepTsRegs = (IcssgTsDrv_IepTsRegs *)(baseAddr + ICSSG_TS_IEP0_TS_BASE_ADDR);
+        pTsDrvObj->iepTsCtrl[ICSSG_TS_DRV__IEP_ID_1].pIepTsRegs = (IcssgTsDrv_IepTsRegs *)(baseAddr + ICSSG_TS_IEP1_TS_BASE_ADDR);
 
         /* Reset IEP TS global enable mask */
         pTsDrvObj->tsCtrl.tsGblEnMask = DEF_TS_GBL_EN_MASK;

@@ -89,17 +89,40 @@ int32_t getPruId(
     uint8_t *pPruId
 )
 {
+    int32_t retVal = 0;
+    
     /* Translate PRU hardware module ID to PWM API */
-    if (pruInstId == PRUICCSS_PRU0) {
-        *pPruId = ICSSG_TS_DRV__PRU_ID_0;
-        return TEST_UTILS_ERR_NERR;
+    switch (pruInstId)
+    {
+        case PRUICCSS_PRU0:
+            *pPruId = ICSSG_TS_DRV__PRU_ID_0;
+            retVal = TEST_UTILS_ERR_NERR;
+            break;
+        case PRUICCSS_PRU1:
+            *pPruId = ICSSG_TS_DRV__PRU_ID_1;
+            retVal = TEST_UTILS_ERR_NERR;
+            break;
+        case PRUICCSS_RTU0:
+            *pPruId = ICSSG_TS_DRV__RTU_ID_0;
+            retVal = TEST_UTILS_ERR_NERR;
+            break;
+        case PRUICCSS_RTU1:
+            *pPruId = ICSSG_TS_DRV__RTU_ID_1;
+            retVal = TEST_UTILS_ERR_NERR;
+            break;
+        case PRUICCSS_TPRU0:
+            *pPruId = ICSSG_TS_DRV__TPRU_ID_0;
+            retVal = TEST_UTILS_ERR_NERR;
+            break;
+        case PRUICCSS_TPRU1:
+            *pPruId = ICSSG_TS_DRV__TPRU_ID_1;
+            retVal = TEST_UTILS_ERR_NERR;
+            break;
+        default:
+            *pPruId = 0;
+            retVal = TEST_UTILS_ERR_INV_PRMS;
+            break;
     }
-    else if (pruInstId == PRUICCSS_PRU1) {
-        *pPruId = ICSSG_TS_DRV__PRU_ID_1;
-        return TEST_UTILS_ERR_NERR;
-    }
-    else {
-        *pPruId = 0;
-        return TEST_UTILS_ERR_INV_PRMS;
-    }
+    
+    return retVal;
 }

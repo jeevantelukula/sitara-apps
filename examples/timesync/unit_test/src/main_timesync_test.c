@@ -87,7 +87,7 @@
 /* Test ICSSG instance ID */
 #define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_TWO )
 /* Test PRU instance ID */
-#define TEST_PRU_INST_ID                ( PRUICCSS_PRU0 )
+#define TEST_PRU_INST_ID                ( PRUICCSS_RTU0 )
 
 /* Task priorities */
 #define TASK_SYSINIT_PRI                ( 3 )
@@ -156,7 +156,7 @@ int32_t initIcss(
 );
 
 /* Initialize PRU for TS */
-int32_t initPruTs(
+int32_t initPruTimesync(
     PRUICSS_Handle pruIcssHandle,
     PRUSS_PruCores pruInstId
 );
@@ -291,6 +291,8 @@ int32_t initPruTimesync(
     PRUSS_PruCores pruInstId
 )
 {
+    uint8_t slicePruInstId;
+    uint32_t pruDMem, pruIMem;
     int32_t size;
     const uint32_t *sourceMem;    /* Source memory[ Array of uint32_t ] */
     uint32_t offset;              /* Offset at which write will happen */
@@ -303,14 +305,37 @@ int32_t initPruTimesync(
         return TEST_TS_ERR_INIT_PRU;
     }
 
+    /* Determine PRU ID in slice */
+    slicePruInstId = pruInstId - (uint8_t)pruInstId/ICSSG_NUM_SLICE * ICSSG_NUM_SLICE;
+    /* Determine PRU DMEM address */
+    pruDMem = PRU_ICSS_DATARAM(slicePruInstId);
+    /* Determine PRU IMEM address */
+    switch (pruInstId)
+    {
+        case PRUICCSS_PRU0:
+        case PRUICCSS_PRU1:
+            pruIMem = PRU_ICSS_IRAM_PRU(slicePruInstId);
+            break;
+        case PRUICCSS_RTU0:
+        case PRUICCSS_RTU1:
+            pruIMem = PRU_ICSS_IRAM_RTU(slicePruInstId);
+            break;
+        case PRUICCSS_TPRU0:
+        case PRUICCSS_TPRU1:
+            pruIMem = PRU_ICSS_IRAM_TXPRU(slicePruInstId);
+            break;
+        default:
+            break;
+    }
+
     /* Initialize DMEM */
-    size = PRUICSS_pruInitMemory(pruIcssHandle, PRU_ICSS_DATARAM(pruInstId));
+    size = PRUICSS_pruInitMemory(pruIcssHandle, pruDMem);
     if (size == 0) {
         return TEST_TS_ERR_INIT_PRU;
     }
 
     /* Initialize IMEM */
-    size = PRUICSS_pruInitMemory(pruIcssHandle, PRU_ICSS_IRAM(pruInstId));
+    size = PRUICSS_pruInitMemory(pruIcssHandle, pruIMem);
     if (size == 0)
     {
         return TEST_TS_ERR_INIT_PRU;
@@ -320,7 +345,7 @@ int32_t initPruTimesync(
     offset = 0;
     sourceMem = (uint32_t *)pru_timesync_image_1;
     byteLen = sizeof(pru_timesync_image_1);
-    size = PRUICSS_pruWriteMemory(pruIcssHandle, PRU_ICSS_DATARAM(pruInstId), offset, sourceMem, byteLen);
+    size = PRUICSS_pruWriteMemory(pruIcssHandle, pruDMem, offset, sourceMem, byteLen);
     if (size == 0)
     {
         return TEST_TS_ERR_INIT_PRU;
@@ -330,7 +355,7 @@ int32_t initPruTimesync(
     offset = 0;
     sourceMem = pru_timesync_image_0;
     byteLen = sizeof(pru_timesync_image_0);
-    size = PRUICSS_pruWriteMemory(pruIcssHandle, PRU_ICSS_IRAM(pruInstId), offset, sourceMem, byteLen);
+    size = PRUICSS_pruWriteMemory(pruIcssHandle, pruIMem, offset, sourceMem, byteLen);
     if (size == 0)
     {
         return TEST_TS_ERR_INIT_PRU;

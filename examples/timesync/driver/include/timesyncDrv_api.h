@@ -43,11 +43,19 @@
 #define ICSSG_TS_DRV__ICSSG_ID_0       ( 0 )   /* ICSSG0 hardware module ID */
 #define ICSSG_TS_DRV__ICSSG_ID_1       ( 1 )   /* ICSSG1 hardware module ID */
 #define ICSSG_TS_DRV__ICSSG_ID_2       ( 2 )   /* ICSSG2 hardware module ID */
-#define ICSSG_TS_DRV__NUM_ICSSG        ( 3 )   /* AM654x number of ICSSG*/
+#define ICSSG_TS_DRV__NUM_ICSSG        ( 3 )   /* AM65xx number of ICSSG */
 
 #define ICSSG_TS_DRV__PRU_ID_0         ( 0 )   /* PRU0 hardware module ID */
 #define ICSSG_TS_DRV__PRU_ID_1         ( 1 )   /* PRU1 hardware module ID */
-#define ICSSG_TS_DRV__NUM_PRU          ( 2 )   /* ICSSG number of ICSSG PRUs */
+#define ICSSG_TS_DRV__RTU_ID_0         ( 2 )   /* RTU0 hardware module ID */
+#define ICSSG_TS_DRV__RTU_ID_1         ( 3 )   /* RTU1 hardware module ID */
+#define ICSSG_TS_DRV__TPRU_ID_0        ( 4 )   /* TPRU0 hardware module ID */
+#define ICSSG_TS_DRV__TPRU_ID_1        ( 5 )   /* TPRU1 hardware module ID */
+#define ICSSG_TS_DRV__NUM_PRU          ( 6 )   /* ICSSG number of ICSSG PRUs */
+
+#define ICSSG_TS_DRV__SLICE_PRU_ID_0   ( 0 )   /* Slice PRU0 ID */
+#define ICSSG_TS_DRV__SLICE_PRU_ID_1   ( 1 )   /* Slice PRU1 ID */
+#define ICSSG_NUM_SLICE                ( 2 )   /* ICSSG number of Slices */
 
 #define ICSSG_TS_DRV__IEP_ID_0         ( 0 )   /* IEP0 hardware module ID */
 #define ICSSG_TS_DRV__IEP_ID_1         ( 1 )   /* IEP1 hardware module ID */
