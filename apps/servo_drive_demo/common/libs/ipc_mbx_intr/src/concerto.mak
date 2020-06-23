@@ -4,7 +4,12 @@ include $(PRELUDE)
 
 TARGET      := app_servo_drive_common_ipc_mbx_intr
 TARGETTYPE  := library
-CSOURCES    := 
+CSOURCES    := $(SITARA_DEMO_SOC)/app_mailbox_ipc.c
+ifeq ($(TARGET_PLATFORM),AM65X)
+# MBX configuration in Apps only needed for AM65x MBX IPC
+# For AM64x - LLD driver does MBX configuration
+CSOURCES    += $(SITARA_DEMO_SOC)/mailbox_config.c
+endif
 
 # Define root directory
 LIBDIR := $(abspath $(SDIR)/..)
@@ -12,10 +17,7 @@ LIBDIR := $(abspath $(SDIR)/..)
 IDIRS+=$(LIBDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(LIBDIR)/include
 IDIRS+=$(LIBDIR)/../logs/include
-IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
-
-# This CSL based Mailbox + Interrupt IPC Validated only for AM65xx
-CSOURCES    += app_mailbox_ipc.c $(SITARA_DEMO_SOC)/app_mailbox_ipc_soc.c $(SITARA_DEMO_SOC)/mailbox_config.c
+IDIRS+=$(LIBDIR)/src/$(SITARA_DEMO_SOC)
 
 include $(FINALE)
 

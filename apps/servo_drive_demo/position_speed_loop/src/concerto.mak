@@ -11,8 +11,19 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
+# Define core ID as each core will host an application that provides a unique
+# role in the system demo. This is beyond the concerto concept of TARGET_CPU,
+# so define this here. The PDK libraries may also be unique for individual core
+# instances.
+ifeq ($(TARGET_PLATFORM),AM65X)
+PDK_CORE_ID = mcu1_1
+endif
+ifeq ($(TARGET_PLATFORM),AM64X)
+PDK_CORE_ID = mcu2_0
+endif
+
 # Define object name (TARGET) and type (TARGET_TYPE)
-TARGET      := app_no_os_mcu1_1_servo_drive_pscontrol
+TARGET      := app_no_os_$(PDK_CORE_ID)_servo_drive_pscontrol
 TARGETTYPE  := exe
 
 ifeq ($(TARGET_PLATFORM),AM64X)
@@ -48,12 +59,6 @@ IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 IDIRS+=$(APPDIR)/../ethercat_loop/beckhoff_ssc
 
-# Define core ID as each core will host an application that provides a unique
-# role in the system demo. This is beyond the concerto concept of TARGET_CPU,
-# so define this here. The PDK libraries may also be unique for individual core
-# instances.
-PDK_CORE_ID = mcu1_1
-
 # Append to STATIC_LIBS for common demo libraries
 # These must also be built using concerto, and concerto will handle the
 # dependencies
@@ -73,6 +78,9 @@ ifeq ($(TARGET_PLATFORM),AM65X)
 ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 endif
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
+ifeq ($(TARGET_PLATFORM),AM64X)
+ADDITIONAL_STATIC_LIBS += mailbox_baremetal.aer5f
+endif
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi

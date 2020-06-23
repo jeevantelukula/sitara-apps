@@ -44,12 +44,20 @@
 
 /* List of CPUs included in MBX IPC Unit Test */
 #define MBXIPC_TEST_CPU_1    (MAILBOX_IPC_CPUID_MCU1_0)
-#define MBXIPC_TEST_CPU_2    (MAILBOX_IPC_CPUID_MCU1_1)
+#define MBXIPC_TEST_CPU_2    (MAILBOX_IPC_CPUID_MCU2_0)
 
 /* Translate the ATCM local view addr to SoC view addr */
-#define CPU0_ATCM_SOCVIEW(x) (0x78000000+x)
-#define CPU1_ATCM_SOCVIEW(x) (0x78400000+x)
+#define CPU0_ATCM_SOCVIEW(x) (CSL_R5FSS0_CORE0_ATCM_BASE+(x))
+#define CPU1_ATCM_SOCVIEW(x) (CSL_R5FSS1_CORE0_ATCM_BASE+(x))
 
-#define MAX_ITERATION_COUNT  (20)
+/* Simulated ECAT timer */
+#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
+#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
+#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125*8 )       /* Timer period (usec.) */
+#define SIM_ECAT_TIMER_INTNUM       ( 154 )         /* Timer interrupt, R5F1_0 DMTIMER2 INT */
+
+#define MAX_ITERATION_COUNT  (50)
+
 
 #endif
+

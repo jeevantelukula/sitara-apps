@@ -43,15 +43,18 @@
  *
  * @{
  */
-
+ 
 /* ========================================================================== */
 /*                                 Macros                                     */
 /* ========================================================================== */
 /** \brief Core definitions */
-#define    MAILBOX_IPC_CPUID_MPU1_0     (0)    /**< ARM A53 - VM0 */
-#define    MAILBOX_IPC_CPUID_MCU1_0     (1)    /**< ARM MCU  R5F0 - core0 */
-#define    MAILBOX_IPC_CPUID_MCU1_1     (2)    /**< ARM MCU  R5F1 - core0 */
-#define    MAILBOX_IPC_MAX_PROCS        (3)    /**< Maximum Processors */
+#define MAILBOX_IPC_CPUID_MPU1_0     (0U)    /**< ARM A53 - VM0 */
+#define MAILBOX_IPC_CPUID_MCU1_0     (1U)    /**< ARM MAINSS1  R5F - core0 */
+#define MAILBOX_IPC_CPUID_MCU1_1     (2U)    /**< ARM MAINSS1  R5F - core1 */
+#define MAILBOX_IPC_CPUID_MCU2_0     (3U)    /**< ARM MAINSS2  R5F - core0 */
+#define MAILBOX_IPC_CPUID_MCU2_1     (4U)    /**< ARM MAINSS2  R5F - core1 */
+#define MAILBOX_IPC_CPUID_M4F_0      (5U)    /**< ARM MCUSS  M4F - core0 */
+#define MAILBOX_IPC_MAX_PROCS        (6U)    /**< Maximum Processors */
 
 /* @} */
 

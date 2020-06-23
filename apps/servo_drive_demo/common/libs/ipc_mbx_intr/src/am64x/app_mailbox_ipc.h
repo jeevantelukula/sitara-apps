@@ -30,55 +30,43 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
+
+#ifndef APP_MAILBOX_IPC_H_
+#define APP_MAILBOX_IPC_H_
+
+
 /* ========================================================================== */
 /*                             Include Files                                  */
 /* ========================================================================== */
+#include <stdint.h>
+#include <ti/csl/soc.h>
+#include <ti/csl/cslr_gtc.h>
+#include <ti/drv/mailbox/mailbox.h>
+#include <app_mbx_ipc.h>
 
-#include "mailbox_config.h"
 
 /* ========================================================================== */
 /*                                 Macros                                     */
 /* ========================================================================== */
+/** \brief Invalid CPU ID */
+#define APP_IPC_CPU_INVALID            (0xFFu)
 
+#define LOCAL_DELAY_COUNT              (0x10)
+#define MAILBOX_APP_SYNC_MESSAGE       (0xBABEFACE)
+#define MAILBOX_APP_ACK_MESSAGE        (0xC00DC00D)
+
+#define IS_CPU_ENABLED(x) (appMbxIpcIsCpuEnabled(x) && (appMbxIpcGetSelfCpuId()==x))
 
 /* ========================================================================== */
 /*                                 Structures                                 */
 /* ========================================================================== */
-const mailboxIpc_MailboxInfo gMailboxIpc_MailboxInfo[MAILBOX_IPC_MAX_PROCS][MAILBOX_IPC_MAX_PROCS] =
-{
-    /* Host Processor - A53-vm0	*/
-    {
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }},  /* Self - A53-vm0 */
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }},  /* mcu-r5f1_0 */
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }},  /* mcu-r5f2_0 */
-    },
-    /* Host Processor - mcu1_0 */
-    {
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }},  /* A53-vm0 */
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }},  /* Self - mcu-r5f1_0 */
-        { {    0U,    0U,  0U }},                                  /* mcu-r5f2_0 */
-    },
-    /* Host Processor - mcu2_0 */
-    {
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }}, /* A53-vm0 */
-        { {    0U,    2U,  2U }},                                 /* mcu-mcu-r5f1_0 */
-        { { MAILBOX_CLUSTER_INVALID, MAILBOX_USER_INVALID, 0U }}, /* Self - mcu-r5f2_0 */
-    }
-};
+/* IPC global data object */
+typedef struct {
+    app_mbxipc_init_prm_t prm;
+    app_mbxipc_notify_handler_f mbxipc_notify_handler;
+    Mbox_Handle handle[MAILBOX_IPC_MAX_PROCS];
+} app_mbxipc_obj_t;
 
-const uint32_t gMailboxIpc_MailboxBaseAddressArray[MAILBOX_MAX_CLUSTER_CNT] =
-{
-    CSL_MAILBOX0_REGS0_BASE,
-    CSL_MAILBOX0_REGS1_BASE,
-    CSL_MAILBOX0_REGS2_BASE,
-    CSL_MAILBOX0_REGS3_BASE,
-    CSL_MAILBOX0_REGS4_BASE,
-    CSL_MAILBOX0_REGS5_BASE,
-    CSL_MAILBOX0_REGS6_BASE,
-    CSL_MAILBOX0_REGS7_BASE,
-};
 
-/* This is dynamically allocated through sciclient */
-uint32_t gMailboxIpc_MailboxInterruptInfo[MAILBOX_IPC_MAX_PROCS];
-
+#endif /* APP_MAILBOX_IPC_H_ */
 

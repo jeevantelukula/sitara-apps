@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include <app_mbx_ipc.h>
+#include <app_mbx_ipc_test_soc.h>
 
 
 /* ========================================================================== */

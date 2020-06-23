@@ -45,6 +45,9 @@
 #include <app_mbx_ipc.h>
 #include <ti/csl/cslr_gtc.h>
 
+/** \brief Invalid CPU ID */
+#define APP_IPC_CPU_INVALID        (0xFFu)
+
 /* In general , Get this from CSL, not available for AM65XX */
 #define MAILBOX_MAX_CLUSTER_CNT    (12U)
 

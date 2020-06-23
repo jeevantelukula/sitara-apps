@@ -38,6 +38,16 @@
 #include <app_mbx_ipc_soc.h>
 
 /**
+ * \defgroup group_apps_utils_ipc Inter-processor communication (IPC) APIs
+ *
+ * \brief This section contains APIs for Inter-processor communication (IPC)
+ *
+ * \ingroup group_apps_utils
+ *
+ * @{
+ */
+
+/**
  * \brief Callback that is invoke when current CPU receives a IPC notify
  *
  * \param remoteId [in] source CPU which generated this callback, see APP_IPC_CPU_*
@@ -59,15 +69,6 @@ typedef struct {
     /**< List of CPU IDs enabled for IPC */
     uint32_t enabled_cpu_id_list[MAILBOX_IPC_MAX_PROCS];
 } app_mbxipc_init_prm_t;
-
-/**
- * /brief IPC data object
- */
-typedef struct {
-
-    app_mbxipc_init_prm_t prm;
-    app_mbxipc_notify_handler_f mbxipc_notify_handler;
-} app_mbxipc_obj_t;
 
 /**
  * \brief Set IPC init parameters to default state

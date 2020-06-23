@@ -69,6 +69,9 @@ ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 #ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
+ifeq ($(TARGET_PLATFORM),AM64X)
+ADDITIONAL_STATIC_LIBS += mailbox.aer5f
+endif
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi

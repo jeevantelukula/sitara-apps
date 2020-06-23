@@ -30,7 +30,6 @@ IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test
-IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -59,6 +58,9 @@ ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
+ifeq ($(TARGET_PLATFORM),AM64X)
+ADDITIONAL_STATIC_LIBS += mailbox.aer5f
+endif
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi

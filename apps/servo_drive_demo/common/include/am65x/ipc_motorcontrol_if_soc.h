@@ -29,18 +29,19 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
-
+ 
 #ifndef _IPC_MOTORCONTROL_IF_SOC_H_
 #define _IPC_MOTORCONTROL_IF_SOC_H_
 
 #include <ti/csl/soc.h>
+#include <app_mbx_ipc.h>
+
+/* Set IPC CPU IDs for EtherCAT and Position-Speed loop Apps */
+#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
+#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
 
 /* Translate the ATCM local view addr to SoC view addr */
 #define CPU0_ATCM_SOCVIEW(x)   (CSL_MCU_ARMSS0_CORE0_ATCM_BASE+(x))
 #define CPU1_ATCM_SOCVIEW(x)   (CSL_MCU_ARMSS0_CORE1_ATCM_BASE+(x))
 
-/* IPC CPU ID should match with PSL MC CPU configuration */
-#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
-#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
-
-#endif /* _IPC_MOTORCONTROL_IF_H_ */
+#endif /* _IPC_MOTORCONTROL_IF_SOC_H_ */

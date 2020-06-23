@@ -55,9 +55,8 @@
 #include <app_log.h>
 #include <app_mbx_ipc.h>
 #include <app_sciclient.h>
-#include <app_mbx_ipc_test_soc.h>
 #include <app_mbx_ipc_test.h>
-#include <ipc_test_main_soc.h>
+
 
 /* Timer -- simulate ECAT interrupt */
 void timerTickFxn(void *arg);   /* Timer tick function */

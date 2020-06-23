@@ -47,7 +47,6 @@
 #include <app_log.h>
 #include <app_mbx_ipc.h>
 #include <app_sciclient.h>
-#include <app_mbx_ipc_test_soc.h>
 #include <app_mbx_ipc_test.h>
 
 

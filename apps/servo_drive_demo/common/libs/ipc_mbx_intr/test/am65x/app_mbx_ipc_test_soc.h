@@ -47,9 +47,17 @@
 #define MBXIPC_TEST_CPU_2    (MAILBOX_IPC_CPUID_MCU1_1)
 
 /* Translate the ATCM local view addr to SoC view addr */
-#define CPU0_ATCM_SOCVIEW(x) (0x41000000+x)
-#define CPU1_ATCM_SOCVIEW(x) (0x41400000+x)
+#define CPU0_ATCM_SOCVIEW(x) (CSL_MCU_ARMSS0_CORE0_ATCM_BASE+(x))
+#define CPU1_ATCM_SOCVIEW(x) (CSL_MCU_ARMSS0_CORE1_ATCM_BASE+(x))
+
+/* Simulated ECAT timer */
+#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
+#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
+#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125*8 )       /* Timer period (usec.) */
+#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, R5F0 MCU_TIMER_0_INT */
 
 #define MAX_ITERATION_COUNT  (10000)
 
+
 #endif
+
