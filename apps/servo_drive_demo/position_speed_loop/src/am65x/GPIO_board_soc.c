@@ -58,6 +58,7 @@ GPIO_PinConfig gpioPinConfigs[] =
 /* GPIO Driver call back functions */
 GPIO_CallbackFxn gpioCallbackFunctions[] =
 {
+    NULL,
     NULL
 };
 
