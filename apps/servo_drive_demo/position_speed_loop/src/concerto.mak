@@ -11,13 +11,13 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
-ifeq ($(TARGET_PLATFORM),AM64X)
-SKIPBUILD=1
-endif
-
 # Define object name (TARGET) and type (TARGET_TYPE)
 TARGET      := app_no_os_mcu1_1_servo_drive_pscontrol
 TARGETTYPE  := exe
+
+ifeq ($(TARGET_PLATFORM),AM64X)
+CFLAGS +=-D=FSI_LOOPBACK
+endif
 
 # common "config" dependencies
 COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
@@ -26,7 +26,10 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 COMMON_LIB = $(abspath $(APPDIR)/../common/libs)
 
 # Provide list of C files by using built-in macro
-CSOURCES    := app_init.c app_psl_mbxipc.c cfg_icss.c cfg_mcu_intr.c GPIO_board.c main.c multi_axis_master_comms.c multi_axis_master_ctrl.c multi_axis_master_ctrl_user.c position_speed_loop.c $(SITARA_DEMO_SOC)/app_cfg_soc.c
+CSOURCES    := app_init.c app_psl_mbxipc.c $(SITARA_DEMO_SOC)/cfg_mcu_intr_soc.c $(SITARA_DEMO_SOC)/GPIO_board_soc.c main.c multi_axis_master_comms.c multi_axis_master_ctrl.c multi_axis_master_ctrl_user.c $(SITARA_DEMO_SOC)/position_speed_loop_soc.c $(SITARA_DEMO_SOC)/app_cfg_soc.c
+ifeq ($(TARGET_PLATFORM),AM65X)
+CSOURCES    += $(SITARA_DEMO_SOC)/cfg_icss.c
+endif
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
@@ -66,7 +69,9 @@ ADDITIONAL_STATIC_LIBS += ti.osal.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
+ifeq ($(TARGET_PLATFORM),AM65X)
 ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+endif
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 
 # Add run-time libraries from toolchain

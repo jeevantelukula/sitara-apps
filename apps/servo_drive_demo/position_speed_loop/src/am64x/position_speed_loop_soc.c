@@ -35,25 +35,15 @@
 #include <ti/csl/soc.h>
 #include <ti/csl/csl_fsi_tx.h>
 #include <ti/csl/csl_fsi_rx.h>
-#include <ti/csl/cslr_icss.h>
 #include <ti/osal/osal.h>
-#include <ti/drv/pruss/pruicss.h>
-#include <ti/drv/pruss/soc/pruicss_v1.h>
 #include <logs/include/app_log.h>
 #include "motor_ctrl_settings.h"
 #include "multi_axis_master_lead.h"
 #include "multi_axis_master_ctrl.h"
 #include "multi_axis_fsi_shared.h"
-#include "cfg_icss.h"
-#include "cfg_mcu_intr.h"
-#include "PRU_FSI_Transmit.h"		/* FSI Transmit image data */
-#include "PRU_FSI_Receive.h"		/* FSI Receive image data */
+#include "cfg_mcu_intr_soc.h"
 #include "app_psl_mbxipc.h"
 #include "position_speed_loop_if.h"
-
-// debug
-#include <ti/drv/gpio/GPIO.h>
-#include "GPIO_board.h"
 
 /* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
 //#define _CTRL_SYN_ENABLE
@@ -65,37 +55,24 @@ uint32_t gTimerIsrCnt=0;
 /* 
  * PRU IRQ handlers
  */
-__attribute__((interrupt("IRQ")))   void fsiRxInt1PruIrqHandler(void);
-__attribute__((interrupt("IRQ")))   void fsiRxInt2PruIrqHandler(void);
-__attribute__((interrupt("IRQ")))   void fsiTxInt1PruIrqHandler(void);
-__attribute__((interrupt("IRQ")))   void fsiTxInt2PruIrqHandler(void);
-
-/* PRU IRQ handler, FSI RX INT1 */
-void fsiRxInt1PruIrqHandler(void);
-/* PRU IRQ handler, FSI RX INT2 */
-void fsiRxInt2PruIrqHandler(void);
-/* PRU IRQ handler, FSI TX INT1 */
-void fsiTxInt1PruIrqHandler(void);
-/* PRU IRQ handler, FSI TX INT2 */
-void fsiTxInt2PruIrqHandler(void);
+__attribute__((interrupt("IRQ")))   void fsiRxInt1IrqHandler(void);
+__attribute__((interrupt("IRQ")))   void fsiRxInt2IrqHandler(void);
+__attribute__((interrupt("IRQ")))   void fsiTxInt1IrqHandler(void);
+__attribute__((interrupt("IRQ")))   void fsiTxInt2IrqHandler(void);
 
 // debug
-uint32_t gFsiRxInt1PruIsrCnt=0;
-uint32_t gFsiRxInt2PruIsrCnt=0;
-uint32_t gFsiTxInt1PruIsrCnt=0;
-uint32_t gFsiTxInt2PruIsrCnt=0;
-
-
+uint32_t gFsiRxInt1IsrCnt=0;
+uint32_t gFsiRxInt2IsrCnt=0;
+uint32_t gFsiTxInt1IsrCnt=0;
+uint32_t gFsiTxInt2IsrCnt=0;
 
 /* ------------------------------------------------------------------------- *
  *                                Globals                                    *
  * ------------------------------------------------------------------------- */
 
-/* ICSSG handle */
-PRUICSS_Handle gPruIcssHandle;
-/* Simulated FSI base pointer */
-uint32_t gFsiTxBase = CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE;
-uint32_t gFsiRxBase = CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE;
+/* FSI base pointer */
+uint32_t gFsiTxBase = CSL_FSITX0_CFG_BASE;
+uint32_t gFsiRxBase = CSL_FSIRX0_CFG_BASE;
 /* Global ping frame counter for handshake */
 volatile uint8_t numPingFrames = 0;
 volatile uint32_t numDataFrames = 0;
@@ -107,7 +84,6 @@ TimerP_Handle gTimerHandle;
 int32_t appPositionSpeedLoopInit(void)
 {
     McuIntrRegPrms mcuIntrRegPrms;
-    McuIntrRtrPrms mcuIntrRtrPrms;
     TimerP_Params timerParams;
     int32_t status;
 
@@ -141,14 +117,8 @@ int32_t appPositionSpeedLoopInit(void)
     FSI_initParams();
 #endif
 
-    /* Initialize ICSSG */
-    status = initIcss(FSI_ICSS_INST_ID, &gPruIcssHandle);
-    if (status != CFG_ICSS_SOK) {
-        return POSITION_SPEED_LOOP_SERR_INIT;
-    }
-
     /*
-        Register ICSSG Host interrupts
+        Register FSI interrupts
     */
 
     /* Initialize MCU INTC */
@@ -156,16 +126,14 @@ int32_t appPositionSpeedLoopInit(void)
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }
-    
+
     /* Configure MCU interrupt for FSI RX INT1 */
     mcuIntrRegPrms.intrNum = FSI_RX_INT1_INT_NUM;
     mcuIntrRegPrms.intrType = FSI_RX_INT1_INT_TYPE;
     mcuIntrRegPrms.intrMap = FSI_RX_INT1_INT_MAP;
     mcuIntrRegPrms.intrPri = FSI_RX_INT1_INT_PRI;
-    mcuIntrRegPrms.isrRoutine = &fsiRxInt1PruIrqHandler;
-    mcuIntrRtrPrms.tisciSrcId = FSI_RX_INT1_INTR_RTR_DEV_SRC_ID;
-    mcuIntrRtrPrms.tisciSrcIndex = FSI_RX_INT1_INTR_RTR_DEV_SRC_IRQ_IDX;
-    status = McuIntc_cfgIntr(&mcuIntrRegPrms, &mcuIntrRtrPrms, MCU_INTR_IDX(0));
+    mcuIntrRegPrms.isrRoutine = &fsiRxInt1IrqHandler;
+    status = McuIntc_cfgIntr(&mcuIntrRegPrms, MCU_INTR_IDX(0));
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }
@@ -175,10 +143,8 @@ int32_t appPositionSpeedLoopInit(void)
     mcuIntrRegPrms.intrType = FSI_RX_INT2_INT_TYPE;
     mcuIntrRegPrms.intrMap = FSI_RX_INT2_INT_MAP;
     mcuIntrRegPrms.intrPri = FSI_RX_INT2_INT_PRI;
-    mcuIntrRegPrms.isrRoutine = &fsiRxInt2PruIrqHandler;
-    mcuIntrRtrPrms.tisciSrcId = FSI_RX_INT2_INTR_RTR_DEV_SRC_ID;
-    mcuIntrRtrPrms.tisciSrcIndex = FSI_RX_INT2_INTR_RTR_DEV_SRC_IRQ_IDX;
-    status = McuIntc_cfgIntr(&mcuIntrRegPrms, &mcuIntrRtrPrms, MCU_INTR_IDX(1));
+    mcuIntrRegPrms.isrRoutine = &fsiRxInt2IrqHandler;
+    status = McuIntc_cfgIntr(&mcuIntrRegPrms, MCU_INTR_IDX(1));
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }
@@ -188,43 +154,23 @@ int32_t appPositionSpeedLoopInit(void)
     mcuIntrRegPrms.intrType = FSI_TX_INT1_INT_TYPE;
     mcuIntrRegPrms.intrMap = FSI_TX_INT1_INT_MAP;
     mcuIntrRegPrms.intrPri = FSI_TX_INT1_INT_PRI;
-    mcuIntrRegPrms.isrRoutine = &fsiTxInt1PruIrqHandler;
-    mcuIntrRtrPrms.tisciSrcId = FSI_TX_INT1_INTR_RTR_DEV_SRC_ID;
-    mcuIntrRtrPrms.tisciSrcIndex = FSI_TX_INT1_INTR_RTR_DEV_SRC_IRQ_IDX;
-    status = McuIntc_cfgIntr(&mcuIntrRegPrms, &mcuIntrRtrPrms, MCU_INTR_IDX(2));
+    mcuIntrRegPrms.isrRoutine = &fsiTxInt1IrqHandler;
+    status = McuIntc_cfgIntr(&mcuIntrRegPrms, MCU_INTR_IDX(2));
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }
-    
+
     /* Configure MCU interrupt for FSI TX INT2 */
     mcuIntrRegPrms.intrNum = FSI_TX_INT2_INT_NUM;
     mcuIntrRegPrms.intrType = FSI_TX_INT2_INT_TYPE;
     mcuIntrRegPrms.intrMap = FSI_TX_INT2_INT_MAP;
     mcuIntrRegPrms.intrPri = FSI_TX_INT2_INT_PRI;
-    mcuIntrRegPrms.isrRoutine = &fsiTxInt2PruIrqHandler;
-    mcuIntrRtrPrms.tisciSrcId = FSI_TX_INT2_INTR_RTR_DEV_SRC_ID;
-    mcuIntrRtrPrms.tisciSrcIndex = FSI_TX_INT2_INTR_RTR_DEV_SRC_IRQ_IDX;
-    status = McuIntc_cfgIntr(&mcuIntrRegPrms, &mcuIntrRtrPrms, MCU_INTR_IDX(3));
+    mcuIntrRegPrms.isrRoutine = &fsiTxInt2IrqHandler;
+    status = McuIntc_cfgIntr(&mcuIntrRegPrms, MCU_INTR_IDX(3));
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
-    }
-       
-    /* Initialize PRU0 for FSI TX */
-    status = initPruFsi(gPruIcssHandle, FSI_TX_PRU_INST_ID, 
-        (uint32_t *)PRU_FSI_Transmit_image_1, sizeof(PRU_FSI_Transmit_image_1), 
-        (uint32_t *)PRU_FSI_Transmit_image_0, sizeof(PRU_FSI_Transmit_image_0));
-    if (status != CFG_ICSS_SOK) {
-        return POSITION_SPEED_LOOP_SERR_INIT;
-    }
-
-    /* Initialize PRU1 for FSI RX */
-    status = initPruFsi(gPruIcssHandle, FSI_RX_PRU_INST_ID, 
-        (uint32_t *)PRU_FSI_Receive_image_1, sizeof(PRU_FSI_Receive_image_1), 
-        (uint32_t *)PRU_FSI_Receive_image_0, sizeof(PRU_FSI_Receive_image_0));
-    if (status != CFG_ICSS_SOK) {
-        return POSITION_SPEED_LOOP_SERR_INIT;
-    }    
-           
+    } 
+      
     /* Enable Host interrupts for events from PRU */
     McuIntc_enableIntr(MCU_INTR_IDX(0), true);
     McuIntc_enableIntr(MCU_INTR_IDX(1), true);
@@ -254,14 +200,6 @@ int32_t appPositionSpeedLoopInit(void)
     {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }
-    
-    // debug
-    GPIO_init();
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH);
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW);
-
-    GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH);
-    GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW);
 
     return POSITION_SPEED_LOOP_SOK;
 }
@@ -308,7 +246,6 @@ void timerTickFxn(void *arg)
 {
     // debug
     gTimerIsrCnt++;
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW);
 
     buildLevel7_9();
     FSI_updateTransmissionData();
@@ -317,9 +254,8 @@ void timerTickFxn(void *arg)
     FSI_setTxFrameType(gFsiTxBase, 0x3);
     FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
 
-    fsiTxUserDataTag = FSI_USERTAG_CHK - FSI_FRAME_TAG_NODE1;
     /* Application level function used to avoid RMW for Frame Tag and User Data update */
-    FSI_writeTxTagUserData(gFsiTxBase, (fsiTxUserDataTag << 8) | FSI_FRAME_TAG_NODE1);
+    FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
 
     FSI_startTxTransmit(gFsiTxBase);
     
@@ -327,33 +263,22 @@ void timerTickFxn(void *arg)
     gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
     gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
     gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
-
-    // debug
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH);
 }
 
-/* PRU IRQ handler, FSI RX INT1 */
-void fsiRxInt1PruIrqHandler(void)
+/* IRQ handler, FSI RX INT1 */
+void fsiRxInt1IrqHandler(void)
 {
     volatile uint32_t intNum;
     uint16_t fsiRxStatus = 0;
     int32_t status;
 
     // debug
-    gFsiRxInt1PruIsrCnt++;
-    GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW);
+    gFsiRxInt1IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if (status == CSL_PASS)
     {
-        
-        /* Clear interrupt at source */
-        /* Write 18 to ICSSG_STATUS_CLR_INDEX_REG
-            18 = 16+2, 2 is Host Interrupt Number. See AM654x TRM, Table 6-391.
-        */
-        PRUICSS_pruClearEvent(gPruIcssHandle, 16+2);
-
         FSI_getRxEventStatus(gFsiRxBase, &fsiRxStatus);
 
         if (fsiRxStatus & FSI_RX_EVT_DATA_FRAME)
@@ -377,28 +302,27 @@ void fsiRxInt1PruIrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT1_INT_MAP );
-
     }
-
-    // debug
-    GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH);
 }
 
-/* PRU IRQ handler, FSI RX INT2 */
-void fsiRxInt2PruIrqHandler(void)
+/* IRQ handler, FSI RX INT2 */
+void fsiRxInt2IrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t fsiRxStatus = 0;
     int32_t status;
 
     // debug
-    gFsiRxInt2PruIsrCnt++;
+    gFsiRxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if (status == CSL_PASS)
     {
-        /* Clear interrupt at source */
-        PRUICSS_pruClearEvent(gPruIcssHandle, 16+3);
+        FSI_getRxEventStatus(gFsiRxBase, &fsiRxStatus);
+
+        /* Clear the interrupt flag and issue ACK */
+        FSI_clearRxEvents(gFsiRxBase, fsiRxStatus);
 
         /* Clear level-type interrupt after executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
@@ -408,21 +332,24 @@ void fsiRxInt2PruIrqHandler(void)
     }
 }
 
-/* PRU IRQ handler, FSI TX INT1 */
-void fsiTxInt1PruIrqHandler(void)
+/* IRQ handler, FSI TX INT1 */
+void fsiTxInt1IrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t fsiTxStatus = 0;
     int32_t status;
 
     // debug
-    gFsiTxInt1PruIsrCnt++;
+    gFsiTxInt1IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if (status == CSL_PASS)
     {
-        /* Clear interrupt at source */
-        PRUICSS_pruClearEvent(gPruIcssHandle, 16+4);
+        FSI_getTxEventStatus(gFsiTxBase, &fsiTxStatus);
+
+        /* Clear the interrupt flag and issue ACK */
+        FSI_clearTxEvents(gFsiTxBase, fsiTxStatus);
 
         /* Clear level-type interrupt after executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
@@ -432,21 +359,24 @@ void fsiTxInt1PruIrqHandler(void)
     }
 }
 
-/* PRU IRQ handler, FSI TX INT2 */
-void fsiTxInt2PruIrqHandler(void)
+/* IRQ handler, FSI TX INT2 */
+void fsiTxInt2IrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t fsiTxStatus = 0;
     int32_t status;
 
     // debug
-    gFsiTxInt2PruIsrCnt++;
+    gFsiTxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if (status == CSL_PASS)
     {
-        /* Clear interrupt at source */
-        PRUICSS_pruClearEvent(gPruIcssHandle, 16+5);
+        FSI_getTxEventStatus(gFsiTxBase, &fsiTxStatus);
+
+        /* Clear the interrupt flag and issue ACK */
+        FSI_clearTxEvents(gFsiTxBase, fsiTxStatus);
 
         /* Clear level-type interrupt after executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );

@@ -36,63 +36,13 @@
 
 /* Include files */
 #include <ti/csl/tistdtypes.h>
-#include <ti/drv/pruss/pruicss.h>
 #include <ti/drv/sciclient/sciclient.h>
-//#include "cfg_mcu_intr.h"
+#include <position_speed_loop_if_soc.h>
 
 /* Return status codes */
 #define POSITION_SPEED_LOOP_SOK        (  0 )       /* OK */
 #define POSITION_SPEED_LOOP_SERR_INIT  ( -1 )       /* initialization error */
 #define POSITION_SPEED_LOOP_SERR_START ( -2 )       /* start error */
-
-/* ICSS instance for FSI PRU FW */
-#define FSI_ICSS_INST_ID            ( PRUICCSS_INSTANCE_THREE )
-/* PRU instance IDs for FSI PRU FWs */
-#define FSI_TX_PRU_INST_ID          ( PRUICCSS_PRU0 )
-#define FSI_RX_PRU_INST_ID          ( PRUICCSS_PRU1 )
-
-/* 
- * Definitions for FSI interrupts 
- */
-/* FSI Rx Int1 */
-#define FSI_RX_INT1_INT_NUM         ( 192 ) 
-#define FSI_RX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
-#define FSI_RX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_RX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
-#define FSI_RX_INT1_INTR_RTR_DEV_SRC_ID    \
-    (  TISCI_DEV_PRU_ICSSG2 )
-#define FSI_RX_INT1_INTR_RTR_DEV_SRC_IRQ_IDX   \
-    (  294 )
-
-/* FSI Rx Int2 */
-#define FSI_RX_INT2_INT_NUM         ( 193 )
-#define FSI_RX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
-#define FSI_RX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_RX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
-#define FSI_RX_INT2_INTR_RTR_DEV_SRC_ID    \
-    (  TISCI_DEV_PRU_ICSSG2 )
-#define FSI_RX_INT2_INTR_RTR_DEV_SRC_IRQ_IDX   \
-    (  295 )
-    
-/* FSI Tx Int1 */
-#define FSI_TX_INT1_INT_NUM         ( 194 )
-#define FSI_TX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
-#define FSI_TX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_TX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
-#define FSI_TX_INT1_INTR_RTR_DEV_SRC_ID    \
-    (  TISCI_DEV_PRU_ICSSG2 )
-#define FSI_TX_INT1_INTR_RTR_DEV_SRC_IRQ_IDX   \
-    (  296 )
-
-/* FSI Tx Int2 */
-#define FSI_TX_INT2_INT_NUM         ( 195 )
-#define FSI_TX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
-#define FSI_TX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_TX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
-#define FSI_TX_INT2_INTR_RTR_DEV_SRC_ID    \
-    (  TISCI_DEV_PRU_ICSSG2 )
-#define FSI_TX_INT2_INTR_RTR_DEV_SRC_IRQ_IDX   \
-    (  297 )
 
 /* Initialization function */
 int32_t appPositionSpeedLoopInit(void);
@@ -100,8 +50,5 @@ int32_t appPositionSpeedLoopInit(void);
 int32_t appPositionSpeedLoopStart(void);
 /* Deinitialization function */
 int32_t appPositionSpeedLoopDeinit(void);
-
-/* ICSSG handle */
-extern PRUICSS_Handle gPruIcssHandle;
 
 #endif /* _POSITION_SPEED_LOOP_IF_H_ */

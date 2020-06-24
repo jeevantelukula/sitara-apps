@@ -36,8 +36,8 @@
 #include "hw_types.h"
 #include "fcl_enum.h"
 #include "cia402appl.h"
-#include "cfg_mcu_intr.h"
-#include "app_cfg.h"
+#include "cfg_mcu_intr_soc.h"
+#include "app_cfg_soc.h"
 #include "app_psl_mbxipc.h"
 
 /* Translate Rx MC parameters, write to control variables for node */

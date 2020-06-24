@@ -39,4 +39,8 @@
 #define CPU0_ATCM_SOCVIEW(x)   (CSL_R5FSS0_CORE0_ATCM_BASE+(x))
 #define CPU1_ATCM_SOCVIEW(x)   (CSL_R5FSS1_CORE0_ATCM_BASE+(x))
 
+/* IPC CPU ID should match with PSL MC CPU configuration */
+#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
+#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
+
 #endif /* _IPC_MOTORCONTROL_IF_H_ */

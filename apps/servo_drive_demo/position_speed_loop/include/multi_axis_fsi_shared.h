@@ -63,7 +63,7 @@
 #define FSI_PRESCALE_10MHZ          10U
 #define FSI_PRESCALE_5MHZ           20U
 
-#define PRESCALER_VAL   	FSI_PRESCALE_12_5MHZ
+#define PRESCALER_VAL   	FSI_PRESCALE_50MHZ
 
 #define FSI_TX_WORDS        5
 #define FSI_RX_WORDS        5

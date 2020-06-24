@@ -161,7 +161,11 @@ void FSI_initParams(void)
     fsiRxUserDataTag = fsiRxUserData[fsiSlaveNodeActive] +
                        fsiFrameTag[fsiSlaveNodeActive];
 
-    //TODO: HAL_setupFSI (disableRxInternalLoopback, setup FSI pinmux, FSI_performRxInitialization, FSI_performTxInitialization)
+#if FSI_LOOPBACK
+    FSI_enableRxInternalLoopback(gFsiRxBase);
+#endif
+    FSI_performTxInitialization(gFsiTxBase, PRESCALER_VAL);
+    FSI_performRxInitialization(gFsiRxBase);
 
     fsiTxDataBufAddr = (uint16_t *)(&fsiTxDataBuf[0][0]);
     fsiRxDataBufAddr = (uint16_t *)(&fsiRxDataBuf[0][0]);
@@ -372,7 +376,7 @@ void FSI_updateTransmissionData(void)
     uint16_t ni;
     uint16_t dataType;
 
-    fsiNode = fsiSlaveNodeNext;
+    fsiNode = fsiSlaveNodeActive;
     ctrlNode = fsiNode + 1;
 
     dataType = FSI_UDATA_IS_REF;
@@ -385,10 +389,18 @@ void FSI_updateTransmissionData(void)
             frameDataTX[0] += ctrlVars[ctrlNode].ctrlStateCom & 0x00FF;
 
             tempData = FSI_floatToPU(ctrlVars[ctrlNode].IqRef);
+#if FSI_LOOPBACK
+            /* if LOOPBACK just send the target speed reference to get looped back as actual */
+            tempData = FSI_floatToPU(ctrlVars[ctrlNode].speedSet);
+#endif
             frameDataTX[1] = (uint16_t)((tempData>>16) & 0x0000FFFF);
             frameDataTX[2] = (uint16_t)(tempData & 0x0000FFFF);
 
             tempData = FSI_floatToPU(ctrlVars[ctrlNode].IdRef);
+#if FSI_LOOPBACK
+            /* if LOOPBACK just send the target position reference to get looped back as actual */
+            tempData = FSI_floatToPU(ctrlVars[ctrlNode].positionSet);
+#endif
             frameDataTX[3] = (uint16_t)((tempData>>16) & 0x0000FFFF);
             frameDataTX[4] = (uint16_t)(tempData & 0x0000FFFF);
             break;
@@ -425,6 +437,8 @@ void FSI_updateTransmissionData(void)
 
     //DINT;          // Disable Global interrupt INTM
     fsiTxUserData[fsiNode] = dataCrcTX;
+
+    fsiTxUserDataTag = (dataCrcTX << 8) | fsiFrameTag[fsiNode];
 
     for(ni = 0; ni< FSI_TX_WORDS; ni++)
     {

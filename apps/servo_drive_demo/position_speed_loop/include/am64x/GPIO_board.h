@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2019-2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_CFG_SOC_H_
-#define APP_CFG_SOC_H_
+#ifndef _GPIO_BOARD_H
+#define _GPIO_BOARD_H
 
+/* Example/Board Header files */
 #include <ti/board/board.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
+#include <ti/csl/csl_intr_router.h>
+#include <ti/csl/csl_fss.h>
+#include <ti/csl/csl_rat.h>
+#include <ti/csl/soc/am64x/src/cslr_soc_baseaddress.h>
+#include <ti/csl/soc/am64x/src/cslr_mcu_ctrl_mmr.h>
+#include <ti/csl/soc/am64x/src/cslr_mcu_pll_mmr.h>
 
-//#define ENABLE_BOARD
 
-extern pinmuxPerCfg_t gFsiPinCfg[];
+/**********************************************************************
+ ************************** Macros ************************************
+ **********************************************************************/
 
-/* Simulated ECAT timer */
-#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
-#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125 )         /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, MCU_TIMER_2_INT */
-
-#endif /* APP_CFG_SOC_H_ */
+#endif /* _GPIO_BOARD_H */

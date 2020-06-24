@@ -31,8 +31,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _CFG_MCU_INTR_H_
-#define _CFG_MCU_INTR_H_
+#ifndef _CFG_MCU_INTR_SOC_H_
+#define _CFG_MCU_INTR_SOC_H_
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/arch/csl_arch.h>
@@ -65,16 +65,9 @@ typedef struct McuIntrRtrPrms_s {
 /* Initialize MCU INTC */
 int32_t McuIntc_Init(void);
 
-/* Register MCU interrupt */
-int32_t McuIntc_registerIntr(
-    McuIntrRegPrms *pMcuIntrRegPrms,    /* MCU interrupt registration parameters */
-    uint8_t mcuIntrIdx                  /* MCU interrupt index */
-);
-
 /* Configure MCU interrupt */
 int32_t McuIntc_cfgIntr(
     McuIntrRegPrms *pMcuIntrRegPrms,    /* MCU interrupt registration parameters */
-    McuIntrRtrPrms *pMcuIntrRtrPrms,    /* MCU interrupt MAIN2MCU interrupt router parameters */
     uint8_t mcuIntrIdx                  /* MCU interrupt index */
 );
 
@@ -87,4 +80,4 @@ int32_t McuIntc_enableIntr(
 /* VIM registers base address */
 extern uint32_t gVimRegsBaseAddr;
 
-#endif /* _CFG_MCU_INTR_H_ */
+#endif /* _CFG_MCU_INTR_SOC_H_ */

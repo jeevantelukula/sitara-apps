@@ -43,7 +43,6 @@
 #include <logs/include/app_log.h>
 
 #include "app_psl_mbxipc.h"
-#include "app_cfg.h"
 #include "app_cfg_soc.h"
 #include "app_init.h"
 

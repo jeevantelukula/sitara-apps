@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,43 +31,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GPIO_BOARD_H
-#define _GPIO_BOARD_H
+#ifndef _POSITION_SPEED_LOOP_IF_SOC_H_
+#define _POSITION_SPEED_LOOP_IF_SOC_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* 
+ * Definitions for FSI interrupts 
+ */
+/* FSI Rx Int1 */
+#define FSI_RX_INT1_INT_NUM         ( 16 ) 
+#define FSI_RX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
+#define FSI_RX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
+#define FSI_RX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
 
+/* FSI Rx Int2 */
+#define FSI_RX_INT2_INT_NUM         ( 17 )
+#define FSI_RX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
+#define FSI_RX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
+#define FSI_RX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
+    
+/* FSI Tx Int1 */
+#define FSI_TX_INT1_INT_NUM         ( 28 )
+#define FSI_TX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
+#define FSI_TX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
+#define FSI_TX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
 
-/* Example/Board Header files */
-#include <ti/board/board.h>
+/* FSI Tx Int2 */
+#define FSI_TX_INT2_INT_NUM         ( 29 )
+#define FSI_TX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
+#define FSI_TX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
+#define FSI_TX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
 
-#if defined (SOC_AM65XX)
-#include <ti/csl/src/ip/intr_router/V0/csl_intr_router.h>
-#include <ti/csl/src/ip/fss/V0/csl_fss.h>
-#include <ti/csl/src/ip/rat/V0/csl_rat.h>
-#include <ti/csl/soc/am65xx/src/cslr_soc_baseaddress.h>
-#include <ti/csl/soc/am65xx/src/cslr_mcu_ctrl_mmr.h>
-#include <ti/csl/soc/am65xx/src/cslr_mcu_pll_mmr.h>
-#include <ti/csl/soc/am65xx/src/cslr_wkup_ctrl_mmr.h>
-#endif
-
-
-/**********************************************************************
- ************************** Macros ************************************
- **********************************************************************/
-#define TEST_GPIO_PORT_NUM  ( 0 )
-#define TEST_GPIO_PIN_NUM   ( 14 )
-#define TEST_GPIO2_PIN_NUM  ( 15 )
-
-#define GPIO_PIN_VAL_LOW    ( 0U )
-#define GPIO_PIN_VAL_HIGH   ( 1U )
-
-#define TEST_GPIO_IDX       ( 0 )
-#define TEST_GPIO2_IDX      ( 1 )
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _GPIO_BOARD_H */
+#endif /* _POSITION_SPEED_LOOP_IF_SOC_H_ */

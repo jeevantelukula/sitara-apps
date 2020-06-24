@@ -32,7 +32,7 @@
  */
 
 #include <string.h>
-#include "cfg_mcu_intr.h"
+#include <cfg_mcu_intr_soc.h>
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/arch/csl_arch.h>
 #include <ti/csl/csl_intr_router.h>
@@ -41,17 +41,6 @@
 /* Unitialized values */
 #define UINIT_MPU_CPU_ID                ( 0xFFFFFFFF )  /* MPU CPU ID */
 #define UINIT_VIM_REGS_BASE_ADDR        ( 0x0 )         /* VIM base address register */
-
-/* MAIN2MCU_LVL_INTRTR0 number of input interrupts */
-#define NUM_MAIN2MCU_LVL_INTR0_IN       ( 192 )
-/* MAIN2MCU_LVL_INTRTR0 number of output interrupts */
-#define NUM_MAIN2MCU_LVL_INTR0_OUT      ( 64 )
-
-/* MAIN2MCU_PLS_INTRTR0 number of input interrupts */
-#define NUM_MAIN2MCU_PLS_INTR0_IN       ( 32 )
-/* MAIN2MCU_PLS_INTRTR0 number of output interrupts */
-#define NUM_MAIN2MCU_PLS_INTR0_OUT      ( 48 )
-
 
 /* MCU interrupt configuration structure */
 typedef struct McuIntrCfg_s {
@@ -106,40 +95,6 @@ int32_t McuIntc_Init(void)
         gVimRegsBaseAddr = UINIT_VIM_REGS_BASE_ADDR;
         return CFG_MCU_INTR_SERR_INV_GROUP_ID;
     }
-}
-
-/* Register MCU interrupt */
-int32_t McuIntc_registerIntr(
-    McuIntrRegPrms *pMcuIntrRegPrms,    /* MCU interrupt registration parameters */
-    uint8_t mcuIntrIdx                  /* MCU interrupt index */
-)
-{
-    McuIntrCfg *pMcuIntrCfg;
-    int32_t status;
-    
-    if (mcuIntrIdx > NUM_MCU_INTR)
-    {
-        return CFG_MCU_INTR_SERR_INV_ID;
-    }
-
-    pMcuIntrCfg = &gMcuIntrCfg[mcuIntrIdx]; /* get MCU interrupt configuration */
-
-    /* Copy MCU interrupt parameters to MCU interrupt configuration */
-    pMcuIntrCfg->mcuIntrRegPrms = *pMcuIntrRegPrms;
-    pMcuIntrCfg->intrRtrIntrCfgValid = false;
-
-    /* Register VIM Interrupt */    
-    status = CSL_vimCfgIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr,
-        pMcuIntrRegPrms->intrNum, 
-        pMcuIntrRegPrms->intrPri, 
-        pMcuIntrRegPrms->intrMap, 
-        pMcuIntrRegPrms->intrType, 
-        (uint32_t)pMcuIntrRegPrms->isrRoutine );    
-    if (status != CSL_PASS) {
-        return CFG_MCU_INTR_SERR_REG_INTR;
-    }
-    
-    return CFG_MCU_INTR_SOK;
 }
 
 /* Configure MCU interrupt */

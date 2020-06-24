@@ -31,15 +31,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_CFG_H_
-#define APP_CFG_H_
+#ifndef APP_CFG_SOC_H_
+#define APP_CFG_SOC_H_
+
+#include <ti/board/board.h>
+#include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
 
 //#define ENABLE_BOARD
+
+extern pinmuxPerCfg_t gFsiPinCfg[];
 
 /* Simulated ECAT timer */
 #define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
 #define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define SIM_ECAT_TIMER_PERIOD_USEC  ( 125 )         /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 40 )          /* Timer interrupt, MCU_TIMER_2_INT */
+#define SIM_ECAT_TIMER_PERIOD_USEC  ( 50 )          /* Timer period (usec.) */
+#define SIM_ECAT_TIMER_INTNUM       ( 154 )         /* Timer interrupt, R5F1_0 DMTIMER2 INT */
 
-#endif /* APP_CFG_H_ */
+#endif /* APP_CFG_SOC_H_ */

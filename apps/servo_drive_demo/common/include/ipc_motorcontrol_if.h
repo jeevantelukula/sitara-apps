@@ -38,10 +38,6 @@
 
 #define APP_ASSERT_SUCCESS(x)  { if((x)!=0) while(1); }
 
-/* IPC CPU ID should match with PSL MC CPU configuration */
-#define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
-#define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU1_1)
-
 /* MAX number of independent axis supported */
 #define MAX_NUM_AXES           (3)
 

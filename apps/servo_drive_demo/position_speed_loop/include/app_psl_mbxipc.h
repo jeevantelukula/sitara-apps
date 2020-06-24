@@ -39,7 +39,7 @@
 #include "ipc_motorcontrol_if.h"
 #include "hw_types.h"
 #include "multi_axis_master_ctrl.h"
-#include "app_cfg.h"
+#include "app_cfg_soc.h"
 
 /* Status return codes */
 #define APP_PSL_MBXIPC_SOK              (  0 )
