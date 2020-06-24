@@ -25,6 +25,28 @@ endef
 $(error $(ERROR_BODY))
 endif
 
+ifndef PRSDK_INSTALL_DIR
+define ERROR_BODY
+
+*******************************************************************************
+PRSDK_INSTALL_DIR environment variable is not set.
+*******************************************************************************
+
+endef
+$(error $(ERROR_BODY))
+endif
+
+ifndef PDK_VER
+define ERROR_BODY
+
+*******************************************************************************
+PDK_VER environment variable is not set.
+*******************************************************************************
+
+endef
+$(error $(ERROR_BODY))
+endif
+
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_DIR := $(notdir $(patsubst %/,%,$(dir $(MKFILE_PATH))))
 PROJ_NAME=timesync
@@ -33,10 +55,10 @@ LINKER_COMMAND_FILE=./ICSSG_PRU.cmd
 
 LIBS=
 
-#PDK_INSTALL_DIR ?= $(PRSDK_INSTALL_DIR)/pdk_am65xx_1_0_4/packages
+# PDK install directory
+PDK_INSTALL_DIR = $(PRSDK_INSTALL_DIR)/$(PDK_VER)/packages
 
-#INCLUDE=--include_path=$(PDK_INSTALL_DIR)
-INCLUDE=--include_path="./include/am437x"
+INCLUDE=--include_path=$(PDK_INSTALL_DIR)
 STACK_SIZE=0x100
 HEAP_SIZE=0x100
 GEN_DIR=gen
@@ -44,14 +66,10 @@ GEN_DIR=gen
 CDEFINES = -DSOC_AM65XX
 
 #Common compiler and linker flags (Defined in 'PRU Optimizing C/C++ Compiler User's Guide)
-#CFLAGS=-v3 -o2 --display_error_number --endian=little --hardware_mac=on --asm_directory=$(GEN_DIR) --obj_directory=$(GEN_DIR) --pp_directory=$(GEN_DIR) -ppd -ppa
 CFLAGS= $(CDEFINES) -v3 -o2 --display_error_number --endian=little --hardware_mac=on --asm_directory=$(GEN_DIR) --obj_directory=$(GEN_DIR) --pp_directory=$(GEN_DIR) -ppd -ppa
-#CFLAGS= $(CDEFINES) -v3 -o2 --opt_for_speed=0 --display_error_number --endian=little --hardware_mac=on --asm_directory=$(GEN_DIR) --obj_directory=$(GEN_DIR) --pp_directory=$(GEN_DIR) -ppd -ppa
-#CFLAGS= $(CDEFINES) -v3 -g --display_error_number --endian=little --hardware_mac=on --asm_directory=$(GEN_DIR) --obj_directory=$(GEN_DIR) --pp_directory=$(GEN_DIR) -ppd -ppa
 
 #Linker flags (Defined in 'PRU Optimizing C/C++ Compiler User's Guide)
-LFLAGS=--reread_libs --warn_sections --stack_size=$(STACK_SIZE) --heap_size=$(HEAP_SIZE) --entry_point=TIMESYNC_ENTRY
-#LFLAGS=--reread_libs --warn_sections --stack_size=$(STACK_SIZE) --heap_size=$(HEAP_SIZE)
+LFLAGS=--reread_libs --warn_sections --stack_size=$(STACK_SIZE) --heap_size=$(HEAP_SIZE)
 
 TARGET=$(GEN_DIR)/$(PROJ_NAME)_array.h
 PRU_IMAGE_PREFIX=pru_$(PROJ_NAME)_image

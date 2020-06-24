@@ -7,7 +7,7 @@
 /*                 the resulting .out file on an pru device.                */
 /****************************************************************************/
 
-/* -cr  */                          /* Link using C conventions */
+-cr                           /* Link using C conventions */
 /* -stack       0x100 */
 
 /* Specify the System Memory Map */
@@ -63,24 +63,24 @@ MEMORY
 SECTIONS {
     /* Forces _c_int00 to the start of PRU IRAM. Not necessary when loading
        an ELF file, but useful when loading a binary */
-    /* .text:_c_int00*  >  0x0, PAGE 0 */
+    .text:_c_int00*  >  0x0, PAGE 0
 
-    /* .text       >  PRU_IMEM, PAGE 0 */
-    /* .stack      >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .bss        >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .cio        >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .data       >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .switch     >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .sysmem     >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .cinit      >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .rodata     >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .rofardata  >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .farbss     >  PRU_DMEM_0_1_LOW, PAGE 1 */
-    /* .fardata    >  PRU_DMEM_0_1_LOW, PAGE 1 */
+    .text       >  PRU_IMEM, PAGE 0
+    .stack      >  PRU_DMEM_0_1_LOW, PAGE 1
+    .bss        >  PRU_DMEM_0_1_LOW, PAGE 1
+    .cio        >  PRU_DMEM_0_1_LOW, PAGE 1
+    .data       >  PRU_DMEM_0_1_LOW, PAGE 1
+    .switch     >  PRU_DMEM_0_1_LOW, PAGE 1
+    .sysmem     >  PRU_DMEM_0_1_LOW, PAGE 1
+    .cinit      >  PRU_DMEM_0_1_LOW, PAGE 1
+    .rodata     >  PRU_DMEM_0_1_LOW, PAGE 1
+    .rofardata  >  PRU_DMEM_0_1_LOW, PAGE 1
+    .farbss     >  PRU_DMEM_0_1_LOW, PAGE 1
+    .fardata    >  PRU_DMEM_0_1_LOW, PAGE 1
     
-    .text           >  PRU_IMEM, PAGE 0
-    .data           >  PRU_DMEM_0_1_LOW, PAGE 1
+    /* .text           >  PRU_IMEM, PAGE 0          */
+    /* .data           >  PRU_DMEM_0_1_LOW, PAGE 1  */
     .fwRegs         >  0x0, PAGE 1
     
-    .dbgBuf         > PRU_SHAREDMEM, PAGE 2
+    /* .dbgBuf         > PRU_SHAREDMEM, PAGE 2      */
 }
