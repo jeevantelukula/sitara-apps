@@ -535,7 +535,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     Error_init(&eb);
 
     /* Initialize board */
-    Board_init(BOARD_INIT_MODULE_CLOCK | BOARD_INIT_PINMUX_CONFIG | BOARD_INIT_UART_STDIO | BOARD_INIT_ICSS_PINMUX);
+    Board_init(BOARD_INIT_MODULE_CLOCK | BOARD_INIT_PINMUX_CONFIG | BOARD_INIT_UART_STDIO);
 
     /* Output board & chip information */
     Board_getIDInfo(&boardInfo);
@@ -685,7 +685,6 @@ void pruTsIrqHandler(uintptr_t foobar)
         if (thisDelay > 0x80000000u) {
             errorDelay++; /* Error computing delay, we read curCmp3 before it was updated by fw */
         } else {
-            totDelay += thisDelay;
             if (numDelay == 0) {
                 minDelay = maxDelay = totDelay = thisDelay;
             } else {
