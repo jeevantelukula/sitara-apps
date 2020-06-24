@@ -1,7 +1,7 @@
 /**
- *  \file   test_data.h
+ *  \file   fir.h
  *
- *  \brief  This file contains the contsants for cfft test data.
+ *  \brief  This file contains the prototypes for the FIR benchmark functions.
  *
  */
 
@@ -37,12 +37,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- #ifndef _TEST_DATA_H_
-#define _TEST_DATA_H_
 
-#include <stdint.h>
-#include "arm_math.h"
+#ifndef _FIR_H_
+#define _FIR_H_
 
-#define NUM_CFFT_LOOP_ITER ( 10 )
+#include "benchmark_stat.h"
 
-#endif /* _TEST_DATA_H_ */
+/* ----------------------------------------------------------------------
+** Macro Defines
+** ------------------------------------------------------------------- */
+
+#define TEST_LENGTH_SAMPLES  320
+#define NUM_ITERATION 10
+/*
+
+This SNR is a bit small. Need to understand why
+this example is not giving better SNR ...
+
+*/
+#define SNR_THRESHOLD_F32    75.0f
+#define BLOCK_SIZE            32
+#define NUM_TAPS              29
+
+/* -------------------------------------------------------------------
+ * The input signal and reference output (computed with MATLAB)
+ * are defined externally in arm_fir_lpf_data.c.
+ * ------------------------------------------------------------------- */
+
+extern float32_t testInput_f32_1kHz_15kHz[TEST_LENGTH_SAMPLES];
+extern float32_t refOutput[TEST_LENGTH_SAMPLES];
+
+/* Function prototypes */
+/* execute Complex FFT */
+int32_t fir_bench(int32_t firSize);
+
+#endif /* _FIR_H_ */

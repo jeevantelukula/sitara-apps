@@ -1,7 +1,7 @@
 /**
  *  \file   main.c
  *
- *  \brief  This file contains main function and macros for cfft menchmark.
+ *  \brief  This file contains main function and macros for fir benchmark.
  *
  */
 
@@ -47,8 +47,7 @@
 
 #include "benchmark_log.h"
 #include "profile.h"
-#include "arm_math.h"
-#include "cfft.h"
+#include "fir.h"
 #include "ipc_setup.h"
 #include "benchmark_timer_interrupt.h"
 
@@ -70,7 +69,7 @@ void main(void)
    ipc_initSciclient();
    MCBENCH_log("\n Set up the IPC RPMsg\n");
    ipc_rpmsg_init();
-
+	
    /* Set up the timer interrupt */
    benchmarkTimerInit();
 
@@ -84,9 +83,9 @@ void main(void)
       /* Check for new timer interrupt */
       if (gTimerIntStat.isrCnt>gTimerIntStat.isrCntPrev)
       {
-        /* Execute CFFT loop with the selected size */
-        cfft_bench(gOption[gOptionSelect-1]);			 
-        gTimerIntStat.isrCntPrev++;
+         /* Execute CFFT loop */
+         fir_bench(320);
+         gTimerIntStat.isrCntPrev++;
       }
 
       /* Check for new RPMsg arriving */
@@ -94,23 +93,26 @@ void main(void)
       ipc_rpmsg_receive((char *)&gCoreStatRcv.payload_num, &gCoreStatRcvSize);
       if (gCoreStatRcvSize>0)
       {
-         /* has to match the CFFT */
-         if (gCoreStatRcv.input.app==APP_SEL_CFFT)
+         /* has to match the FIR */
+         if (gCoreStatRcv.input.app==APP_SEL_FIR)
          {
-           /* check for CFFT size selection change */
-           if ((gOptionSelect>0)&&(gOptionSelect<=NUM_CFFT_SIZE))
-           {
-             if (gOptionSelect!=gCoreStatRcv.input.freq)
-             {
-               gTimerIntStat.isrCnt = 0;
-               gTimerIntStat.isrCntPrev = 0;
-               gTimerIntStat.intLatencyMax = 0;
-               gTimerIntStat.intLatencyAve = 0;
-               gCountPerLoopAve = 0;
-               gCountPerLoopMax = 0;
-               gOptionSelect = gCoreStatRcv.input.freq;
+            gOptionSelect = gCoreStatRcv.input.freq;
+            /* set the running frequency to the selected one */
+            if ((gOptionSelect>0)&&(gOptionSelect<=NUM_RUN_FREQS))
+            {
+               if (gAppRunFreq!=gOption[gOptionSelect-1])
+               {
+                 /* set to selected frequency */
+                 benchmarkTimerSetFreq((Run_Freq_Sel)gOptionSelect);
+                 gAppRunFreq = gOption[gOptionSelect-1];
+                 gTimerIntStat.isrCnt = 0;
+                 gTimerIntStat.isrCntPrev = 0;
+                 gTimerIntStat.intLatencyMax = 0;
+                 gTimerIntStat.intLatencyAve = 0;
+                 gCountPerLoopAve = 0;
+                 gCountPerLoopMax = 0;
+               }
              }
-           }
          }
          /* Send the gCoreStat to the A53 */
          ipc_rpmsg_send((char *)&gCoreStat, (uint16_t)sizeof(gCoreStat));

@@ -34,6 +34,79 @@
 File name:       benchmark_stat.h
 ===================================================================================*/
 
+#include <stdint.h>
+
+#ifndef _BENCHMARK_STAT_H_
+#define _BENCHMARK_STAT_H_
+
+#define NUM_CORES             4
+#define NUM_APPS              5
+#define NUM_RUN_FREQS         7
+#define RUN_FREQS_OFFSET      3
+#define NUM_CFFT_SIZE         4
+
+/*!
+ *  @brief    Application Selection for R5 benchmarks
+ */
+typedef enum App_Sel_e {
+    APP_SEL_DEF             = 0,
+    APP_SEL_CFFT            = 1,
+    APP_SEL_FIR             = 2,
+    APP_SEL_FOC             = 3,
+    APP_SEL_PID             = 4,
+    APP_SEL_ADC             = 5
+} App_Sel;
+
+/*!
+ *  @brief    Running Frequencies Selection for R5 benchmarks
+ */
+typedef enum Run_Freq_Sel_e {
+    RUN_FREQ_SEL_DEF         = 0,
+    RUN_FREQ_SEL_1K          = 1,
+    RUN_FREQ_SEL_2K          = 2,
+    RUN_FREQ_SEL_4K          = 3,
+    RUN_FREQ_SEL_8K          = 4,
+    RUN_FREQ_SEL_16K         = 5,
+    RUN_FREQ_SEL_32K         = 6,
+    RUN_FREQ_SEL_50K         = 7
+} Run_Freq_Sel;
+
+/*!
+ *  @brief    Running Frequencies for R5 benchmarks
+ */
+typedef enum Run_Freq_e {
+    RUN_FREQ_DEF         = 0,
+    RUN_FREQ_1K          = 1000,
+    RUN_FREQ_2K          = 2000,
+    RUN_FREQ_4K          = 4000,
+    RUN_FREQ_8K          = 8000,
+    RUN_FREQ_16K         = 16000,
+    RUN_FREQ_32K         = 32000,
+    RUN_FREQ_50K         = 50000
+} Run_Freq;
+
+/*!
+ *  @brief    CFFT data size Selection for R5 benchmarks
+ */
+typedef enum Cfft_Size_Sel_e {
+    CFFT_SIZE_SEL_DEF        = 0,
+    CFFT_SIZE_SEL_128        = 1,
+    CFFT_SIZE_SEL_256        = 2,
+    CFFT_SIZE_SEL_512        = 3,
+    CFFT_SIZE_SEL_1024       = 4
+} Cfft_Size_Sel;
+
+/*!
+ *  @brief    CFFT data sizes for R5 benchmarks
+ */
+typedef enum Cfft_Size_e {
+    CFFT_SIZE_DEF            = 0,
+    CFFT_SIZE_128            = 128,
+    CFFT_SIZE_256            = 256,
+    CFFT_SIZE_512            = 512,
+    CFFT_SIZE_1024           = 1024
+} Cfft_Size;
+
 typedef struct
 {
     int32_t app;      /* Input: application number (0-5: 0: none, 1:cfft, 2:fir, 3:foc, 4:pid, 5:ADC/ePWM) */
@@ -65,7 +138,7 @@ typedef struct
     cpu_load cload;      /* Output: CPU load struct */
     int_latency ilate;   /* Output: INT latency struct */
     ccp_loop ccploop;    /* Output: circle count per loop struct */
-    int32_t ave_count;       /* Output: counter for average period  */
+    int64_t ave_count;       /* Output: counter for average period  */
     int32_t sram_pcnt;       /* Output: SRAM usage in percent (0-100) */
     int32_t core_num;        /* Output: current core ID (0-3) */
     int32_t app;             /* Output: current app (0-3) */
@@ -80,5 +153,22 @@ typedef struct
     core_output output;  /* core input parameters */
 } core_stat;
 
-#define APP_RUN_FREQUNCY 8  /* in Khz */
-#define CPU_FREQUNCY 800000  /* in Khz */
+typedef struct
+{
+    int64_t payload_num; /* rpmsg payload number */
+    int64_t payload_size;/* rpmsg payload size */
+    core_input input;    /* core input parameters */
+} core_stat_rcv;
+
+extern core_stat gCoreStat;
+extern int32_t gCountPerLoopMax;
+extern int32_t gCountPerLoopAve;
+
+extern core_stat_rcv gCoreStatRcv;
+extern uint16_t gCoreStatRcvSize;
+extern uint32_t gAppSelect;
+extern uint32_t gOptionSelect;
+extern uint32_t gOption[];
+extern uint32_t gAppRunFreq;
+
+#endif /* _BENCHMARK_STAT_H_ */

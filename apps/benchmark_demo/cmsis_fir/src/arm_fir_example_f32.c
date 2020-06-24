@@ -131,33 +131,13 @@
 
 #include "benchmark_log.h"
 #include "profile.h"
+#include "benchmark_stat.h"
+#include "benchmark_timer_interrupt.h"
 
 #include "arm_math.h"
 #include "math_helper.h"
-
-/* ----------------------------------------------------------------------
-** Macro Defines
-** ------------------------------------------------------------------- */
-
-#define TEST_LENGTH_SAMPLES  320
-#define NUM_ITERATION 10
-/*
-
-This SNR is a bit small. Need to understand why
-this example is not giving better SNR ...
-
-*/
-#define SNR_THRESHOLD_F32    75.0f
-#define BLOCK_SIZE            32
-#define NUM_TAPS              29
-
-/* -------------------------------------------------------------------
- * The input signal and reference output (computed with MATLAB)
- * are defined externally in arm_fir_lpf_data.c.
- * ------------------------------------------------------------------- */
-
-extern float32_t testInput_f32_1kHz_15kHz[TEST_LENGTH_SAMPLES];
-extern float32_t refOutput[TEST_LENGTH_SAMPLES];
+#include "fir.h"
+#include <ti/csl/arch/csl_arch.h>
 
 /* -------------------------------------------------------------------
  * Declare Test output buffer
@@ -192,66 +172,91 @@ uint32_t numBlocks = TEST_LENGTH_SAMPLES/BLOCK_SIZE;
 
 float32_t  snr;
 
+int32_t gCountPerLoopMax = 0;
+int32_t gCountPerLoopAve = 0;
+
+/* declare the core statistic variables */
+CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
+core_stat gCoreStat __attribute__((section(".testInData"))) ;
+core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
+uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
+uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
+uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
+  RUN_FREQ_1K,
+  RUN_FREQ_2K,
+  RUN_FREQ_4K,
+  RUN_FREQ_8K,
+  RUN_FREQ_16K,
+  RUN_FREQ_32K,
+  RUN_FREQ_50K  
+};uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+
 /* ----------------------------------------------------------------------
  * FIR LPF Example
  * ------------------------------------------------------------------- */
 
-int32_t main(void)
+int32_t fir_bench(int32_t firSize)
 {
-  uint32_t i, j;
+  uint32_t i;
   arm_fir_instance_f32 S;
-  arm_status status;
   float32_t  *inputF32, *outputF32;
 
-#ifndef IO_CONSOLE
-	Board_initCfg boardCfg;
-#endif
-    
-#ifndef IO_CONSOLE
-    boardCfg = BOARD_INIT_PINMUX_CONFIG |
-               BOARD_INIT_MODULE_CLOCK  |
-               BOARD_INIT_UART_STDIO;
-    Board_init(boardCfg);
-#endif
-
-#if PROFILE == COMPONENTS
-    init_profiling();
-    gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
-    gStartTime = readPmu();
-    gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;    
-    MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
-#endif
+  init_profiling();
+  gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
+  gStartTime = readPmu();
+  gEndTime = readPmu();
+  gOverheadTime = gEndTime - gStartTime;
+  MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
 
   /* Initialize input and output buffer pointers */
   inputF32 = &testInput_f32_1kHz_15kHz[0];
   outputF32 = &testOutput[0];
 
   MCBENCH_log("\n START FIR benchmark\n");
-  for (j=0; j<NUM_ITERATION; j++)
-  {	  
   /* Call FIR init function to initialize the instance structure. */
   arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
 
   /* ----------------------------------------------------------------------
   ** Call the FIR process function for every blockSize samples
-  ** ------------------------------------------------------------------- */
+    ** ------------------------------------------------------------------- */
 
-  MCBENCH_log("\n ITERATION %d\n", j+1);
-#if PROFILE == COMPONENTS
   gStartTime = readPmu();
-#endif        
+
+  numBlocks = firSize/blockSize;
   for(i=0; i < numBlocks; i++)
   {
     arm_fir_f32(&S, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
   }
-#if PROFILE == COMPONENTS
+
   /*********** Compute benchmark in cycles ********/
   gEndTime = readPmu();
   gTotalTime = gEndTime - gStartTime - gOverheadTime;
-  MCBENCH_log("\n Test used %d cycles\n", (uint32_t)gTotalTime);
+  /* Compute the average and max of count per loop */
+  if (gTotalTime>(int64_t)gCountPerLoopMax)
+  {
+    /* Count per loop max */ 
+    gCountPerLoopMax = gTotalTime;
   }
-#endif        
+  gCountPerLoopAve = ((int64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
+  /* populate the core stat */
+  gCoreStat.payload_num = 0;
+  gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(int64_t));
+  gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
+  /* get Group and CPU ID */
+  CSL_armR5GetCpuID(&cpuInfo);
+  /* compute core number */
+  gCoreStat.output.core_num = cpuInfo.grpId*2 + cpuInfo.cpuID;
+  gCoreStat.output.app = gAppSelect;
+  gCoreStat.output.freq = gOptionSelect;
+  gCoreStat.output.ccploop.ave = gCountPerLoopAve;
+  gCoreStat.output.ccploop.max = gCountPerLoopMax;
+  gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
+  gCoreStat.output.cload.ave = (int64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
+  gCoreStat.output.cload.max = (int64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
+  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;		
+  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;		
+
   MCBENCH_log("\n END FIR benchmark\n");
 
   /* ----------------------------------------------------------------------
@@ -263,20 +268,14 @@ int32_t main(void)
 
   if (snr < SNR_THRESHOLD_F32)
   {
-    status = ARM_MATH_TEST_FAILURE;
-    MCBENCH_log("\n FAILURE: SNR = %d, status=%d\n", (int32_t)(snr+0.5f), status);
+    MCBENCH_log("\n FAILURE: SNR = %d, status=FAILURE\n", (int32_t)(snr+0.5f));
+    return -1;
   }
   else
   {
-    status = ARM_MATH_SUCCESS;
-    MCBENCH_log("\n SUCCESS: SNR = %d, status=%d\n", (int32_t)(snr+0.5f), status);
+    MCBENCH_log("\n SUCCESS: SNR = %d, status=SUCCESS\n", (int32_t)(snr+0.5f));
+    return 0;
   }
-
-  /* ----------------------------------------------------------------------
-  ** Loop here if the signal does not match the reference output.
-  ** ------------------------------------------------------------------- */
-
-  while (1);                             /* main function does not return */
 }
 
 /** \endlink */

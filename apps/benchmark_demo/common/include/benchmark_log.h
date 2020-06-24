@@ -62,12 +62,16 @@ void ConsoleUtilsInit(void);
  **********************************************************************/
 /* Enable the below macro to have prints on the IO Console */
 #define IO_CONSOLE
-
+///#define DEBUG_PRINT
+#ifdef DEBUG_PRINT
 #ifndef IO_CONSOLE
-#define MCBENCH_log                UART_printf
+#define MCBENCH_log(a,...)             UART_printf(a,##__VA_ARGS__)
 #else
-#define MCBENCH_log                printf
-#endif
+#define MCBENCH_log(a,...)             printf(a,##__VA_ARGS__)
+#endif /* IO_CONSOLE */
+#else
+#define MCBENCH_log(a,...)             
+#endif /* DEBUG_PRINT */
 
 #ifdef __cplusplus
 }

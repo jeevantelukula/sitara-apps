@@ -15,7 +15,6 @@ TARGETTYPE  := exe
 # Define local compiler options
 DEFS+=__COMPILER_BARRIER
 DEFS+=BUILD_MCU$(MCUNUM)
-DEFS+=MPU_LINUX_OS
 DEFS+=BAREMETAL
 
 # Define application's root directory
@@ -31,7 +30,10 @@ IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/DSP/Include
 IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/Core/Include
 IDIRS+=$(APPDIR)/../common/include/r5f
 IDIRS+=$(APPDIR)/../common/include
+IDIRS+=$(APPDIR)/../common/libs/benchmark_timer_interrupt/include
+IDIRS+=$(APPDIR)/../common/libs/benchmark_timer_interrupt/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../../common/ipc_rpmsg_lib/include
+IDIRS+=$(APPDIR)/../../common/ipc_rpmsg_lib/include/$(SITARA_DEMO_SOC)
 
 # Add directory to library search path
 LDIRS+=$(CMSIS_LIB)/lib_prebuild/release
@@ -49,6 +51,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 STATIC_LIBS += profile
+STATIC_LIBS += benchmark_timer_interrupt
 STATIC_LIBS += ipc_rpmsg_lib_mcu$(MCUNUM)
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)

@@ -70,11 +70,11 @@ SECTIONS
 /* a range of +\- 16 MB                                                       */
     .intvecs 	: {} palign(8) 		> MCU1_0_VECTORS
     .intc_text 	: {} palign(8) 		> MCU1_0_VECTORS
-    .rstvectors 	: {} palign(8) 		> MCU1_0_RESET_VECTORS
+    .rstvectors 	: {} palign(8) 		> R5F_ATCM_SBL_RSVD
     .bootCode      : {} palign(8)      > OCMRAM_MCU1_0
     .startupCode   : {} palign(8)      > OCMRAM_MCU1_0
     .startupData   : {} palign(8)      > OCMRAM_MCU1_0, type = NOINIT
-    .text    	: {} palign(8) 		> R5F_ATCM
+    .text    	: {} palign(8) 		> OCMRAM_MCU1_0
     .const   	: {} palign(8) 		> OCMRAM_MCU1_0
     .cinit   	: {} palign(8) 		> OCMRAM_MCU1_0
     .pinit   	: {} palign(8) 		> OCMRAM_MCU1_0
@@ -113,6 +113,11 @@ SECTIONS
     .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_0_SHARED_MEM
     .testInCode    	: {} palign(8) 		> R5F0_BTCM
     .testInData    	: {} palign(8) 		> R5F0_BTCM
+    .resource_table : {
+        __RESOURCE_TABLE = .;
+    } > DDR_MCU1_0_RESOURCE_TABLE
+	.tracebuf    	: {} palign(1024) 		> DDR_MCU1_0
+	ipc_data_buffer : {} palign(128) 		> DDR_MCU1_0
 }  /* end of SECTIONS */
 
 /*----------------------------------------------------------------------------*/

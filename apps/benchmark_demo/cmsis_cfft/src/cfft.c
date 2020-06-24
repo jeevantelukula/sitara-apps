@@ -49,112 +49,125 @@
 
 #include "benchmark_log.h"
 #include "profile.h"
-#include "test_data.h"
 #include "benchmark_stat.h"
+#include "benchmark_timer_interrupt.h"
 #include <ti/csl/arch/csl_arch.h>
+
+/* declare the core statistic variables */
+CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
+core_stat gCoreStat __attribute__((section(".testInData"))) ;
+core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
+uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
+uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_CFFT;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = CFFT_SIZE_SEL_1024;
+uint32_t gOption[NUM_CFFT_SIZE] __attribute__((section(".testInData")))  = {
+  CFFT_SIZE_128,
+  CFFT_SIZE_256,
+  CFFT_SIZE_512,
+  CFFT_SIZE_1024
+};
+uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
 
 float32_t cfftInData[2048] __attribute__((aligned(128), section(".testInData")));
 float32_t cfftMagData[1024] __attribute__((aligned(128), section(".testInData")));
 
-float a __attribute__((section(".testInData"))) = 5.3; 
-float b __attribute__((section(".testInData"))) = 9.2; 
-float c __attribute__((section(".testInData"))) = 8.1; 
-float d __attribute__((section(".testInData"))) = 9.5; 
-float e __attribute__((section(".testInData"))) = 7.6; 
-float f __attribute__((section(".testInData"))) = 120.5; 
-volatile float g __attribute__((section(".testInData"))) = 283.185;  	
-
-extern core_stat gCoreStat;
-extern CSL_ArmR5CPUInfo cpuInfo;
+int32_t gCountPerLoopMax __attribute__((aligned(8), section(".testInData")))= 0;
+int32_t gCountPerLoopAve __attribute__((aligned(8), section(".testInData")))= 0;
 
 /* initialize FFT complex array */
 void cfftInit(void)
 {
-	uint16_t i;
-	float sin;
-	float cos;
-	for(i = 0; i < 2048; i+=2) {
-		arm_sin_cos_f32((float)i*7.5, &sin, &cos);
-		cfftInData[i] = sin;
+    uint16_t i;
+    float sin;
+    float cos;
+
+    for(i = 0; i < 2048; i+=2) {
+        arm_sin_cos_f32((float)i*7.5, &sin, &cos);
+        cfftInData[i] = sin;
         cfftInData[i+1] = 0;
         cfftMagData[i/2] = 0;
-	}
-	memset(&gCoreStat, 0, sizeof(gCoreStat));
+    }
+    memset(&gCoreStat, 0, sizeof(gCoreStat));    
 }
 
 /* execute Complex FFT */
-void cfft_bench(uint16_t fftSize) __attribute__((aligned(8), section(".testInCode")));
-void cfft_bench(uint16_t fftSize)
+int32_t cfft_bench(int32_t fftSize) __attribute__((aligned(8), section(".testInCode")));
+int32_t cfft_bench(int32_t fftSize)
 {
     const static arm_cfft_instance_f32 *S;
     uint32_t refIndex1 = 43, refIndex2 = 981;
-	float refMax = 422.244476;
-	
+    float refMax = 422.244476;
+
     switch (fftSize) {
+        case 128:
+            S = &arm_cfft_sR_f32_len128;
+            break;
+        case 256:
+            S = &arm_cfft_sR_f32_len256;
+            break;
+        case 512:
+            S = &arm_cfft_sR_f32_len512;
+            break;
+
+        default:
         case 1024:
             S = &arm_cfft_sR_f32_len1024;
             break;
     }
 
-#if PROFILE == COMPONENTS
     init_profiling();
-    gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
+    gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
     gStartTime = readPmu();
     gEndTime = readPmu();
     gOverheadTime = gEndTime - gStartTime;
     MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
-#endif
 
-#if PROFILE == COMPONENTS
     cfftInit();
-    gStartTime = readPmu();
-	/* Process the data through the CFFT/CIFFT module */
-    arm_cfft_f32(S, cfftInData, 0, 1);
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    /* populate the core stat */
-	gCoreStat.payload_num = 0;
-	gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(int64_t));
-	gCoreStat.input.app = 1;
-	gCoreStat.input.freq = 1;
-	gCoreStat.input.mod_flag = 0;
-	gCoreStat.output.ave_count = 10;
-	/* get Group and CPU ID */
-	CSL_armR5GetCpuID(&cpuInfo);
-	/* compute core number */
-	gCoreStat.output.core_num = cpuInfo.grpId*2 + cpuInfo.cpuID;
-	gCoreStat.output.app = 1;
-	gCoreStat.output.freq = 1;
-	gCoreStat.output.ccploop.ave = gTotalTime;
-	gCoreStat.output.ccploop.max = gTotalTime;
-	gCoreStat.output.cload.cur = gTotalTime*100/CPU_FREQUNCY;
-	gCoreStat.output.cload.ave = gTotalTime*100/CPU_FREQUNCY;
-	gCoreStat.output.cload.max = gTotalTime*100/CPU_FREQUNCY;
-	/* Process the data through the Complex Magnitude Module for 
-	   calculating the magnitude at each bin */
-    arm_cmplx_mag_f32(cfftInData, cfftMagData, fftSize);
-	/* The two max BIN values have to match */    
-	if ((cfftMagData[refIndex1]!=refMax)||(cfftMagData[refIndex2]!=refMax))  
-	{    
-       MCBENCH_log("\n %d point CFFT failed\n", fftSize);
-	   return;
-	} else
-	{
-       MCBENCH_log("\n %d point CFFT %d cycles\n", fftSize, (uint32_t)gTotalTime);
-	}
-#endif
 
-#if PROFILE == COMPONENTS
     gStartTime = readPmu();
-    //c = a / b;
-    //f = d / e;
-    g = (a / b) / (d / e);
+
+    /* Process the data through the CFFT/CIFFT module */
+    arm_cfft_f32(S, cfftInData, 0, 1);
+
     gEndTime = readPmu();
     gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n Division: %d cycles\n", (uint32_t)gTotalTime);
-    a += 0.001;
-    b += 0.02;
-    d += .105;
-    e += 1.0023;
-#endif
+
+    /* Compute the average and max of count per loop */
+    if (gTotalTime>(int64_t)gCountPerLoopMax)
+    {
+      /* Count per loop max */
+      gCountPerLoopMax = gTotalTime;
+    }
+    gCountPerLoopAve = ((int64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
+    /* populate the core stat */
+    gCoreStat.payload_num = 0;
+    gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(int64_t));
+    gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
+    /* get Group and CPU ID */
+    CSL_armR5GetCpuID(&cpuInfo);
+    /* compute core number */
+    gCoreStat.output.core_num = cpuInfo.grpId*2 + cpuInfo.cpuID;
+    gCoreStat.output.app = gAppSelect;
+    gCoreStat.output.freq = gOptionSelect;
+    gCoreStat.output.ccploop.ave = gCountPerLoopAve;
+    gCoreStat.output.ccploop.max = gCountPerLoopMax;
+    gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
+    gCoreStat.output.cload.ave = (int64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
+    gCoreStat.output.cload.max = (int64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
+    gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;
+    gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;
+
+    /* Process the data through the Complex Magnitude Module for 
+       calculating the magnitude at each bin */
+    arm_cmplx_mag_f32(cfftInData, cfftMagData, fftSize);
+    /* The two max BIN values have to match */
+    if ((cfftMagData[refIndex1]!=refMax)||(cfftMagData[refIndex2]!=refMax))
+    {
+       MCBENCH_log("\n %d point CFFT failed\n", fftSize);
+       return 0;
+    } else
+    {
+       MCBENCH_log("\n %d point CFFT %d cycles\n", fftSize, (uint32_t)gTotalTime);
+       return -1;
+    }
 }

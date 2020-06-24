@@ -41,10 +41,12 @@
 #ifndef _CFFT_H_
 #define _CFFT_H_
 
+#include "benchmark_stat.h"
+
 /* Function prototypes */
 /* initialize FFT complex array */
 void cfftInit(void);
 /* execute Complex FFT */
-void cfft_bench(uint16_t fftSize);
+int32_t cfft_bench(int32_t fftSize);
 
 #endif /* _CFFT_H_ */
