@@ -51,17 +51,13 @@ extern "C" {
 #define VQ_BUF_SIZE             2048U
 
 /* Set Start Address for VRING */
-#ifdef SOC_AM65XX
-#define VRING_BASE_ADDRESS      0xA2000000U
-#elif defined (SOC_AM64XX)
 #define VRING_BASE_ADDRESS      0xAA000000U
-#else
-#error incorrect SOC defined 
-#endif
 
 void ipc_initSciclient(void);
+void ipc_rpmsg_receive(char *msg, uint16_t *msg_size);
+void ipc_rpmsg_send(char *msg, uint16_t msg_size);
 
-int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size);
+int32_t ipc_rpmsg_init(void);
 
 #ifdef __cplusplus
 }

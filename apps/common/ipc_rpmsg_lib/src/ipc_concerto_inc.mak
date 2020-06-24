@@ -6,7 +6,6 @@ TARGETTYPE  := library
 
 # Define local compiler options
 DEFS+=BUILD_MCU$(MCUNUM)
-DEFS+=MPU_LINUX_OS
 DEFS+=BAREMETAL
 
 # Define application's root directory

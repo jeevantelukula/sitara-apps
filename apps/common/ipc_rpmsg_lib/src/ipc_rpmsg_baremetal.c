@@ -85,7 +85,6 @@ uint32_t rpmsgDataSize = RPMSG_DATA_SIZE;
 /* Define System_printf to use Ipc_Trace_printf */
 #define System_printf Ipc_Trace_printf
 
-
 /* ========================================================================== */
 /*                         Structure Declarations                             */
 /* ========================================================================== */
@@ -105,6 +104,13 @@ uint8_t  gSysVqBuf[VQ_BUF_SIZE]  __attribute__ ((section ("ipc_data_buffer"), al
 uint8_t  gRspBuf[RPMSG_DATA_SIZE]  __attribute__ ((section ("ipc_data_buffer"), aligned (8)));
 
 volatile uint32_t gMessagesReceived = 0;
+volatile uint32_t gMessagesReceivedPrev = 0;
+
+uint32_t		  myEndPt = 0;
+uint32_t		  remoteEndPt;
+uint32_t		  remoteProcId =0xFFFFFFFF;
+RPMessage_Handle  handleIpcRPMsg;
+RPMessage_Params  paramsIpcRPMsg;
 
 #ifdef BUILD_MPU1_0
 #define NUM_CHRDEV_SERVICES (1)
@@ -153,118 +159,51 @@ void ipc_initSciclient()
 bool g_exitRespTsk = 0;
 
 /*
- * This function waits for a "ping" message from any processor
- * then replies with a "pong" message.
+ * This function check for message from any processor
  */
-void rpmsg_responderFxn(uintptr_t arg0, uintptr_t arg1, void *msg, uint16_t msg_size)
+void ipc_rpmsg_receive(char *msg, uint16_t *msg_size)
 {
-    RPMessage_Handle handle;
-    RPMessage_Params params;
-    uint32_t		 myEndPt = 0;
-    uint32_t		 remoteEndPt;
-    uint32_t		 remoteProcId;
-    uint16_t		 len;
-    int32_t		     status = 0;
-    void		     *buf;
-    uint32_t         t;
-    uint32_t         lastNumMessagesReceived = 0;
-    uint32_t         emptyReceiveCalls = 0;
+   int32_t status = 0;
 
-    uint32_t            bufSize = rpmsgDataSize;
-    char                str[MSGSIZE];
+   /* if there is a message showed up */
+   if (gMessagesReceived > gMessagesReceivedPrev)
+   {
+      /* NOTE: The following function may need to be replaced by a blocking
+         function RPMessage_recv in later implementations */
+      status = RPMessage_recvNb(handleIpcRPMsg,
+         (Ptr)msg, msg_size, &remoteEndPt, &remoteProcId);
+      if(status != IPC_SOK)
+      {
+         System_printf("ipc_rpmsg_receive: failed with code %d\n", status);
+      } else 
+      {
+         gMessagesReceivedPrev++;
 
-    buf = gRspBuf;
-    if(buf == NULL)
-    {
-        System_printf("RecvTask: buffer allocation failed\n");
-        return;
-    }
+         /* NULL terminated string */
+         msg[*msg_size] = '\0';
+         System_printf("ipc_rpmsg_receive: Revcvd msg \"%s\" len %d from %s\n",
+            msg, *msg_size, Ipc_mpGetName(remoteProcId));
+      }
+   }
+}
 
-    RPMessageParams_init(&params);
+/*
+ * This function send message to any processor
+ */
+void ipc_rpmsg_send(char *msg, uint16_t msg_size)
+{
+   int32_t status = 0;
 
-    params.requestedEndpt = ENDPT1;
-
-    params.buf = buf;
-    params.bufSize = bufSize;
-
-    handle = RPMessage_create(&params, &myEndPt);
-    if(!handle)
-    {
-        System_printf("RecvTask: Failed to create endpoint\n");
-        return;
-    }
-    System_printf("RPMessage_create is done\n");
-
-    for (t = 0; t < gNumRemoteProc; t++)
-    {
-        Ipc_mailboxEnableNewMsgInt(selfProcId, t);
-    }
-    System_printf("Ipc_mailboxEnableNewMsgInt is done\n");
-
-    status = RPMessage_announce(RPMESSAGE_ALL, myEndPt, SERVICE);
-    if(status != IPC_SOK)
-    {
-        System_printf("RecvTask: RPMessage_announce() failed\n");
-        return;
-    }
-    System_printf("RPMessage_announce is done\n");
-
-    while(!g_exitRespTsk)
-    {
-        /* Wait for messages to show up */
-        while(gMessagesReceived == lastNumMessagesReceived);
-        /* NOTE: The following function may need to be replaced by a blocking
-          function RPMessage_recv in later implementations */
-        status = RPMessage_recvNb(handle,
-                                  (Ptr)str, &len, &remoteEndPt,
-                                  &remoteProcId);
-        if(status != IPC_SOK)
-        {
-#ifdef DEBUG_PRINT
-            System_printf("RecvTask: failed with code %d\n", status);
-#endif
-            emptyReceiveCalls++;
-        }
-        else
-        {
-            lastNumMessagesReceived++;
-
-            /* NULL terminated string */
-            str[len] = '\0';
-#ifdef DEBUG_PRINT
-            System_printf("RecvTask: Revcvd msg \"%s\" len %d from %s\n",
-                    str, len, Ipc_mpGetName(remoteProcId));
-#endif
-        }
-        if(status == IPC_SOK)
-        {
-			/* If this is not ping/pong message, just print the message */
-			System_printf("%s <--> %s : %s recvd : %d:%d:%d\n",
-						  Ipc_mpGetSelfName(),
-						  Ipc_mpGetName(remoteProcId),
-						  str,
-						  gMessagesReceived,
-						  lastNumMessagesReceived,
-						  emptyReceiveCalls);
-#ifdef DEBUG_PRINT
-            System_printf("RecvTask: Sending msg \"%s\" len %d from %s to %s\n",
-                          str, len, Ipc_mpGetSelfName(),
-                          Ipc_mpGetName(remoteProcId));
-#endif
-			status = RPMessage_send(handle, remoteProcId, remoteEndPt, myEndPt, msg, msg_size);
-            if (status != IPC_SOK)
-            {
-                System_printf("RecvTask: Sending msg \"%s\" len %d from %s to %s failed!!!\n",
-                    str, len, Ipc_mpGetSelfName(),
-                    Ipc_mpGetName(remoteProcId));
-            }
-			/* wait for 1ms  before send the next message*/
-			/* Osal_delay(1000); */
-        }
-    }
-
-    System_printf("%s responder task exiting ...\n",
-                    Ipc_mpGetSelfName());
+   /* Got the remote Proc ID and endpoint */
+   if (remoteProcId!=0xFFFFFFFF)
+   {
+      status = RPMessage_send(handleIpcRPMsg, remoteProcId, remoteEndPt, myEndPt, msg, msg_size);
+      if (status != IPC_SOK)
+      {
+         System_printf("RecvTask: Sending msg \"%s\" len %d from %s to %s failed!!!\n",
+            msg, msg_size, Ipc_mpGetSelfName(),Ipc_mpGetName(remoteProcId));
+      }
+   }
 }
 
 #define INTRTR_CFG_MAIN_DOMAIN_MBX_CLST0_USR1_OUT_INT_NO  (17U)
@@ -312,6 +251,7 @@ int32_t IpcAppConfigureInterruptHandlers(void)
     HwiP_Handle hwiHandle;
     struct tisci_msg_rm_irq_set_req     rmIrqReq;
     struct tisci_msg_rm_irq_set_resp    rmIrqResp;
+    struct tisci_msg_rm_irq_release_req rmIrqRel;
     int32_t retVal;
 
 #if defined(BUILD_MCU1_0)
@@ -347,9 +287,29 @@ int32_t IpcAppConfigureInterruptHandlers(void)
 #else
 #error BUILD CORE is not defined
 #endif
+
+    /* release what we plan to request */
+	rmIrqRel.ia_id                  = 0U;
+    rmIrqRel.vint                   = 0U;
+    rmIrqRel.global_event           = 0U;
+    rmIrqRel.vint_status_bit_index  = 0U;
+
+    rmIrqRel.valid_params   = TISCI_MSG_VALUE_RM_DST_ID_VALID |
+                              TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID;
+    rmIrqRel.src_id         = rmIrqReq.src_id;
+    rmIrqRel.src_index      = rmIrqReq.src_index;
+    rmIrqRel.dst_id         = (uint16_t)rmIrqReq.dst_id;
+    rmIrqRel.dst_host_irq   = (uint16_t)rmIrqReq.dst_host_irq;
+    rmIrqRel.secondary_host = (uint8_t)TISCI_MSG_VALUE_RM_UNUSED_SECONDARY_HOST;
+
+    retVal = Sciclient_rmIrqRelease(
+                 &rmIrqRel, IPC_SCICLIENT_TIMEOUT);
+    System_printf("Sciclient_rmIrqRelease is done\n");
+
+    /* request what we plan to request */
     retVal = Sciclient_rmIrqSet(
                  &rmIrqReq, &rmIrqResp, APP_SCICLIENT_TIMEOUT);
-     if(CSL_PASS != retVal)
+    if(CSL_PASS != retVal)
     {
         System_printf(": Error in SciClient Interrupt Params Configuration!!!\n");
         return -1;
@@ -389,20 +349,20 @@ int32_t IpcAppConfigureInterruptHandlers(void)
 }
 
 /*
- * This is the main test function which initializes and runs the Sender and 
- * responder functions.
- * NOTE: Sender function is not actually active in this example.
- *       Only the receiver function does a echo back of incoming messages
+ * This is the function which initializes the IPC RPMsg_char channel
  */
 /* ==========================================*/
-int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size)
+int32_t ipc_rpmsg_init(void)
 {
     uint32_t          t;
     uint32_t          numProc = gNumRemoteProc;
     Ipc_VirtIoParams  vqParam;
     Ipc_InitPrms      initPrms;
+    int32_t		      status = 0;
+    void		      *buf;
+    uint32_t          bufSize = rpmsgDataSize;
 
-    System_printf("\nEnter ipc_rpmsg_func\n");
+    System_printf("\nEnter ipc_rpmsg_init\n");
     /* Step1 : Initialize the multiproc */
     if (IPC_SOK == Ipc_mpSetConfig(selfProcId, numProc, pRemoteProcArray))
     {
@@ -436,18 +396,15 @@ int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size)
 	{
         System_printf("Ipc_mpSetConfig failed!!!\n");
 	}
-#ifdef DEBUG_PRINT
+
     System_printf("Required Local memory for Virtio_Object = %d\r\n",
                   numProc * Ipc_getVqObjMemoryRequiredPerCore());
-#endif
-#if !defined(BUILD_MPU1_0) && defined(MPU_LINUX_OS)
     /* If MPU remote core is running Linux OS, then
      * load resource table
      */
     Ipc_loadResourceTable((void*)&ti_ipc_remoteproc_ResourceTable);
     System_printf("Ipc_loadResourceTable done!!!\n");
 
-#if !defined(MPU_LINUX_OS_IPC_ATTACH)
     /* Wait for Linux VDev ready... */
     System_printf("\nWait for Linux VDev ready...\n");
     for(t = 0; t < numProc; t++)
@@ -458,8 +415,6 @@ int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size)
         }
     }
     System_printf("Linux VDEV ready now .....\n");
-#endif
-#endif
 
     /* Step2 : Initialize Virtio */
     vqParam.vqObjBaseAddr = (void*)gSysVqBuf;
@@ -472,10 +427,8 @@ int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size)
     /* Step 3: Initialize RPMessage */
     RPMessage_Params cntrlParam;
 
-#ifdef DEBUG_PRINT
     System_printf("\nRequired Local memory for RPMessage Object = %d\n",
                   RPMessage_getObjMemRequired());
-#endif
 
     /* Initialize the param */
     RPMessageParams_init(&cntrlParam);
@@ -499,9 +452,41 @@ int32_t ipc_rpmsg_func(void *msg, uint16_t msg_size)
 
     System_printf("\nSetup IPC interrupt handling is done\n");
 
-    /* run responder function to receive and reply messages back */
-    System_printf("\nStart rpmsg_responderFxn\n");
-    rpmsg_responderFxn(0, 0, msg, msg_size);
+    buf = gRspBuf;
+    if(buf == NULL)
+    {
+        System_printf("Buffer allocation failed\n");
+        return -2;
+    }
 
-    return 1;
+    RPMessageParams_init(&paramsIpcRPMsg);
+
+    paramsIpcRPMsg.requestedEndpt = ENDPT1;
+
+    paramsIpcRPMsg.buf = buf;
+    paramsIpcRPMsg.bufSize = bufSize;
+
+    handleIpcRPMsg = RPMessage_create(&paramsIpcRPMsg, &myEndPt);
+    if(!handleIpcRPMsg)
+    {
+        System_printf("Failed to create endpoint\n");
+        return -3;
+    }
+    System_printf("RPMessage_create is done\n");
+
+    for (t = 0; t < gNumRemoteProc; t++)
+    {
+        Ipc_mailboxEnableNewMsgInt(selfProcId, t);
+    }
+    System_printf("Ipc_mailboxEnableNewMsgInt is done\n");
+
+    status = RPMessage_announce(RPMESSAGE_ALL, myEndPt, SERVICE);
+    if(status != IPC_SOK)
+    {
+        System_printf("RPMessage_announce() failed\n");
+        return -4;
+    }
+    System_printf("RPMessage_announce is done\n");
+
+    return 0;
 }
