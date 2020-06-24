@@ -31,7 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <link rel="icon" type="image/png" href="splash/gui_icon.png">
 
-    <title>AM64x Starter Tool</title>
+    <title>AM64x EVM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <script src="components/webcomponentsjs/webcomponents-lite.js"></script>
@@ -832,37 +832,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         z-index: 1;
         padding: 10px;
     }
-    #ti_widget_label27 {
-        text-align: left;
-        text-decoration: none;
-        font-weight: normal;
-        font-style: normal;
-        font-size: inherit;
-        white-space: nowrap;
-        left: 30px;
-        top: 10px;
-        position: absolute;
-    }
-    #ti_widget_container7 {
-        height: 40px;
-        width: calc(100% - 40px);
-        text-align: left;
-        text-decoration: none;
-        font-weight: normal;
-        font-style: normal;
-        font-size: inherit;
-        overflow: hidden;
-        left: -1px;
-        top: 233px;
-        position: absolute;
-        display: block;
-        margin-left: 20px;
-        margin-right: 20px;
-        background-color: white;
-        border-bottom: 1px solid rgb(204, 204, 204);
-        z-index: 1;
-        padding: 10px;
-    }
     #ti_widget_label14 {
         position: absolute;
         left: 21px;
@@ -910,17 +879,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         top: 0px;
         box-shadow: 0px 0px 7px grey;
         padding: 10px 15px 20px 15px;
-    }
-    #load_0 {
-        position: absolute;
-        left: 212px;
-        top: 115px;
-        background-color: #44c85b;
-        width: 70px;
-        height: 30px;
-        font-size: small;
-        font-weight: 700;
-        z-index: 10;
     }
     #ti_widget_label70 {
         position: absolute;
@@ -1085,17 +1043,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         left: 311px;
         z-index: 0;
     }
-    #load_1 {
-        position: absolute;
-        left: 502px;
-        top: 115px;
-        background-color: #44c85b;
-        width: 70px;
-        height: 30px;
-        font-size: small;
-        font-weight: 700;
-        z-index: 10;
-    }
     #ti_widget_label15 {
         position: absolute;
         left: 21px;
@@ -1243,17 +1190,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         left: 601px;
         z-index: 0;
     }
-    #load_2 {
-        position: absolute;
-        left: 792px;
-        top: 115px;
-        background-color: #44c85b;
-        width: 70px;
-        height: 30px;
-        font-size: small;
-        font-weight: 700;
-        z-index: 10;
-    }
     #ti_widget_label16 {
         position: absolute;
         left: 21px;
@@ -1400,17 +1336,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         position: absolute;
         left: 891px;
         z-index: 0;
-    }
-    #load_3 {
-        position: absolute;
-        left: 1082px;
-        top: 115px;
-        background-color: #44c85b;
-        width: 70px;
-        height: 30px;
-        font-size: small;
-        font-weight: 700;
-        z-index: 10;
     }
     #ti_widget_label17 {
         position: absolute;
@@ -2187,12 +2112,54 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         box-shadow: 0px 0px 7px black;
         position: absolute;
     }
+    #load_1 {
+        position: absolute;
+        left: 600px;
+        top: 225px;
+        background-color: #44c85b;
+        width: 568px;
+        height: 40px;
+        font-size: medium;
+        font-weight: 700;
+        z-index: 10;
+    }
+    #load_0 {
+        position: absolute;
+        left: 20px;
+        top: 225px;
+        background-color: #44c85b;
+        width: 568px;
+        height: 40px;
+        font-size: medium;
+        font-weight: 700;
+        z-index: 10;
+    }
+    #core_0_1_container {
+        height: 169px;
+        width:580px;
+        border: 1px solid lightgray;
+        box-shadow: 0px 0px 3px grey;
+        position: absolute;
+        left: 16px;
+        top: 107px;
+        z-index: -1;
+    }
+    #core_2_3_container {
+        height: 169px;
+        width:580px;
+        border: 1px solid lightgray;
+        box-shadow: 0px 0px 5px grey;
+        position: absolute;
+        left: 596px;
+        top: 107px;
+        z-index: -1;
+    }
 </style>
 
 <ti-widget-readme background-color="#ffffff" elevation="5" title-text="README.md" id="readmeViewer" pin></ti-widget-readme>
 <ti-core-stylesheets id="ti_core_stylesheets"></ti-core-stylesheets>
 
-<ti-widget-menubar id="ti_widget_menubar" layout class="x-scope ti-widget-menubar-0" horizontal pin product-name="AM64x Starter Tool">
+<ti-widget-menubar id="ti_widget_menubar" layout class="x-scope ti-widget-menubar-0" horizontal pin product-name="AM64x EVM">
     <ti-widget-filemenu load-save-disabled="true" id="ti_widget_filemenu" layout>
         <ti-widget-menuitem id="fileFormat"  name="Register File Format" icon-name="icons:description">
            <ti-widget-menutoggle id="fileFormatCSV" name="CSV (Comma Separated Values)" action="set_csv_format"></ti-widget-menutoggle>
@@ -2226,7 +2193,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <ti-widget-vtabcontainer id="ti_widget_vtabcontainer" vtab-height-in-px="60" selected-index="0" ink-color="#f1f1f1" color-selected="#ffffff" color-unselected="#888" color-disabled="#ccc" color-selection-bar="white" background-color-selected="#148c9c" background-color-hover="#dcdcec" auto-expand auto-zero-htab-index tab-height-in-px="60" vertical layout>
     <ti-widget-vtab id="ti_widget_vtab_home" name="Home" icon="home" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
-        <ti-widget-label id="ti_widget_label_productname" label="AM64x Starter Tool" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        <ti-widget-label id="ti_widget_label_productname" label="AM64x EVM" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
         <ti-widget-label id="ti_widget_label_productdesc" label="Analyze system performance, review documentation, and run demos" text-align="center" font-size="custom" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
         <ti-widget-image id="ti_widget_image" image-path="images/ti_adschip.png" lock-aspect-ratio hover-effect="no" visible lockaspectratio center-justified horizontal layout center></ti-widget-image>
         <ti-widget-label id="ti_widget_label_showless" label="Show Less..." mouse-over-font-color="#0c515a" mouse-over-underline-color="#0c515a" text-align="center" font-size="custom" custom-font-size="12px" font-color="#0c515a" font-style="normal" font-weight="normal" text-decoration="none" visible hidden></ti-widget-label>
@@ -2245,23 +2212,22 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <ti-widget-container id="ti_widget_container6" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
             <ti-widget-label id="ti_widget_label26" label="Core Loading" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
         </ti-widget-container>
-        <ti-widget-button id="load_0" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
         <ti-tile-container title-text="R5F Core 0" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_0">
             <ti-widget-label id="ti_widget_label69" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="app_list_0" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
-            <ti-widget-label id="ti_widget_label70" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label70" label="Options:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="freq_list_0" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
         </ti-tile-container>
         <ti-tile-container title-text="R5F Core 1" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_1">
             <ti-widget-label id="ti_widget_label71" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="app_list_1" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
-            <ti-widget-label id="ti_widget_label72" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label72" label="Options:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="freq_list_1" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
         </ti-tile-container>
         <ti-tile-container title-text="R5F Core 2" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_2">
             <ti-widget-label id="ti_widget_label73" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="app_list_2" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
-            <ti-widget-label id="ti_widget_label74" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label74" label="Options:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="freq_list_2" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
         </ti-tile-container>
         <ti-tile-container title-text="A53" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_a53">
@@ -2269,15 +2235,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <ti-tile-container title-text="R5F Core 3" title-style="border-bottom:solid 1px #eee;" tile-body-style="padding:0 1em 1em 1em;" background-color="#ffffff" elevation="3" id="core_load_container_3">
             <ti-widget-label id="ti_widget_label75" label="Application:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="app_list_3" labels="|CFFT|FIR Filtering|FOC Loop|Position/Speed Loop|ADC and PWM Loop" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
-            <ti-widget-label id="ti_widget_label76" label="Frequency:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
+            <ti-widget-label id="ti_widget_label76" label="Options:" text-align="right" font-size="small" font-color="#4e4e4e" font-weight="700"></ti-widget-label>
             <ti-widget-droplist id="freq_list_3" labels="|8 kHz|16 kHz|32 kHz|50 kHz" selected-value="0" selected-index="0" font-size="small" font-weight="700"></ti-widget-droplist>
         </ti-tile-container>
+        <ti-widget-button id="load_0" label="Load"  raised center-justified bindable-trigger="23" center wrap></ti-widget-button>
         <ti-widget-button id="load_1" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
-        <ti-widget-button id="load_2" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
-        <ti-widget-button id="load_3" label="Load"  raised center-justified bindable-trigger="21" center wrap></ti-widget-button>
-        <ti-widget-container id="ti_widget_container7" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
-            <ti-widget-label id="ti_widget_label27" label="Stats" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
-        </ti-widget-container>
         <ti-widget-container id="int_box_1"  auto-scroll>
             <ti-widget-gauge id="gauge1" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" size="0" units="%" value-font-size="x-large"></ti-widget-gauge>
             <ti-widget-label id="ti_widget_label81" label="Core 0" text-align="center" font-size="xx-large" font-color="#4c4c4c" font-weight="700"></ti-widget-label>
@@ -2363,6 +2325,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <ti-widget-progressbar id="sram_4" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
             <ti-widget-label id="ti_widget_label17" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
         </ti-widget-container>
+        <ti-widget-container id="core_0_1_container" auto-scroll></ti-widget-container>
+        <ti-widget-container id="core_2_3_container" auto-scroll></ti-widget-container>
     </ti-widget-vtab>
     <ti-widget-vtab id="ti_widget_vtab_motor_demo" name="Motor Drive Demo" caption="View output data from the motor drive demo" icon="ti-core-icons:area-chart" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" icon-name="build" autoscroll title>
         <ti-widget-banner id="ti_widget_banner5" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>

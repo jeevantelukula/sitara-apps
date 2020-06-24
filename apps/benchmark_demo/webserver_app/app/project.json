@@ -1,10 +1,10 @@
 {
-	"template":"AM64x Starter Tool",
+	"template":"AM64x EVM",
 	"description":"Multipage application with benchmark data",
 	"version":"1.0.0",
 	"theme":"ti-analogevm-theme",
-	"projectName":"AM64x_Starter_Tool",
-	"applicationName":"AM64x Starter Tool",
+	"projectName":"AM64x_EVM",
+	"applicationName":"AM64x EVM",
 	"applicationIcon":"",
 	"windowIcon":"",
 	"splashImage":"",
