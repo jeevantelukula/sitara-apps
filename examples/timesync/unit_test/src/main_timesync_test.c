@@ -514,6 +514,11 @@ int32_t startTs(
     }
 
     /* Wait for PRU FW initialization complete */
+    status = icssgTsDrv_waitFwInit(pTs->hTsDrv);
+    if (status != ICSSG_TS_DRV__STS_NERR)
+    {
+        return TEST_TS_ERR_START_TS;
+    }
 
     return TEST_TS_ERR_NERR;
 }

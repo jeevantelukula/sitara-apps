@@ -41,11 +41,6 @@ TsFwRegs * const pTsFwRegs = &gTsFwRegs;
 /* Pointer to IEP0 registers */
 CSL_icss_g_pr1_iep1_slvRegs * const pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)CSL_ICSS_IEP0_CFG_BASE;
 
-#pragma DATA_SECTION(gCapCmp1, ".dbgBuf")
-uint64_t gCapCmp1[256];
-#pragma DATA_SECTION(gCapCmp1Idx, ".dbgBuf")
-uint16_t gCapCmp1Idx = 0;
-
 void main(void)
 {
     uint32_t tsCtrl, tsStat;
@@ -94,7 +89,7 @@ void main(void)
     }
     
     /* Initialize CMP4 */
-    if (pTsFwRegs->tsCmpFwRegs.TS_CMP4_COUNT != 0)
+    if (pTsCmpFwRegs->TS_CMP4_COUNT != 0)
     {
         mask |= (1<<4);
         lastCmp4 = lastCmp1;
