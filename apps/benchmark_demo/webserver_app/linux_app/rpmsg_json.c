@@ -10,6 +10,7 @@
  * Copyright (c) 2014, Mentor Graphics Corporation. All rights reserved.
  * Copyright (c) 2015 - 2016 Xilinx, Inc. All rights reserved.
  * Copyright (c) 2016 Freescale Semiconductor, Inc. All rights reserved
+ * Copyright (c) 2020 Texas Instruments, Inc. All rights reserved
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -69,14 +70,43 @@ struct _payload *i_payload;
 struct _payload *r_payload;
 
 #define NUM_R5_CORES 4
+#define NUM_R5_APPS 5
 core_stat R5CoreStat[NUM_R5_CORES];
 core_output A53CoreStat;
+core_input curR5CoreInput[NUM_R5_CORES] = {
+  {0, 0, 0},
+  {0, 0, 0},
+  {0, 0, 0},
+  {0, 0, 0}
+};
+
+/* Change BENCHMARK_DEMO_FW_ROOT is required for this program to run */
+/* either provide it via build system or it will be default to the following location */
+#ifndef BENCHMARK_DEMO_FW_ROOT
+#define BENCHMARK_DEMO_FW_ROOT "/lib/firmware/sitara-apps/sitara-benchmark-demo"
+#endif
+
+/* Change RPMSG_FW_PATHNAME is required for this program to run */
+/* either provide it via build system or it will be default to the following location */
+#ifndef RPMSG_FW_PATHNAME
+#define RPMSG_FW_PATHNAME "/lib/firmware/am65x-mcu-r5f%d_%d-fw"
+#endif
+
+char commandBuffer[128];
+char softLinkFormat[NUM_R5_APPS][128] = {
+"ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_cfft.out "RPMSG_FW_PATHNAME,
+"ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_fir.out "RPMSG_FW_PATHNAME,
+"ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_foc.out "RPMSG_FW_PATHNAME,
+"ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_pid.out "RPMSG_FW_PATHNAME,
+"ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_adc_pwm.out "RPMSG_FW_PATHNAME
+};
+
+long loopCounter = 0;
 
 #define RPMSG_HEADER_LEN 16
 #define MAX_RPMSG_BUFF_SIZE (512 - RPMSG_HEADER_LEN)
-#define PAYLOAD_MIN_SIZE	1
-#define PAYLOAD_MAX_SIZE	(MAX_RPMSG_BUFF_SIZE - 24)
-#define PAYLOAD_TEST_SIZE 256
+#define PAYLOAD_SIZE    12
+#define PAYLOAD_MAX_SIZE    (MAX_RPMSG_BUFF_SIZE - 24)
 #define RPMSG_BUS_SYS "/sys/bus/rpmsg"
 
 long diff(struct timespec start, struct timespec end)
@@ -296,45 +326,45 @@ int json_file_write(char *outFileName, char *buf, int size)
   return bytes_write;
 }
 
-int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *myCoreStat, int num, core_output *myCoreOut) 
+int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *myCoreStat, int num, core_output *myCoreOut)
 {
   int i, j, k, l, m;
   char tempBuf[128];
   char tempNum[20];
+  int cur;
 
   /* Looking for each R5 core */
+  cur = 1;
   for (m=0; m<4; m++)
   {
+next0:
     sprintf(tempBuf, "core%d", m);
-    for (i = 1; i < r; i++) 
+    for (i = cur; i < r; i++) 
     {
       if (jsoneq(dataBuf, &t[i], tempBuf) == 0)
       {
         /* if we got coreN */
-        printf("- %s: %.*s\n", tempBuf, t[i + 1].end - t[i + 1].start,
-             dataBuf + t[i + 1].start);
         i++;
+        cur++;
 
         /* looking for input */
-        for (j = i; j < r; j++) 
+        for (j = cur; j < r; j++) 
         {
           if (jsoneq(dataBuf, &t[j], "input") == 0)
           {
             /* if we got intput */
-            printf("- input: %.*s\n", t[j + 1].end - t[j + 1].start,
-                dataBuf + t[j + 1].start);
             j++;
+            cur++;
 
             /* looking for application */
-            for (k = j; k < r; k++) 
+            for (k = cur; k < r; k++) 
             {
               /* find application field */
               if (jsoneq(dataBuf, &t[k], "application") == 0)
               {
                 /* if we got application */
-                printf("- application: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 strncpy(tempNum, dataBuf + t[k + 1].start, t[k + 1].end - t[k + 1].start);
+                tempNum[t[k + 1].end - t[k + 1].start] = '\0';
                 myCoreStat[m].input.app = atoi(tempNum);
                 k++;
               }
@@ -343,9 +373,8 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
               if (jsoneq(dataBuf, &t[k], "frequency") == 0)
               {
                 /* if we got frequency */
-                printf("- frequency: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 strncpy(tempNum, dataBuf + t[k + 1].start, t[k + 1].end - t[k + 1].start);
+                tempNum[t[k + 1].end - t[k + 1].start] = '\0';
                 myCoreStat[m].input.freq = atoi(tempNum);
                 k++;
               }
@@ -354,46 +383,45 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
               if (jsoneq(dataBuf, &t[k], "changed") == 0)
               {
                 /* if we got changed */
-                printf("- changed: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 strncpy(tempNum, dataBuf + t[k + 1].start, t[k + 1].end - t[k + 1].start);
+                tempNum[t[k + 1].end - t[k + 1].start] = '\0';
                 myCoreStat[m].input.mod_flag = atoi(tempNum);
                 k++;
+                cur = k;
+                goto next1;
               }
             } /* k loop */  
           } /* input */
         } /* j loop */
 
+next1:
         /* looking for output */
-        for (j = i; j < r; j++) 
+        for (j = cur; j < r; j++) 
         {
           if (jsoneq(dataBuf, &t[j], "output") == 0)
           {
             /* if we got output */
-            printf("- output: %.*s\n", t[j + 1].end - t[j + 1].start,
-              dataBuf + t[j + 1].start);
             j++;
+            cur++;
 
             /* looking for cpu_load */
-            for (k = j; k < r; k++) 
+            for (k = cur; k < r; k++) 
             {
               if (jsoneq(dataBuf, &t[k], "cpu_load") == 0)
               {
                 /* if we got cpu_load */
-                printf("- cpu_load: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 k++;
+                cur++;
 
                 /* looking for current, average and max */
-                for (l = k; l < r; l++) 
+                for (l = cur; l < r; l++) 
                 {
                   /* find current field */
                   if (jsoneq(dataBuf, &t[l], "current") == 0)
                   {
                     /* if we got current */
-                    printf("- current: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.cload.cur = atoi(tempNum);
                     l++;
                   }
@@ -402,9 +430,8 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                   if (jsoneq(dataBuf, &t[l], "average") == 0)
                   {
                     /* if we got average */
-                    printf("- average: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.cload.ave = atoi(tempNum);
                     l++;
                   }
@@ -413,36 +440,36 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                   if (jsoneq(dataBuf, &t[l], "max") == 0)
                   {
                     /* if we got max */
-                    printf("- max: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.cload.max = atoi(tempNum);
                     l++;
+                    cur = l;
+                    goto next2;
                   }
                 } /* l loop */ 
               } /* cpu_load */
             } /* k loop */
 
+next2:
             /* looking for int_latency */
-            for (k = j; k < r; k++) 
+            for (k = cur; k < r; k++) 
             {
               if (jsoneq(dataBuf, &t[k], "int_latency") == 0)
               {
                 /* if we got int_latency */
-                printf("- int_latency: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 k++;
+                cur++;
 
                 /* looking for average and max */
-                for (l = k; l < r; l++) 
+                for (l = cur; l < r; l++) 
                 {
                   /* find average field */
                   if (jsoneq(dataBuf, &t[l], "average") == 0)
                   {
                     /* if we got average */
-                    printf("- average: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.ilate.ave = atoi(tempNum);
                     l++;
                   }
@@ -451,25 +478,26 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                   if (jsoneq(dataBuf, &t[l], "max") == 0) 
                   {
                     /* if we got max */
-                    printf("- max: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.ilate.max = atoi(tempNum);
                     l++;
+                    cur = l;
+                    goto next3;
                   }
                 } /* l loop */
               } /* int_latency */  
             } /* k loop */
 
+next3:
             /* looking for cycles_per_loop */
-            for (k = j; k < r; k++) 
+            for (k = cur; k < r; k++) 
             {
               if (jsoneq(dataBuf, &t[k], "cycles_per_loop") == 0)
               {
                 /* if we got cycles_per_loop */
-                printf("- cycles_per_loop: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 k++;
+                cur++;
 
                 /* looking for average and max */
                 for (l = k; l < r; l++) 
@@ -478,9 +506,8 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                   if (jsoneq(dataBuf, &t[l], "average") == 0)
                   {
                     /* if we got average */
-                    printf("- average: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.ccploop.ave = atoi(tempNum);
                     l++;
                   }
@@ -489,74 +516,73 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                   if (jsoneq(dataBuf, &t[l], "max") == 0)
                   {
                     /* if we got max */
-                    printf("- max: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                     strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                    tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                     myCoreStat[m].output.ccploop.max = atoi(tempNum);
                     l++;
+                    cur = l;
+                    goto next4;
                   }
                 } /* l loop */
               } /* cycles_per_loop */  
             } /* k loop */
 
+next4:
             /* looking for sram */
-            for (k = j; k < r; k++) 
+            for (k = cur; k < r; k++) 
             {
               if (jsoneq(dataBuf, &t[k], "sram") == 0)
               {
                 /* if we got sram */
-                printf("- sram: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
                 strncpy(tempNum, dataBuf + t[k + 1].start, t[k + 1].end - t[k + 1].start);
+                tempNum[t[k + 1].end - t[k + 1].start] = '\0';
                 myCoreStat[m].output.sram_pcnt = 100-atoi(tempNum);
                 k++;
+                cur = k;
+                goto next0;
               } /* sram */
             }/* k loop */
           } /* output */ 
         } /* j loop */
       } /* coreN */
-    } /* i loop */     
+    } /* i loop */
   } /* m loop */
 
-  for (i = 1; i < r; i++) 
+  for (i = cur; i < r; i++) 
   {
     if (jsoneq(dataBuf, &t[i], "a53") == 0)
     {
       /* if we got a53 */
-      printf("- %s: %.*s\n", tempBuf, t[i + 1].end - t[i + 1].start,
-           dataBuf + t[i + 1].start);
       i++;
+      cur++;
 
       /* looking for output */
-      for (j = i; j < r; j++) 
+      for (j = cur; j < r; j++) 
       {
         if (jsoneq(dataBuf, &t[j], "output") == 0)
         {
           /* if we got output */
-          printf("- output: %.*s\n", t[j + 1].end - t[j + 1].start,
-            dataBuf + t[j + 1].start);
           j++;
+          cur++;
 
           /* looking for cpu_load */
-          for (k = j; k < r; k++) 
+          for (k = cur; k < r; k++) 
           {
             if (jsoneq(dataBuf, &t[k], "cpu_load") == 0)
             {
               /* if we got cpu_load */
-              printf("- cpu_load: %.*s\n", t[k + 1].end - t[k + 1].start,
-              dataBuf + t[k + 1].start);
               k++;
+              cur++;
 
               /* looking for current, average and max */
-              for (l = k; l < r; l++) 
+              for (l = cur; l < r; l++) 
               {
                 /* find current field */
                 if (jsoneq(dataBuf, &t[l], "current") == 0)
                 {
                   /* if we got current */
-                  printf("- current: %.*s\n", t[l + 1].end - t[l + 1].start,
-                  dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->cload.cur = atoi(tempNum);
                   l++;
                 }
@@ -565,9 +591,8 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                 if (jsoneq(dataBuf, &t[l], "average") == 0)
                 {
                   /* if we got average */
-                  printf("- average: %.*s\n", t[l + 1].end - t[l + 1].start,
-                  dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->cload.ave = atoi(tempNum);
                   l++;
                 }
@@ -576,36 +601,36 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                 if (jsoneq(dataBuf, &t[l], "max") == 0)
                 {
                   /* if we got max */
-                  printf("- max: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->cload.max = atoi(tempNum);
                   l++;
+                  cur = l;
+                  goto next5;
                 }
               } /* l loop */ 
             } /* cpu_load */
           } /* k loop */
 
+next5:
           /* looking for int_latency */
-          for (k = j; k < r; k++) 
+          for (k = cur; k < r; k++) 
           {
             if (jsoneq(dataBuf, &t[k], "int_latency") == 0)
             {
               /* if we got int_latency */
-              printf("- int_latency: %.*s\n", t[k + 1].end - t[k + 1].start,
-              dataBuf + t[k + 1].start);
               k++;
+              cur++;
 
               /* looking for average and max */
-              for (l = k; l < r; l++) 
+              for (l = cur; l < r; l++) 
               {
                 /* find average field */
                 if (jsoneq(dataBuf, &t[l], "average") == 0)
                 {
                   /* if we got average */
-                  printf("- average: %.*s\n", t[l + 1].end - t[l + 1].start,
-                  dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->ilate.ave = atoi(tempNum);
                   l++;
                 }
@@ -614,36 +639,36 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                 if (jsoneq(dataBuf, &t[l], "max") == 0)
                 {
                   /* if we got max */
-                  printf("- max: %.*s\n", t[l + 1].end - t[l + 1].start,
-                    dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->ilate.max = atoi(tempNum);
                   l++;
+                  cur = l;
+                  goto next6;
                 }
               } /* l loop */
             } /* int_latency */  
           } /* k loop */
 
+next6:
           /* looking for cycles_per_loop */
-          for (k = j; k < r; k++) 
+          for (k = cur; k < r; k++) 
           {
             if (jsoneq(dataBuf, &t[k], "cycles_per_loop") == 0)
             {
               /* if we got cycles_per_loop */
-              printf("- cycles_per_loop: %.*s\n", t[k + 1].end - t[k + 1].start,
-              dataBuf + t[k + 1].start);
               k++;
+              cur++;
 
               /* looking for average and max */
-              for (l = k; l < r; l++) 
+              for (l = cur; l < r; l++) 
               {
                 /* find average field */
                 if (jsoneq(dataBuf, &t[l], "average") == 0)
                 {
                   /* if we got average */
-                  printf("- average: %.*s\n", t[l + 1].end - t[l + 1].start,
-                  dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->ccploop.ave = atoi(tempNum);
                   l++;
                 }
@@ -652,27 +677,30 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
                 if (jsoneq(dataBuf, &t[l], "max") == 0)
                 {
                   /* if we got max */
-                  printf("- max: %.*s\n", t[l + 1].end - t[l + 1].start,
-                  dataBuf + t[l + 1].start);
                   strncpy(tempNum, dataBuf + t[l + 1].start, t[l + 1].end - t[l + 1].start);
+                  tempNum[t[l + 1].end - t[l + 1].start] = '\0';
                   myCoreOut->ccploop.max = atoi(tempNum);
                   l++;
+                  cur = l;
+                  goto next7;
                 }
               } /* l loop */
             } /* cycles_per_loop */  
           } /* k loop */
 
+next7:
           /* looking for sram */
-          for (k = j; k < r; k++) 
+          for (k = cur; k < r; k++) 
           {
             if (jsoneq(dataBuf, &t[k], "sram") == 0)
             {
               /* if we got sram */
-              printf("- sram: %.*s\n", t[k + 1].end - t[k + 1].start,
-                dataBuf + t[k + 1].start);
               strncpy(tempNum, dataBuf + t[k + 1].start, t[k + 1].end - t[k + 1].start);
+              tempNum[t[k + 1].end - t[k + 1].start] = '\0';
               myCoreOut->sram_pcnt = 100-atoi(tempNum);
               k++;
+              cur = k;
+              goto next8;
             } /* sram */
           }/* k loop */
         } /* output */ 
@@ -680,6 +708,7 @@ int json_read_fields(char *dataBuf, int size, jsmntok_t *t, int r, core_stat *my
     } /* coreN */
   } /* i loop */     
 
+next8:
   return EXIT_SUCCESS;
 }
 
@@ -687,6 +716,7 @@ int json_write_fields(char *outBuf, int bufSize, core_stat *coreStat, int num, c
 {
   int i;
   int index = 0;
+  int numChar;
 
   /* output top level object { */
   sprintf(outBuf+index, "{\n");
@@ -696,153 +726,153 @@ int json_write_fields(char *outBuf, int bufSize, core_stat *coreStat, int num, c
   for (i=0; i<num; i++)
   {
     /* output core object { */
-    sprintf(outBuf+index, "  \"core%d\": {\n", i);
-    index += 13;
+    numChar = sprintf(outBuf+index, "  \"core%d\": {\n", i);
+    index += numChar;
 
     /* output input object { */
-    sprintf(outBuf+index, "    \"input\": {\n");
-    index += 15;
+    numChar = sprintf(outBuf+index, "    \"input\": {\n");
+    index += numChar;
     /* output application field { */
-    sprintf(outBuf+index, "      \"application\": %d,\n", coreStat[i].input.app);
-    index += 24;
+    numChar = sprintf(outBuf+index, "      \"application\": %d,\n", coreStat[i].input.app);
+    index += numChar;
     /* output frequency field { */
-    sprintf(outBuf+index, "      \"frequency\": %d,\n", coreStat[i].input.freq);
-    index += 22;
+    numChar = sprintf(outBuf+index, "      \"frequency\": %d,\n", coreStat[i].input.freq);
+    index += numChar;
     /* output changed field { */
-    sprintf(outBuf+index, "      \"changed\": %d\n", coreStat[i].input.mod_flag);
-    index += 19;
+    numChar = sprintf(outBuf+index, "      \"changed\": %d\n", coreStat[i].input.mod_flag);
+    index += numChar;
     /* output input object } */
-    sprintf(outBuf+index, "    },\n");
-    index += 7;
+    numChar = sprintf(outBuf+index, "    },\n");
+    index += numChar;
 
     /* output output object { */
-    sprintf(outBuf+index, "    \"output\": {\n");
-    index += 16;
+    numChar = sprintf(outBuf+index, "    \"output\": {\n");
+    index += numChar;
     /* output cpu_load object { */
-    sprintf(outBuf+index, "      \"cpu_load\": {\n");
-    index += 20;
+    numChar = sprintf(outBuf+index, "      \"cpu_load\": {\n");
+    index += numChar;
     /* output current field { */
-    sprintf(outBuf+index, "        \"current\": %*d,\n", 3, coreStat[i].output.cload.cur);
-    index += 24;
+    numChar = sprintf(outBuf+index, "        \"current\": %d,\n", coreStat[i].output.cload.cur);
+    index += numChar;
     /* output average field { */
-    sprintf(outBuf+index, "        \"average\": %*d,\n", 3, coreStat[i].output.cload.ave);
-    index += 24;
+    numChar = sprintf(outBuf+index, "        \"average\": %d,\n", coreStat[i].output.cload.ave);
+    index += numChar;
     /* output max field { */
-    sprintf(outBuf+index, "        \"max\": %*d\n", 3, coreStat[i].output.cload.max);
-    index += 19;
+    numChar = sprintf(outBuf+index, "        \"max\": %d\n", coreStat[i].output.cload.max);
+    index += numChar;
     /* output cpu_load object } */
-    sprintf(outBuf+index, "      },\n");
-    index += 9;
+    numChar = sprintf(outBuf+index, "      },\n");
+    index += numChar;
 
     /* output int_latency object { */
-    sprintf(outBuf+index, "      \"int_latency\": {\n");
-    index += 23;
+    numChar = sprintf(outBuf+index, "      \"int_latency\": {\n");
+    index += numChar;
     /* output average field { */
-    sprintf(outBuf+index, "        \"average\": %*d,\n", 6, coreStat[i].output.ilate.ave);
-    index += 27;
+    numChar = sprintf(outBuf+index, "        \"average\": %d,\n", coreStat[i].output.ilate.ave);
+    index += numChar;
     /* output max field { */
-    sprintf(outBuf+index, "        \"max\": %*d\n", 6, coreStat[i].output.ilate.max);
-    index += 22;
+    numChar = sprintf(outBuf+index, "        \"max\": %d\n", coreStat[i].output.ilate.max);
+    index += numChar;
     /* output int_latency object } */
-    sprintf(outBuf+index, "      },\n");
-    index += 9;
+    numChar = sprintf(outBuf+index, "      },\n");
+    index += numChar;
 
     /* output cycles_per_loop object { */
-    sprintf(outBuf+index, "      \"cycles_per_loop\": {\n");
-    index += 27;
+    numChar = sprintf(outBuf+index, "      \"cycles_per_loop\": {\n");
+    index += numChar;
     /* output average field { */
-    sprintf(outBuf+index, "        \"average\": %*d,\n", 6, coreStat[i].output.ccploop.ave);
-    index += 27;
+    numChar = sprintf(outBuf+index, "        \"average\": %d,\n", coreStat[i].output.ccploop.ave);
+    index += numChar;
     /* output max field { */
-    sprintf(outBuf+index, "        \"max\": %*d\n", 6, coreStat[i].output.ccploop.max);
-    index += 22;
+    numChar = sprintf(outBuf+index, "        \"max\": %d\n", coreStat[i].output.ccploop.max);
+    index += numChar;
     /* output cycles_per_loop object } */
-    sprintf(outBuf+index, "      },\n");
-    index += 9;
+    numChar = sprintf(outBuf+index, "      },\n");
+    index += numChar;
 
     /* output sram_label field { */
-    sprintf(outBuf+index, "        \"sram_label\": \"OC-SRAM:   %*d%%\",\n", 3, coreStat[i].output.sram_pcnt);
-    index += 41;
+    numChar = sprintf(outBuf+index, "      \"sram_label\": \"OC-SRAM: %d%%\",\n", coreStat[i].output.sram_pcnt);
+    index += numChar;
     /* output sram field { */
-    sprintf(outBuf+index, "        \"sram\": %*d\n", 3, 100-coreStat[i].output.sram_pcnt);
-    index += 20;
+    numChar = sprintf(outBuf+index, "      \"sram\": %d\n", 100-coreStat[i].output.sram_pcnt);
+    index += numChar;
 
     /* output output object } */
-    sprintf(outBuf+index, "    }\n");
-    index += 6;
+    numChar = sprintf(outBuf+index, "    }\n");
+    index += numChar;
 
     /* output core object } */
-    sprintf(outBuf+index, "  },\n");
-    index += 5;
+    numChar = sprintf(outBuf+index, "  },\n");
+    index += numChar;
   }
 
   /* output a53 object { */
-  sprintf(outBuf+index, "  \"a53\": {\n");
-  index += 11;
+  numChar = sprintf(outBuf+index, "  \"a53\": {\n");
+  index += numChar;
 
   /* output output object { */
-  sprintf(outBuf+index, "    \"output\": {\n");
-  index += 16;
+  numChar = sprintf(outBuf+index, "    \"output\": {\n");
+  index += numChar;
   /* output cpu_load object { */
-  sprintf(outBuf+index, "      \"cpu_load\": {\n");
-  index += 20;
+  numChar = sprintf(outBuf+index, "      \"cpu_load\": {\n");
+  index += numChar;
   /* output current field { */
-  sprintf(outBuf+index, "        \"current\": %*d,\n", 3, coreOut->cload.cur);
-  index += 24;
+  numChar = sprintf(outBuf+index, "        \"current\": %d,\n", coreOut->cload.cur);
+  index += numChar;
   /* output average field { */
-  sprintf(outBuf+index, "        \"average\": %*d,\n", 3, coreOut->cload.ave);
-  index += 24;
+  numChar = sprintf(outBuf+index, "        \"average\": %d,\n", coreOut->cload.ave);
+  index += numChar;
   /* output max field { */
-  sprintf(outBuf+index, "        \"max\": %*d\n", 3, coreOut->cload.max);
-  index += 19;
+  numChar = sprintf(outBuf+index, "        \"max\": %d\n", coreOut->cload.max);
+  index += numChar;
   /* output cpu_load object } */
-  sprintf(outBuf+index, "      },\n");
-  index += 9;
+  numChar = sprintf(outBuf+index, "      },\n");
+  index += numChar;
 
   /* output int_latency object { */
-  sprintf(outBuf+index, "      \"int_latency\": {\n");
-  index += 23;
+  numChar = sprintf(outBuf+index, "      \"int_latency\": {\n");
+  index += numChar;
   /* output average field { */
-  sprintf(outBuf+index, "        \"average\": %*d,\n", 6, coreOut->ilate.ave);
-  index += 27;
+  numChar = sprintf(outBuf+index, "        \"average\": %d,\n", coreOut->ilate.ave);
+  index += numChar;
   /* output max field { */
-  sprintf(outBuf+index, "        \"max\": %*d\n", 6, coreOut->ilate.max);
-  index += 22;
+  numChar = sprintf(outBuf+index, "        \"max\": %d\n", coreOut->ilate.max);
+  index += numChar;
   /* output int_latency object } */
-  sprintf(outBuf+index, "      },\n");
-  index += 9;
+  numChar = sprintf(outBuf+index, "      },\n");
+  index += numChar;
 
   /* output cycles_per_loop object { */
-  sprintf(outBuf+index, "      \"cycles_per_loop\": {\n");
-  index += 27;
+  numChar = sprintf(outBuf+index, "      \"cycles_per_loop\": {\n");
+  index += numChar;
   /* output average field { */
-  sprintf(outBuf+index, "        \"average\": %*d,\n", 6, coreOut->ccploop.ave);
-  index += 27;
+  numChar = sprintf(outBuf+index, "        \"average\": %d,\n", coreOut->ccploop.ave);
+  index += numChar;
   /* output max field { */
-  sprintf(outBuf+index, "        \"max\": %*d\n", 6, coreOut->ccploop.max);
-  index += 22;
+  numChar = sprintf(outBuf+index, "        \"max\": %d\n", coreOut->ccploop.max);
+  index += numChar;
   /* output cycles_per_loop object } */
-  sprintf(outBuf+index, "      },\n");
-  index += 9;
+  numChar = sprintf(outBuf+index, "      },\n");
+  index += numChar;
 
   /* output sram_label field { */
-  sprintf(outBuf+index, "        \"sram_label\": \"OC-SRAM:   %*d%%\",\n", 3, coreOut->sram_pcnt);
-  index += 41;
+  numChar = sprintf(outBuf+index, "      \"sram_label\": \"OC-SRAM: %d%%\",\n", coreOut->sram_pcnt);
+  index += numChar;
   /* output sram field { */
-  sprintf(outBuf+index, "        \"sram\": %*d\n", 3, 100-coreOut->sram_pcnt);
-  index += 20;
+  numChar = sprintf(outBuf+index, "      \"sram\": %d\n", 100-coreOut->sram_pcnt);
+  index += numChar;
 
   /* output output object } */
-  sprintf(outBuf+index, "    }\n");
-  index += 6;
+  numChar = sprintf(outBuf+index, "    }\n");
+  index += numChar;
 
   /* output a53 object } */
-  sprintf(outBuf+index, "  }\n");
-  index += 4;
+  numChar = sprintf(outBuf+index, "  }\n");
+  index += numChar;
 
   /* output top level object } */
-  sprintf(outBuf+index, "}\n");
-  index += 2;
+  numChar = sprintf(outBuf+index, "}\n");
+  index += numChar;
 
   printf("Total %d bytes have output\n", index);
 
@@ -852,22 +882,19 @@ int json_write_fields(char *outBuf, int bufSize, core_stat *coreStat, int num, c
 char rpmsg_dev[256]="virtio0.ti.ipc4.ping-pong.-1.13";
 int main(int argc, char *argv[])
 {
-  int ret, i, j, k;
+  int ret, j, k;
   int size, bytes_rcvd, bytes_sent;
-  err_cnt = 0;
-  int opt;
-  int ntimes = 1;
   char fpath[256];
-  char jsonFilePath[256] = "usr/share/sitara-benchmark-server/app/oob_data.jason";
+  char jsonFilePath[256] = "/usr/share/sitara-benchmark-server/app/oob_data.jason";
   char rpmsg_char_name[16];
   struct rpmsg_endpoint_info eptinfo;
   char ept_dev_name[16];
   char ept_dev_path[32];
-  int token_num, bytesRead, bytesWrite;
+  int token_num, bytesRead, bytesWrite, tempSize;
 
   struct timespec start, end;
   long elapsed;
-  int iter = 1, payload_test_size = PAYLOAD_MIN_SIZE;
+  int payload_test_size = PAYLOAD_SIZE;
   int *dataPtr;
 
   printf("\r\n RPMsg_char to JSON test start \r\n");
@@ -888,70 +915,140 @@ int main(int argc, char *argv[])
   token_num = 1024;
   memset(R5CoreStat, 0, sizeof(R5CoreStat));
   memset(&A53CoreStat, 0, sizeof(A53CoreStat));
-  bytesRead = json_file_read(jsonFilePath, dataBuf, 4096, tokenList, &token_num);
-  /* update the core stats from JSOn file */ 
-  json_read_fields(dataBuf, bytesRead, tokenList, token_num, R5CoreStat, NUM_R5_CORES, &A53CoreStat);
+  memset(dataBuf, 0, 4096);
+  memset(dataBufNew, 0, 4096);
 
-  for (j=0; j<NUM_R5_CORES/2; j++)
+  while (1)
   {
-    /* update the RPMgs_char device name */
-    sprintf(rpmsg_dev, "virtio%d.ti.ipc4.ping-pong.-1.13", j);
-    /* Binding first RPMsg_char device */
-    printf("\r\n Open rpmsg dev %s! \r\n", rpmsg_dev);
-    sprintf(fpath, "%s/devices/%s", RPMSG_BUS_SYS, rpmsg_dev);
-    if (access(fpath, F_OK)) {
-      fprintf(stderr, "Not able to access rpmsg device %s, %s\n",
-        fpath, strerror(errno));
-      return -EINVAL;
-    }
-    ret = bind_rpmsg_chrdev(rpmsg_dev);
-    if (ret < 0)
-      return ret;
-    charfd = get_rpmsg_chrdev_fd(rpmsg_dev, rpmsg_char_name);
-    if (charfd < 0)
-      return charfd;
 
-    /* Create endpoint from rpmsg char driver */
-    strcpy(eptinfo.name, "rpmsg-openamp-demo-channel");
-    eptinfo.src = 0;
-    eptinfo.dst = 0xFFFFFFFF;
-    ret = rpmsg_create_ept(charfd, &eptinfo);
-    if (ret) {
-      printf("failed to create RPMsg endpoint.\n");
-      return -EINVAL;
-    }
-    if (!get_rpmsg_ept_dev_name(rpmsg_char_name, eptinfo.name, ept_dev_name))
-      return -EINVAL;
-    sprintf(ept_dev_path, "/dev/%s", ept_dev_name);
-    fd = open(ept_dev_path, O_RDWR | O_NONBLOCK);
-    if (fd < 0) {
-      perror("Failed to open rpmsg device.");
-      close(charfd);
-      return -1;
-    }
+    /* read the JSON file and update the core stats */
+    bytesRead = json_file_read(jsonFilePath, dataBuf, 4096, tokenList, &token_num);
+#ifdef DEBUG_PRINT
+    printf("%d bytes read and %d tokens parsed\n", bytesRead, token_num);
+#endif
+    
+    /* update the core stats from JSON file */ 
+    json_read_fields(dataBuf, bytesRead, tokenList, token_num, R5CoreStat, NUM_R5_CORES, &A53CoreStat);
+  
+    for (j=0; j<NUM_R5_CORES/2; j++)
+    {
+      /* update the curR5CoreInput[j] according the JSON file */
+      /* if we have a new selection */
+      if (R5CoreStat[j].input.mod_flag)
+      {
+#ifdef DEBUG_PRINT
+        printf("mod_flag set for core %d\n", j);
+#endif
+        /* if we have a new app selection */
+        if (R5CoreStat[j].input.app!=curR5CoreInput[j].app)
+        {
+#ifdef DEBUG_PRINT
+            printf("Switch from %d to %d\n", R5CoreStat[j].input.app, curR5CoreInput[j].app);
+#endif
+            /* update the current app selection */
+            curR5CoreInput[j].app = R5CoreStat[j].input.app;
+            /* stop the app on R5 app on core j */
+            sprintf(commandBuffer, "echo stop > /sys/class/remoteproc/remoteproc%d/state", j);
+#ifdef DEBUG_PRINT
+            printf("Stop: %s\n", commandBuffer);
+#endif
+            ret = system(commandBuffer);
+            if (ret < 0) {
+              printf("Failed to stop rpmsg_char driver.\n");
+              return -EINVAL;
+            }
+            /* change the soft link for R5 core j */ 
+            sprintf(commandBuffer, softLinkFormat[curR5CoreInput[j].app-1], 1, j, 0, j); 
+#ifdef DEBUG_PRINT
+            printf("Softlink: %s\n", commandBuffer);			
+#endif
+            ret = system(commandBuffer);
+            if (ret < 0) {
+              printf("Failed to change soft link.\n");
+              return -EINVAL;
+            }
+            /* load and start the R5 app on core j */
+            sprintf(commandBuffer, "echo start > /sys/class/remoteproc/remoteproc%d/state", j); 
+#ifdef DEBUG_PRINT
+            printf("Start: %s\n", commandBuffer);			
+#endif
+            ret = system(commandBuffer);
+            if (ret < 0) {
+              printf("Failed to start rpmsg_char driver.\n");
+              return -EINVAL;
+            }
 
-    i_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
-    r_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
+            /* wait 3sec for the R5 application to get ready */
+            usleep(3000000);
+        }
 
-    if (i_payload == 0 || r_payload == 0) {
-      printf("ERROR: Failed to allocate memory for payload.\n");
-      return -1;
-    }
+        /* if we have a new app selection */
+        if (R5CoreStat[j].input.freq!=curR5CoreInput[j].freq)
+        {
+            curR5CoreInput[j].freq = R5CoreStat[j].input.freq;
+        }
+      }
 
-    clock_gettime(CLOCK_REALTIME, &start);
+      /* update the RPMgs_char device name */
+      sprintf(rpmsg_dev, "virtio%d.ti.ipc4.ping-pong.-1.13", j);
+      /* Binding first RPMsg_char device */
+#ifdef DEBUG_PRINT
+      printf("\r\n Open rpmsg dev %s! \r\n", rpmsg_dev);
+#endif
+      sprintf(fpath, "%s/devices/%s", RPMSG_BUS_SYS, rpmsg_dev);
+      if (access(fpath, F_OK)) {
+        fprintf(stderr, "Not able to access rpmsg device %s, %s\n",
+          fpath, strerror(errno));
+        return -EINVAL;
+      }
 
-    for (i = 0; i < iter; i++) {
-      int k;
+      ret = bind_rpmsg_chrdev(rpmsg_dev);
+      if (ret < 0)
+        return ret;
+      charfd = get_rpmsg_chrdev_fd(rpmsg_dev, rpmsg_char_name);
+      if (charfd < 0)
+        return charfd;
 
-      i_payload->num = i;
+      /* Create endpoint from rpmsg char driver */
+      strcpy(eptinfo.name, "rpmsg-openamp-demo-channel");
+      eptinfo.src = 0;
+      eptinfo.dst = 0xFFFFFFFF;
+      ret = rpmsg_create_ept(charfd, &eptinfo);
+      if (ret) {
+        printf("failed to create RPMsg endpoint.\n");
+        return -EINVAL;
+      }
+      if (!get_rpmsg_ept_dev_name(rpmsg_char_name, eptinfo.name, ept_dev_name))
+        return -EINVAL;
+      sprintf(ept_dev_path, "/dev/%s", ept_dev_name);
+      fd = open(ept_dev_path, O_RDWR | O_NONBLOCK);
+      if (fd < 0) {
+        perror("Failed to open rpmsg device.");
+        close(charfd);
+        return -1;
+      }
+
+      i_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
+      r_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
+
+      if (i_payload == 0 || r_payload == 0) {
+        printf("ERROR: Failed to allocate memory for payload.\n");
+        return -1;
+      }
+
+      i_payload->num = 0;
       i_payload->size = payload_test_size;
 
-      /* Mark the data buffer. */
-      memset(&(i_payload->data[0]), 0xA5, payload_test_size);
+      /* Copy the curR5CoreInput[j].input into the sending data buffer. */
+      memcpy(&(i_payload->data[0]), &curR5CoreInput[j].app, payload_test_size);
 
+#ifdef DEBUG_PRINT
       printf("\r\n sending payload number");
       printf(" %ld of size %ld\r\n", i_payload->num,
-        (2 * sizeof(unsigned long)) + PAYLOAD_TEST_SIZE);
+        (2 * sizeof(unsigned long)) + payload_test_size);
+#endif
+
+      clock_gettime(CLOCK_REALTIME, &start);
 
       bytes_sent = write(fd, i_payload,
         (2 * sizeof(unsigned long)) + payload_test_size);
@@ -961,60 +1058,80 @@ int main(int argc, char *argv[])
         printf(" .. \r\n");
         break;
       }
-      printf("echo test: sent : %d\n", bytes_sent);
 
       r_payload->num = 0;
       bytes_rcvd = read(fd, r_payload,
         (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
       while (bytes_rcvd <= 0) {
-      /* usleep(10000); */
-      bytes_rcvd = read(fd, r_payload,
-        (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+          bytes_rcvd = read(fd, r_payload,
+            (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
       }
-      printf(" received payload number ");
-      printf("%ld of size %ld\r\n", r_payload->num, r_payload->size);
+      clock_gettime(CLOCK_REALTIME, &end);
+      elapsed = diff(start, end);
 
-      /* print out data buffer */
+#ifdef DEBUG_PRINT
+      /* print out sent data size */
+      printf(" sent payload number ");
+      printf("%ld of size %ld\r\n", i_payload->num, i_payload->size);
+      /* print out sent data buffer */
       printf("\n");
-      dataPtr = (int *)&r_payload->data[0];
-      for (k = 0; k < r_payload->size/sizeof(int); k++) {
+      dataPtr = (int *)(&R5CoreStat[j].input.app);
+      for (k = 0; k < i_payload->size/sizeof(int); k++) {
+        printf("0x%08x\n", *dataPtr++);
+      }
+      printf("\n");
+      dataPtr = (int *)(&i_payload->data[0]);
+      for (k = 0; k < i_payload->size/sizeof(int); k++) {
         printf("0x%08x\n", *dataPtr++);
       }
       printf("\n");
 
+      /* print out received data size */
+      printf(" received payload number ");
+      printf("%ld of size %ld\r\n", r_payload->num, r_payload->size);
+      /* print out received ata buffer */
+      printf("\n");
+      dataPtr = (int *)(&r_payload->data[0]);
+      for (k = 0; k < r_payload->size/sizeof(int); k++) {
+        printf("0x%08x\n", *dataPtr++);
+      }
+      printf("\n");
+#endif
+
       /* save the RPMsg data in R5CoreStat[] */
       R5CoreStat[j].payload_num = r_payload->num;
-      R5CoreStat[j].payload_size = r_payload->size;
-      memcpy(&R5CoreStat[j].input, r_payload->data, r_payload->size);
+      tempSize = (r_payload->size>sizeof(core_stat) ? sizeof(core_stat):r_payload->size);
+      R5CoreStat[j].payload_size = tempSize;
+      memcpy(&R5CoreStat[j].input, r_payload->data, tempSize);
 
       bytes_rcvd = read(fd, r_payload,
         (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
+
+      printf("Avg round trip time: %ld usecs\n", elapsed);
+      printf("\r\n **********************************");
+      printf("****\r\n");
+
+      free(i_payload);
+      free(r_payload);
+
+      close(fd);
+      if (charfd >= 0)
+        close(charfd);
+
+      /* Unbind chardev to be able to run this program again since it will
+      /* attempt to rebind and fail otherwise */
+      ret = unbind_rpmsg_chrdev(rpmsg_dev);
+      if (ret < 0)
+        return ret;
     }
+  
+    /* Generate JSON file using the core stats */
+    bytesRead = json_write_fields(dataBufNew, 4096, R5CoreStat, NUM_R5_CORES, &A53CoreStat);
+    bytesWrite = json_file_write(jsonFilePath, dataBufNew, bytesRead);
+    
+    /* sleep for 2 sec */
+    usleep(2000000);
 
-    clock_gettime(CLOCK_REALTIME, &end);
-    elapsed = diff(start, end);
-
-    printf("Avg round trip time: %ld usecs\n", elapsed / iter);
-    printf("\r\n **********************************");
-    printf("****\r\n");
-
-    free(i_payload);
-    free(r_payload);
-
-    close(fd);
-    if (charfd >= 0)
-      close(charfd);
-
-    // Unbind chardev to be able to run this echo test again since it will
-    // attempt to rebind and fail otherwise
-    ret = unbind_rpmsg_chrdev(rpmsg_dev);
-    if (ret < 0)
-      return ret;
-  }
-
-  /* Generate JSON file using the core stats */
-  bytesRead = json_write_fields(dataBufNew, 4096, R5CoreStat, NUM_R5_CORES, &A53CoreStat);
-  bytesWrite = json_file_write(jsonFilePath, dataBufNew, bytesRead);    
-
+  } /* while loop */
   return 0;
 }

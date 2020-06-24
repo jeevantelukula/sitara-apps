@@ -62,9 +62,9 @@ enum jsmnerr {
 
 /**
  * JSON token description.
- * type		type (object, array, string etc.)
- * start	start position in JSON data string
- * end		end position in JSON data string
+ * type     type (object, array, string etc.)
+ * start    start position in JSON data string
+ * end      end position in JSON data string
  */
 typedef struct jsmntok {
   jsmntype_t type;
