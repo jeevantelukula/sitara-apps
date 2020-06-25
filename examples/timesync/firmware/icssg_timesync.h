@@ -39,22 +39,22 @@
  */
 
 /* FW register base address */
-#define ICSSG_TS_FW_REGS_BASE                           ( 0x0000 )
+#define ICSSG_TS_FW_REGS_BASE                           ( 0x1E00 )
 
 /* Firmware Information Registers */
-#define ICSSG_TS_FW_MAGIC_NUMBER_ADDR                   ( 0x0000 )
-#define ICSSG_TS_FW_TYPE_ADDR                           ( 0x0004 )
-#define ICSSG_TS_FW_VERSION_ADDR                        ( 0x0008 )
-#define ICSSG_TS_FW_FEATURE_ADDR                        ( 0x000C )
-#define ICSSG_TS_FW_EXT_FEATURE_ADDR                    ( 0x0010 )
+#define FW_REG_MAGIC_NUMBER_ADDR                        ( ICSSG_TS_FW_REGS_BASE + 0x0000 )
+#define FW_REG_TYPE_ADDR                                ( ICSSG_TS_FW_REGS_BASE + 0x0004 )
+#define FW_REG_VERSION_ADDR                             ( ICSSG_TS_FW_REGS_BASE + 0x0008 )
+#define FW_REG_FEATURE_ADDR                             ( ICSSG_TS_FW_REGS_BASE + 0x000C )
+#define FW_REG_EXT_FEATURE_ADDR                         ( ICSSG_TS_FW_REGS_BASE + 0x0010 )
 
 /* FW register sizes (in bytes) */
 #define FW_REG_TS_CTRL_SZ                               ( 4 )
 #define FW_REG_TS_STAT_SZ                               ( 4 )
 
 /* FW register offsets from base (in bytes) */
-#define FW_REG_TS_CTRL_OFFSET                           ( 0x0014 )
-#define FW_REG_TS_STAT_OFFSET                           ( 0x0018 )
+#define FW_REG_TS_CTRL_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0014 )
+#define FW_REG_TS_STAT_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0018 )
 
 /* FW register addresses */
 #define FW_REG_TS_CTRL                                  ( ICSSG_TS_FW_REGS_BASE + FW_REG_TS_CTRL_OFFSET )

@@ -20,8 +20,8 @@ MEMORY
 
     /* RAM */
 
-    PRU_DMEM_0_1_LOW    : org = 0x00000000 len = 0x00001000         /* 4kB ICSSG Data RAM 0_1 for PRU*/
-    PRU_DMEM_0_1_HIGH   : org = 0x00001000 len = 0x00001000         /* 4kB ICSSG Data RAM 0_1 for RTU*/
+    PRU_DMEM_0_1_LOW    : org = 0x00000000 len = 0x00001E00         /* (8kB-512b) ICSSG Data RAM 0_1 */
+    PRU_DMEM_0_1_HIGH   : org = 0x00001E00 len = 0x00000200         /* 512b ICSSG Data RAM 0_1 */
     PRU_DMEM_1_0        : org = 0x00002000 len = 0x00002000         /* 8kB ICSSG Data RAM 1_0 */
 
       PAGE 2:
@@ -66,21 +66,22 @@ SECTIONS {
     .text:_c_int00*  >  0x0, PAGE 0
 
     .text       >  PRU_IMEM, PAGE 0
-    .stack      >  PRU_DMEM_0_1_LOW, PAGE 1
-    .bss        >  PRU_DMEM_0_1_LOW, PAGE 1
-    .cio        >  PRU_DMEM_0_1_LOW, PAGE 1
-    .data       >  PRU_DMEM_0_1_LOW, PAGE 1
-    .switch     >  PRU_DMEM_0_1_LOW, PAGE 1
-    .sysmem     >  PRU_DMEM_0_1_LOW, PAGE 1
-    .cinit      >  PRU_DMEM_0_1_LOW, PAGE 1
-    .rodata     >  PRU_DMEM_0_1_LOW, PAGE 1
-    .rofardata  >  PRU_DMEM_0_1_LOW, PAGE 1
-    .farbss     >  PRU_DMEM_0_1_LOW, PAGE 1
-    .fardata    >  PRU_DMEM_0_1_LOW, PAGE 1
+    
+    .stack      >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .bss        >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .cio        >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .data       >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .switch     >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .sysmem     >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .cinit      >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .rodata     >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .rofardata  >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .farbss     >  PRU_DMEM_0_1_HIGH, PAGE 1
+    .fardata    >  PRU_DMEM_0_1_HIGH, PAGE 1
     
     /* .text           >  PRU_IMEM, PAGE 0          */
-    /* .data           >  PRU_DMEM_0_1_LOW, PAGE 1  */
-    .fwRegs         >  0x0, PAGE 1
+    /* .data           >  PRU_DMEM_0_1_HIGH, PAGE 1  */
+    .fwRegs         >  0x1E00, PAGE 1
     
     /* .dbgBuf         > PRU_SHAREDMEM, PAGE 2      */
 }

@@ -52,6 +52,7 @@
 #include "cfg_host_intr.h"
 #include "test_utils.h"
 #include "timesync_array.h"             /* TS PRU FW image data */
+#include "timesyncFwDefs.h"
 #include "timesyncDrv_api.h"            /* TS driver API */
 #include "timesync.h"
 
@@ -342,7 +343,7 @@ int32_t initPruTimesync(
     }
 
     /* Write DMEM */
-    offset = 0;
+    offset = ICSSG_TS_BASE_ADDR;
     sourceMem = (uint32_t *)pru_timesync_image_1;
     byteLen = sizeof(pru_timesync_image_1);
     size = PRUICSS_pruWriteMemory(pruIcssHandle, pruDMem, offset, sourceMem, byteLen);
