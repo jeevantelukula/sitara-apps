@@ -584,27 +584,71 @@ var init = function() {
             }
             
             templateObj.$.load_0.addEventListener('click', () => {
-                const app_body = '{"core0":{"input":{"application":' + app_list_0.getSelectedIndex() + '}}}';
-                const freq_body = '{"core0":{"input":{"frequency":' + freq_list_0.getSelectedIndex() + '}}}';
-                $.post('oob_data.json', app_body + freq_body);
+                const app_body_0 = '{"core0":{"input":{"application":' + app_list_0.getSelectedIndex() + '}}}';
+                const freq_body_0 = '{"core0":{"input":{"frequency":' + freq_list_0.getSelectedIndex() + '}}}';
+                const app_body_1 = '{"core1":{"input":{"application":' + app_list_1.getSelectedIndex() + '}}}';
+                const freq_body_1 = '{"core1":{"input":{"frequency":' + freq_list_1.getSelectedIndex() + '}}}';
+                $.post('oob_data.json', app_body_0 + freq_body_0 + app_body_1 + freq_body_1);
             });
 
             templateObj.$.load_1.addEventListener('click', () => {
-                const app_body = '{"core1":{"input":{"application":' + app_list_1.getSelectedIndex() + '}}}';
-                const freq_body = '{"core1":{"input":{"frequency":' + freq_list_1.getSelectedIndex() + '}}}';
-                $.post('oob_data.json', app_body + freq_body);
+                const app_body_2 = '{"core2":{"input":{"application":' + app_list_2.getSelectedIndex() + '}}}';
+                const freq_body_2 = '{"core2":{"input":{"frequency":' + freq_list_2.getSelectedIndex() + '}}}';
+                const app_body_3 = '{"core3":{"input":{"application":' + app_list_3.getSelectedIndex() + '}}}';
+                const freq_body_3 = '{"core3":{"input":{"frequency":' + freq_list_3.getSelectedIndex() + '}}}';
+                $.post('oob_data.json', app_body_2 + freq_body_2 + app_body_3 + freq_body_3);
             });
 
-            templateObj.$.load_2.addEventListener('click', () => {
-                const app_body = '{"core2":{"input":{"application":' + app_list_2.getSelectedIndex() + '}}}';
-                const freq_body = '{"core2":{"input":{"frequency":' + freq_list_2.getSelectedIndex() + '}}}';
-                $.post('oob_data.json', app_body + freq_body);
+            /* Dynamic drop down list for core 0 */
+            templateObj.$.app_list_0.addEventListener('selected', () => {
+                if (templateObj.$.app_list_0.getSelectedIndex() == 0) {
+                    templateObj.$.freq_list_0.labels = "|";
+                } else if (templateObj.$.app_list_0.getSelectedIndex() == 1) {
+                    templateObj.$.freq_list_0.labels = "|128 pt|256 pt|512 pt|1024 pt"
+                } else if (templateObj.$.app_list_0.getSelectedIndex() == 2) {
+                    templateObj.$.freq_list_0.labels = "|1 kHz|2 kHz|4 kHz|8 kHz"
+                } else {
+                    templateObj.$.freq_list_0.labels = "|8 kHz|16 kHz|32 kHz|50 kHz";
+                }
             });
 
-            templateObj.$.load_3.addEventListener('click', () => {
-                const app_body = '{"core3":{"input":{"application":' + app_list_3.getSelectedIndex() + '}}}';
-                const freq_body = '{"core3":{"input":{"frequency":' + freq_list_3.getSelectedIndex() + '}}}';
-                $.post('oob_data.json', app_body + freq_body);
+            /* Dynamic drop down list for core 1 */
+            templateObj.$.app_list_1.addEventListener('selected', () => {
+                if (templateObj.$.app_list_1.getSelectedIndex() == 0) {
+                    templateObj.$.freq_list_1.labels = "|";
+                } else if (templateObj.$.app_list_1.getSelectedIndex() == 1) {
+                    templateObj.$.freq_list_1.labels = "|128 pt|256 pt|512 pt|1024 pt"
+                } else if (templateObj.$.app_list_1.getSelectedIndex() == 2) {
+                    templateObj.$.freq_list_1.labels = "|1 kHz|2 kHz|4 kHz|8 kHz"
+                } else {
+                    templateObj.$.freq_list_1.labels = "|8 kHz|16 kHz|32 kHz|50 kHz";
+                }
+            });
+
+            /* Dynamic drop down list for core 2 */
+            templateObj.$.app_list_2.addEventListener('selected', () => {
+                if (templateObj.$.app_list_2.getSelectedIndex() == 0) {
+                    templateObj.$.freq_list_2.labels = "|";
+                } else if (templateObj.$.app_list_2.getSelectedIndex() == 1) {
+                    templateObj.$.freq_list_2.labels = "|128 pt|256 pt|512 pt|1024 pt"
+                } else if (templateObj.$.app_list_2.getSelectedIndex() == 2) {
+                    templateObj.$.freq_list_2.labels = "|1 kHz|2 kHz|4 kHz|8 kHz"
+                } else {
+                    templateObj.$.freq_list_2.labels = "|8 kHz|16 kHz|32 kHz|50 kHz";
+                }
+            });
+
+            /* Dynamic drop down list for core 3 */
+            templateObj.$.app_list_3.addEventListener('selected', () => {
+                if (templateObj.$.app_list_3.getSelectedIndex() == 0) {
+                    templateObj.$.freq_list_3.labels = "|";
+                } else if (templateObj.$.app_list_3.getSelectedIndex() == 1) {
+                    templateObj.$.freq_list_3.labels = "|128 pt|256 pt|512 pt|1024 pt"
+                } else if (templateObj.$.app_list_3.getSelectedIndex() == 2) {
+                    templateObj.$.freq_list_3.labels = "|1 kHz|2 kHz|4 kHz|8 kHz"
+                } else {
+                    templateObj.$.freq_list_3.labels = "|8 kHz|16 kHz|32 kHz|50 kHz";
+                }
             });
 
         }, 1);

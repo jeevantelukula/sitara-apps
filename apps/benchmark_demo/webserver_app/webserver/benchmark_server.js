@@ -40,9 +40,15 @@ app.post("/oob_data.json", function(request, response) {
 			var json_file = editJsonFile(demo_dir + '/oob_data.json');
 
 			/* Update the json file with the newly received data */
+			/* First core */
 			json_file.set(fixed_data[0] + '.' + fixed_data[1] + '.' + fixed_data[2], Number(fixed_data[3]));
 			json_file.set(fixed_data[4] + '.' + fixed_data[5] + '.' + fixed_data[6], Number(fixed_data[7]));
 			json_file.set(fixed_data[0] + '.' + fixed_data[1] + '.changed', 1);
+
+			/* Second core */
+			json_file.set(fixed_data[8] + '.' + fixed_data[9] + '.' + fixed_data[10], Number(fixed_data[11]));
+			json_file.set(fixed_data[12] + '.' + fixed_data[13] + '.' + fixed_data[14], Number(fixed_data[15]));
+			json_file.set(fixed_data[8] + '.' + fixed_data[9] + '.changed', 1);
 			json_file.save();
 
 			/* End the POST response */
