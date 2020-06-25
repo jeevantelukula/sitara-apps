@@ -598,13 +598,14 @@ void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
 }
 
 #ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
-void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex)
+void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 {
     uintptr_t key;
     uint32_t payload;
     ecat2mc_msg_obj_t *txobj;
     mc2ecat_msg_obj_t *rxobj;
 	static uint8_t msgsent=0U;
+	uint16_t axisIndex = pCiA402Axis->axisIndex;
 	
 	if(msgsent == 0U)
 	{

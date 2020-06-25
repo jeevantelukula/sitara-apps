@@ -68,7 +68,7 @@ void Sync0task(uint32_t arg1, uint32_t arg2);
 #endif
 
 #ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
-void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis, uint16_t axisIndex);
+void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis);
 #endif
 
 void CiA402_DummyMotionControl(TCiA402Axis *pCiA402Axis);
