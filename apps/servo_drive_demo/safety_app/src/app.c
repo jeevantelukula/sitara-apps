@@ -226,24 +226,6 @@ void mailbox_isr()
     Intc_IntClrPend(MAILBOX1_IPC_INT);
 }
 
-/* HACK: M4F Interrupts Currently in Debug, Polling for Now */
-bool MyIntCheckPending(uint16_t intNum)
-{
-    volatile uint32_t * irqPendSetAddr = (uint32_t *) 0xE000E280U;
-
-    while (intNum > 31) {
-        intNum -= 32;
-        irqPendSetAddr++;
-    }
-
-    uint32_t reg_val = HW_RD_REG32(irqPendSetAddr);
-
-    if (reg_val & (1U << intNum))
-        return true;
-    else
-        return false;
-}
-
 void application_loop()
 {
     bool looping = true;
@@ -257,23 +239,6 @@ void application_loop()
         loopCounter = 10000;    /* adjust so heartbeat LED toggles 1Hz */
 
         while(loopCounter-- > 0) {
-            /* HACK: will remove next four "if" statements when interrupts work */
-            if (MyIntCheckPending(MAIN_WARM_RSTz_INT)) {
-                main_warm_rst_req_isr();
-            }
-
-            if (MyIntCheckPending(MCU_ESM_HI_PRI_INT) || MyIntCheckPending(MCU_ESM_LO_PRI_INT)) {
-                mcu_esm_error_isr();
-            }
-
-            if (MyIntCheckPending(PRU0_PROTOCOL_ACK) || MyIntCheckPending(PRU1_PROTOCOL_ACK)) {
-                pru_protocol_ack_isr();
-            }
-
-            if (MyIntCheckPending(MAILBOX0_IPC_INT) || MyIntCheckPending(MAILBOX1_IPC_INT)) {
-                mailbox_isr();
-            }
-
             if (reset_received == 1 && pru_ack_received == 1) {
                 reset_received = 0;
                 pru_ack_received = 0;
@@ -285,7 +250,7 @@ void application_loop()
 
         /* toggle LED via GPIO pin every time loopCounter hits 0 */
         heartbeatState = heartbeatState == 0 ? GPIO_PIN_HIGH : GPIO_PIN_LOW;
-        /* SITSW-229: will be filled in when EVM hardware details finalize */
+        /* will be filled in when EVM hardware details finalize */
         //GPIOPinWrite_v0(gpio_base_address, gpio_pin, heartbeatState);
 
     }
