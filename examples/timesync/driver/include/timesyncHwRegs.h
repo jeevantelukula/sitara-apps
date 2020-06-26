@@ -47,11 +47,14 @@
 
 #elif defined(BUILD_MCU1_0) || defined(BUILD_MCU1_1)
 /* ICSS HW configuration registers base address */
-#define ICSS_CFG_BASE       ( CSL_PRU_ICSSG1_PR1_CFG_SLV_BASE ) /* Hard-coded for ICSSG1 */
+#define ICSS_CFG_BASE       ( CSL_PRU_ICSSG0_PR1_CFG_SLV_BASE ) /* Hard-coded for ICSSG0 */
+//#define ICSS_CFG_BASE       ( CSL_PRU_ICSSG1_PR1_CFG_SLV_BASE ) /* Hard-coded for ICSSG1 */
 
 /* IEP0/1 HW register base addresses */
-#define ICSS_IEP0_CFG_BASE  ( CSL_PRU_ICSSG1_IEP0_BASE )
-#define ICSS_IEP1_CFG_BASE  ( CSL_PRU_ICSSG1_IEP1_BASE )
+#define ICSS_IEP0_CFG_BASE  ( CSL_PRU_ICSSG0_IEP0_BASE )
+#define ICSS_IEP1_CFG_BASE  ( CSL_PRU_ICSSG0_IEP1_BASE )
+//#define ICSS_IEP0_CFG_BASE  ( CSL_PRU_ICSSG1_IEP0_BASE )
+//#define ICSS_IEP1_CFG_BASE  ( CSL_PRU_ICSSG1_IEP1_BASE )
 
 #endif
 #endif /* #define _TIMESYNC_HW_REGS_H_ */

@@ -86,7 +86,7 @@
 #define TEST_TS_ERR_START_TS          ( -9 )  /* start TS error */
 
 /* Test ICSSG instance ID */
-#define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_TWO )
+#define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_ONE )
 /* Test PRU instance ID */
 #define TEST_PRU_INST_ID                ( PRUICCSS_RTU0 )
 
@@ -116,6 +116,12 @@
 
 /* TS parameters number of PRD */
 #define TS_NUM_PRDS   ( 5 )
+
+/* Compare event router i*/
+#define CMPEVT_INTRTR_IN    ( 35 )  /* ICSSG_0_IEP0_CMP_TIMER3_INT */
+
+/* Compare event router output */
+#define CMPEVT_INTRTR_OUT   ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
 
 /* TS configuration parameters */
 typedef struct TsPrmsObj_s {
@@ -570,7 +576,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     }
 
     /* Configure CompareEvent Interrupt Router */
-    status = configureCmpEventInterruptRouter(67, 16);
+    status = configureCmpEventInterruptRouter(CMPEVT_INTRTR_IN, CMPEVT_INTRTR_OUT);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
