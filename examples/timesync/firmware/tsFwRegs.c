@@ -45,6 +45,7 @@
 /* TS control defaults */
 #define DEF_TS_CTRL             ( 0x00000000 )  /* TS disabled */
 #define DEF_TS_STAT             ( 0x00000000 )  /* FW uninitialized */
+#define DEF_TS_IEP_PRD_NSEC     ( 0x00000005 )  /* TS IEP period in nanoseconds */
 
 /* IEP clock @ 200 MHz */
 #define DEF_TS_CMP_COUNT        ( 0 )   /* disabled */
@@ -58,7 +59,7 @@
 /* TS FW register defaults */
 #pragma RETAIN(gTsFwRegs)
 #pragma DATA_SECTION(gTsFwRegs, ".fwRegs")
-const TsFwRegs gTsFwRegs = 
+TsFwRegs gTsFwRegs = 
 {
     {
         DEF_FW_MAGIC_NUMBER,    /* FwMagicNumber */
@@ -69,9 +70,10 @@ const TsFwRegs gTsFwRegs =
     }, 
     {
         DEF_TS_CTRL,            /* TS_CTRL */
-        DEF_TS_STAT             /* TS_STAT */
+        DEF_TS_STAT,            /* TS_STAT */
+        DEF_TS_IEP_PRD_NSEC     /* TS_IEP_NSEC */
     },
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
     {
         DEF_TS_CMP_COUNT,       /* TS_CMP1_COUNT */
         DEF_TS_CMP_COUNT,       /* TS_CMP3_COUNT */

@@ -36,6 +36,21 @@
 #include "tsFwRegs.h"
 #include "icssg_timesync.h"
 
+/* ESC register offsets (bytes) */
+#define ESC_AL_STATUS_OFFSET            ( 0x0130 )  /* Register Description: Actual State of the Device State Machine */
+#define ESC_AL_STATUS_CUR_STATE_MASK    ( 0x000F )  /* ALStatus, current state mask */
+
+#define ESC_DC_SYNC0_CYCLETIME_OFFSET   ( 0x09A0 )  /* Register Description: 32Bit Time between two consecutive SYNC0 pulses in ns */
+
+
+
+/* ESC AL Status, current state */
+#define STATE_PREOP     ((uint8_t) 0x02)    /* State PreOP */
+#define STATE_SAFEOP    ((uint8_t) 0x04)    /* State SafeOP */
+
+/* Pointer to Shared DMEM containing ESC Registers */
+uint8_t * const pEscRegs = (uint8_t *)CSL_ICSS_G_RAM_SLV_RAM_REGS_BASE;
+
 /* Pointer to FW registers */
 TsFwRegs * const pTsFwRegs = &gTsFwRegs;
 /* Pointer to IEP0 registers */
@@ -43,14 +58,18 @@ CSL_icss_g_pr1_iep1_slvRegs * const pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)
 
 void main(void)
 {
-    uint32_t tsCtrl, tsStat;
-    uint8_t iepTsGblEn;
-    uint8_t mask = 0;
-    uint32_t temp;
-    uint64_t lastCmp1;
-    uint64_t lastCmp3, lastCmp4, lastCmp5, lastCmp6;
     TsCtrlFwRegs *pTsCtrlFwRegs;
     TsCmpFwRegs *pTsCmpFwRegs;
+    uint32_t tsCtrl, tsStat;
+    uint8_t iepTsGblEn;
+    uint8_t iepDefInc;
+    uint32_t cmp1Count;
+    uint8_t mask = 0;
+    uint64_t nextCmp1;
+    uint64_t nextCmp3, nextCmp4, nextCmp5, nextCmp6;
+    uint16_t escCurState;
+    uint32_t escSync0CycleTime_nsec;
+    uint32_t temp;
 
     pTsCtrlFwRegs = &pTsFwRegs->tsCtrlFwRegs;   /* get pointer to firmware control registers */
     pTsCmpFwRegs = &pTsFwRegs->tsCmpFwRegs;     /* get pointer to firmware CMP registers */
@@ -68,116 +87,166 @@ void main(void)
     tsStat &= ~TS_STAT_IEP0_TS_GBL_EN_ACK_MASK;
     tsStat |= BF_TS_GBL_EN_ACK_ENABLE << TS_STAT_IEP0_TS_GBL_EN_ACK_SHIFT;
     pTsCtrlFwRegs->TS_STAT = tsStat;
-    
-    /* Set up CMP1 for testing purposes */
-    if (pTsCmpFwRegs->TS_CMP1_COUNT != 0) 
-    {
-        mask |= (1<<1);
-        lastCmp1 = *(volatile uint64_t *)&pIepHwRegs->COUNT_REG0;
-        lastCmp1 += pTsCmpFwRegs->TS_CMP1_COUNT;
-        *(volatile uint64_t *)&pIepHwRegs->CMP1_REG0 = lastCmp1;
-    }
-    
-    /* Initialize CMP3 */
-    if (pTsCmpFwRegs->TS_CMP3_COUNT != 0)
-    {
-        mask |= (1<<3);
-        lastCmp3 = lastCmp1;
-        lastCmp3 += pTsCmpFwRegs->TS_CMP3_COUNT;
-        lastCmp3 += pTsCmpFwRegs->TS_CMP3_OFFSET;
-        *(volatile uint64_t *)&pIepHwRegs->CMP3_REG0 = lastCmp3;
-    }
-    
-    /* Initialize CMP4 */
-    if (pTsCmpFwRegs->TS_CMP4_COUNT != 0)
-    {
-        mask |= (1<<4);
-        lastCmp4 = lastCmp1;
-        lastCmp4 += pTsCmpFwRegs->TS_CMP4_COUNT;
-        lastCmp4 += pTsCmpFwRegs->TS_CMP4_OFFSET;
-        *(volatile uint64_t *)&pIepHwRegs->CMP4_REG0 = lastCmp4;
-    }
 
-    /* Initialize CMP5 */
-    if (pTsCmpFwRegs->TS_CMP5_COUNT != 0)
-    {
-        mask |= (1<<5);
-        lastCmp5 = lastCmp1;
-        lastCmp5 += pTsCmpFwRegs->TS_CMP5_COUNT;
-        lastCmp5 += pTsCmpFwRegs->TS_CMP5_OFFSET;
-        *(volatile uint64_t *)&pIepHwRegs->CMP5_REG0 = lastCmp5;
-    }
-
-    /* Initialize CMP6 */
-    if (pTsCmpFwRegs->TS_CMP6_COUNT != 0)
-    {
-        mask |= (1<<6);
-        lastCmp6 = lastCmp1;
-        lastCmp6 += pTsCmpFwRegs->TS_CMP6_COUNT;
-        lastCmp6 += pTsCmpFwRegs->TS_CMP6_OFFSET;
-        *(volatile uint64_t *)&pIepHwRegs->CMP6_REG0 = lastCmp6;
-    }
-    
-    /* Clear pending events on CMP1, 3,4,5,6 */
-    temp = pIepHwRegs->CMP_STATUS_REG;
-    temp &= ~0xFF;
-    temp |= mask;
-    pIepHwRegs->CMP_STATUS_REG = temp;
-    
-    /* Enable events on CMP1, 3,4,5,6 */
-    temp = pIepHwRegs->CMP_CFG_REG;
-    temp &= ~(0xFF << 1);
-    temp |= mask << 1;
-    pIepHwRegs->CMP_CFG_REG = temp;
-
-    /* Set firmware init flag */
-    tsStat = pTsCtrlFwRegs->TS_STAT;
-    tsStat &= ~TS_STAT_FW_INIT_MASK;
-    tsStat |= BF_TS_FW_INIT_INIT << TS_STAT_FW_INIT_SHIFT;
-    pTsCtrlFwRegs->TS_STAT = tsStat;
-    
     while (1)
     {
-        /* Read CMP status */
+        if (pTsCmpFwRegs->TS_CMP1_COUNT == 0)
+        {
+            /* Test mode disabled */
+
+            /* Wait for ESC current state to transition to SAFEOP */
+            do {
+                escCurState = *(volatile uint16_t *)&pEscRegs[ESC_AL_STATUS_OFFSET] & 
+                    ESC_AL_STATUS_CUR_STATE_MASK;
+            } while (escCurState != STATE_SAFEOP);
+            
+            /* Read ESC SYNC0 Cycle Time register */
+            escSync0CycleTime_nsec = *(volatile uint32_t *)&pEscRegs[ESC_DC_SYNC0_CYCLETIME_OFFSET];
+            
+            /* Read IEP default count */
+            iepDefInc = (pIepHwRegs->GLOBAL_CFG_REG & CSL_ICSS_G_PR1_IEP0_SLV_GLOBAL_CFG_REG_DEFAULT_INC_MASK) 
+                >> CSL_ICSS_G_PR1_IEP0_SLV_GLOBAL_CFG_REG_DEFAULT_INC_SHIFT;
+            
+            /* Compute CMP1 count corresponding to SYNC0 period */
+            cmp1Count = (escSync0CycleTime_nsec / pTsCtrlFwRegs->TS_IEP_PRD_NSEC) * iepDefInc;
+            
+            /* Compute count for next CMP1 event */
+            nextCmp1 = *(volatile uint64_t *)&pIepHwRegs->COUNT_REG0;
+            nextCmp1 += cmp1Count;
+        }
+        else
+        {
+            /* Test mode enabled */
+            
+            /* Set up CMP1 */
+            mask |= (1<<1);
+            nextCmp1 = *(volatile uint64_t *)&pIepHwRegs->COUNT_REG0;
+            nextCmp1 += pTsCmpFwRegs->TS_CMP1_COUNT;
+            *(volatile uint64_t *)&pIepHwRegs->CMP1_REG0 = nextCmp1;
+        }
+        
+        /* Initialize CMP3 */
+        if (pTsCmpFwRegs->TS_CMP3_COUNT != 0)
+        {
+            mask |= (1<<3);
+            nextCmp3 = nextCmp1;
+            nextCmp3 += pTsCmpFwRegs->TS_CMP3_COUNT;
+            nextCmp3 += pTsCmpFwRegs->TS_CMP3_OFFSET;
+            *(volatile uint64_t *)&pIepHwRegs->CMP3_REG0 = nextCmp3;
+        }
+        
+        /* Initialize CMP4 */
+        if (pTsCmpFwRegs->TS_CMP4_COUNT != 0)
+        {
+            mask |= (1<<4);
+            nextCmp4 = nextCmp1;
+            nextCmp4 += pTsCmpFwRegs->TS_CMP4_COUNT;
+            nextCmp4 += pTsCmpFwRegs->TS_CMP4_OFFSET;
+            *(volatile uint64_t *)&pIepHwRegs->CMP4_REG0 = nextCmp4;
+        }
+
+        /* Initialize CMP5 */
+        if (pTsCmpFwRegs->TS_CMP5_COUNT != 0)
+        {
+            mask |= (1<<5);
+            nextCmp5 = nextCmp1;
+            nextCmp5 += pTsCmpFwRegs->TS_CMP5_COUNT;
+            nextCmp5 += pTsCmpFwRegs->TS_CMP5_OFFSET;
+            *(volatile uint64_t *)&pIepHwRegs->CMP5_REG0 = nextCmp5;
+        }
+
+        /* Initialize CMP6 */
+        if (pTsCmpFwRegs->TS_CMP6_COUNT != 0)
+        {
+            mask |= (1<<6);
+            nextCmp6 = nextCmp1;
+            nextCmp6 += pTsCmpFwRegs->TS_CMP6_COUNT;
+            nextCmp6 += pTsCmpFwRegs->TS_CMP6_OFFSET;
+            *(volatile uint64_t *)&pIepHwRegs->CMP6_REG0 = nextCmp6;
+        }
+        
+        /* Clear pending events on CMP1, 3,4,5,6 */
         temp = pIepHwRegs->CMP_STATUS_REG;
-        temp &= 0x7A;   /* only keep CMP1,3,4,5,6 */
-        
-        /* Reload CMP1 */
-        if (temp & (1<<1))
-        {
-            lastCmp1 += pTsCmpFwRegs->TS_CMP1_COUNT;
-            *(volatile uint64_t *)&pIepHwRegs->CMP1_REG0 = lastCmp1;
-        }
-        
-        /* Reload CMP3 */
-        if (temp & (1<<3))
-        {
-            lastCmp3 += pTsCmpFwRegs->TS_CMP3_COUNT;
-            *(volatile uint64_t *)&pIepHwRegs->CMP3_REG0 = lastCmp3;
-        }
-        
-        /* Reload CMP4 */
-        if (temp & (1<<4))
-        {
-            lastCmp4 += pTsCmpFwRegs->TS_CMP4_COUNT;
-            *(volatile uint64_t *)&pIepHwRegs->CMP4_REG0 = lastCmp4;
-        }
-        
-        /* Reload CMP5 */
-        if (temp & (1<<5))
-        {
-            lastCmp5 += pTsCmpFwRegs->TS_CMP5_COUNT;
-            *(volatile uint64_t *)&pIepHwRegs->CMP5_REG0 = lastCmp5;
-        }
-        
-        /* Reload CMP6 */
-        if (temp & (1<<6))
-        {
-            lastCmp6 += pTsCmpFwRegs->TS_CMP6_COUNT;
-            *(volatile uint64_t *)&pIepHwRegs->CMP6_REG0 = lastCmp6;
-        }
-        
-        /* Clear status */
+        temp &= ~0xFF;
+        temp |= mask;
         pIepHwRegs->CMP_STATUS_REG = temp;
+        
+        /* Enable events on CMP1, 3,4,5,6 */
+        temp = pIepHwRegs->CMP_CFG_REG;
+        temp |= mask << 1;
+        pIepHwRegs->CMP_CFG_REG = temp;
+
+        /* Set firmware init flag */
+        tsStat = pTsCtrlFwRegs->TS_STAT;
+        tsStat &= ~TS_STAT_FW_INIT_MASK;
+        tsStat |= BF_TS_FW_INIT_INIT << TS_STAT_FW_INIT_SHIFT;
+        pTsCtrlFwRegs->TS_STAT = tsStat;
+
+        /* Read ESC current state */
+        escCurState = (pTsCmpFwRegs->TS_CMP1_COUNT == 0) ? 
+            *(volatile uint16_t *)&pEscRegs[ESC_AL_STATUS_OFFSET] & ESC_AL_STATUS_CUR_STATE_MASK : STATE_SAFEOP;
+        while (escCurState == STATE_SAFEOP)
+        {
+            /* Read CMP status */
+            temp = pIepHwRegs->CMP_STATUS_REG;
+            temp &= mask;
+            
+            if (pTsCmpFwRegs->TS_CMP1_COUNT != 0)
+            {
+                /* Test mode enabled */               
+                /* Reload CMP1 */
+                if (temp & (1<<1))
+                {
+                    nextCmp1 += pTsCmpFwRegs->TS_CMP1_COUNT;
+                    *(volatile uint64_t *)&pIepHwRegs->CMP1_REG0 = nextCmp1;
+                }
+            }
+            
+            /* Reload CMP3 */
+            if (temp & (1<<3))
+            {
+                nextCmp3 += pTsCmpFwRegs->TS_CMP3_COUNT;
+                *(volatile uint64_t *)&pIepHwRegs->CMP3_REG0 = nextCmp3;
+            }
+            
+            /* Reload CMP4 */
+            if (temp & (1<<4))
+            {
+                nextCmp4 += pTsCmpFwRegs->TS_CMP4_COUNT;
+                *(volatile uint64_t *)&pIepHwRegs->CMP4_REG0 = nextCmp4;
+            }
+            
+            /* Reload CMP5 */
+            if (temp & (1<<5))
+            {
+                nextCmp5 += pTsCmpFwRegs->TS_CMP5_COUNT;
+                *(volatile uint64_t *)&pIepHwRegs->CMP5_REG0 = nextCmp5;
+            }
+            
+            /* Reload CMP6 */
+            if (temp & (1<<6))
+            {
+                nextCmp6 += pTsCmpFwRegs->TS_CMP6_COUNT;
+                *(volatile uint64_t *)&pIepHwRegs->CMP6_REG0 = nextCmp6;
+            }
+            
+            /* Clear status */
+            pIepHwRegs->CMP_STATUS_REG = temp;
+            
+            /* Read ESC current state */
+            escCurState = (pTsCmpFwRegs->TS_CMP1_COUNT == 0) ? 
+                *(volatile uint16_t *)&pEscRegs[ESC_AL_STATUS_OFFSET] & ESC_AL_STATUS_CUR_STATE_MASK : STATE_SAFEOP;
+        }
+        
+        /* Disable events on CMP1, 3,4,5,6 */
+        temp = pIepHwRegs->CMP_CFG_REG;
+        temp &= ~mask << 1;
+        pIepHwRegs->CMP_CFG_REG = temp;
+        
+        /* Clear firmware init flag */
+        tsStat = pTsCtrlFwRegs->TS_STAT;
+        tsStat &= ~TS_STAT_FW_INIT_MASK;
+        tsStat |= BF_TS_FW_INIT_UNINIT << TS_STAT_FW_INIT_SHIFT;
+        pTsCtrlFwRegs->TS_STAT = tsStat;        
     }
 }

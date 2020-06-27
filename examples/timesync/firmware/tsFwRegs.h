@@ -51,6 +51,7 @@ typedef struct TsCtrlFwRegs_s
 {
     volatile uint32_t  TS_CTRL;             /* TS Control Fw Reg */
     volatile uint32_t  TS_STAT;             /* TS Status Fw Reg */
+    volatile uint32_t  TS_IEP_PRD_NSEC;     /* TS IEP period in nsec */
 } TsCtrlFwRegs;
 
 /* TS Firmware Compare registers */
@@ -72,10 +73,10 @@ typedef struct TsFwRegs_s
 {
     TsInfoFwRegs    tsInfoFwRegs;
     TsCtrlFwRegs    tsCtrlFwRegs;   
-    uint8_t         Rsvd[12];
+    uint8_t         Rsvd[8];
     TsCmpFwRegs     tsCmpFwRegs;
 } TsFwRegs;
 
-extern const TsFwRegs gTsFwRegs;
+extern TsFwRegs gTsFwRegs;
 
 #endif /* _TS_FW_REGS_H_ */
