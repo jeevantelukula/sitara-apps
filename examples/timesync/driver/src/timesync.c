@@ -33,7 +33,6 @@
 
 #include <string.h>
 #include <ti/csl/soc.h>
-#include "timesyncFwDefs.h"
 #include "timesyncHwRegs.h"
 #include "timesync.h"
 

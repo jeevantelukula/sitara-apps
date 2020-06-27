@@ -33,29 +33,19 @@
 
 #include <stdint.h>
 #include <ti/csl/soc.h>
-#include "timesyncFwRegs.h"
-#include "timesyncFwDefs.h"
+#include "tsFwRegs.h"
+#include "icssg_timesync.h"
 #include "timesyncDrv_api.h"
 
-/**    @brief    reconfigure TS enable */
-#define RECFG_TS_EN_MASK           ( 1<<0 )
 /**    @brief    reconfigure TS Period Count */
 #define RECFG_TS_PRD_COUNT_MASK    ( 1<<1 )
-/**    @brief    reconfigure TS Duty Cycle Count */
-#define RECFG_TS_DC_COUNT_MASK     ( 1<<2 )
-/**    @brief    reconfigure TS Deadband Count */
-#define RECFG_TS_DB_COUNT_MASK     ( 1<<3 )
 
 /* Default (reset) IEP TS Global Enable Mask */
 #define DEF_TS_GBL_EN_MASK     ( 0 )
-/* Default (reset) IEPx TS Enable Mask */
-#define DEF_IEPx_TS_EN_MASK        ( 0 )
-/* Default (reset) IEPx TS Mode Mask */
-#define DEF_IEPx_TS_MODE_MASK      ( 0 )
 
 typedef TsInfoFwRegs IcssgTsDrv_TsInfoRegs;
 typedef TsCtrlFwRegs IcssgTsDrv_TsCtrlRegs;
-typedef IepTsFwRegs IcssgTsDrv_IepTsRegs;
+typedef TsCmpFwRegs IcssgTsDrv_TsCmpRegs;
 
 /* TS info object */
 typedef struct IcssgTsDrv_TsInfoObj_s
@@ -73,15 +63,12 @@ typedef struct IcssgTsDrv_TsCtrlObj_s
     IcssgTsDrv_TsCtrlRegs *pTsCtrlRegs;
 } IcssgTsDrv_TsCtrlObj;
 
-/* IEP CMP/TS control object */
-typedef struct IcssgTsDrv_IepTsCtrlObj_s
+/* TS IEP CMP control object */
+typedef struct IcssgTsDrv_TsCmpObj_s
 {
-    /* IEPx TS enable mask */
-    Uint16 tsEnMask;
-
-    /* IEPx TS registers */
-    IcssgTsDrv_IepTsRegs *pIepTsRegs;
-} IcssgTsDrv_IepTsCtrlObj;
+    /* TS CMP registers */
+    IcssgTsDrv_TsCmpRegs *pTsCmpRegs;
+} IcssgTsDrv_TsCmpObj;
 
 /* TS DRV object */
 typedef struct IcssgTsDrv_TsDrvObj_s
@@ -95,7 +82,7 @@ typedef struct IcssgTsDrv_TsDrvObj_s
     /* TS control */
     IcssgTsDrv_TsCtrlObj   tsCtrl;
     /* IEPx TS/CMP control */
-    IcssgTsDrv_IepTsCtrlObj iepTsCtrl[ICSSG_TS_DRV__ICSSG_NUM_IEP];
+    IcssgTsDrv_TsCmpObj    tsCmp[ICSSG_TS_DRV__ICSSG_NUM_IEP];
 } IcssgTsDrv_TsDrvObj;
 
 /* Internal structure for managing TSs for each ICSSG */
@@ -146,17 +133,13 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
         }
         
         /* Initialize TS driver object pointers */
-        pTsDrvObj->tsInfo.pTsInfoRegs = (IcssgTsDrv_TsInfoRegs *)(baseAddr + ICSSG_TS_FW_MAGIC_NUMBER_ADDR);
-        pTsDrvObj->tsCtrl.pTsCtrlRegs = (IcssgTsDrv_TsCtrlRegs *)(baseAddr + ICSSG_TS_TS_CTRL_ADDR);
-        pTsDrvObj->iepTsCtrl[ICSSG_TS_DRV__IEP_ID_0].pIepTsRegs = (IcssgTsDrv_IepTsRegs *)(baseAddr + ICSSG_TS_IEP0_TS_BASE_ADDR);
-        pTsDrvObj->iepTsCtrl[ICSSG_TS_DRV__IEP_ID_1].pIepTsRegs = (IcssgTsDrv_IepTsRegs *)(baseAddr + ICSSG_TS_IEP1_TS_BASE_ADDR);
+        pTsDrvObj->tsInfo.pTsInfoRegs = (IcssgTsDrv_TsInfoRegs *)(baseAddr + FW_REG_MAGIC_NUMBER);
+        pTsDrvObj->tsCtrl.pTsCtrlRegs = (IcssgTsDrv_TsCtrlRegs *)(baseAddr + FW_REG_TS_CTRL);
+        pTsDrvObj->tsCmp[ICSSG_TS_DRV__IEP_ID_0].pTsCmpRegs = (IcssgTsDrv_TsCmpRegs *)(baseAddr + FW_REG_TS_CMP1_COUNT);
+        pTsDrvObj->tsCmp[ICSSG_TS_DRV__IEP_ID_1].pTsCmpRegs = NULL;
 
         /* Reset IEP TS global enable mask */
         pTsDrvObj->tsCtrl.tsGblEnMask = DEF_TS_GBL_EN_MASK;
-
-        /* Reset IEPx TS enable mask */
-        pTsDrvObj->iepTsCtrl[ICSSG_TS_DRV__IEP_ID_0].tsEnMask = DEF_IEPx_TS_EN_MASK;
-        pTsDrvObj->iepTsCtrl[ICSSG_TS_DRV__IEP_ID_1].tsEnMask = DEF_IEPx_TS_EN_MASK;
     }
     else {
         pTsDrvObj = NULL;
@@ -251,61 +234,6 @@ int32_t icssgTsDrv_waitFwInit(
     return ICSSG_TS_DRV__STS_NERR;
 }
 
-/* Prepare IEP TS enable reconfiguration */
-int32_t icssgTsDrv_prepRecfgTsEn(
-    IcssgTsDrv_Handle handle,
-    uint8_t iepId,
-    Uint16 tsEnMask,
-    uint32_t *pRecfgBf
-)
-{
-    IcssgTsDrv_TsDrvObj *pTsDrv;
-    IcssgTsDrv_IepTsCtrlObj *pIepTsCtrl;
-    uint32_t iepTsEn;
-    uint8_t tsEnPrm;
-    uint8_t i;
-
-    /* Check IEP ID */
-    if (iepId >= ICSSG_TS_DRV__ICSSG_NUM_IEP) {
-        return ICSSG_TS_DRV__STS_ERR_INV_PRM;
-    }
-
-    /* Get pointer to IEP TS info & control */
-    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
-    pIepTsCtrl = &pTsDrv->iepTsCtrl[iepId];
-
-    /* Write IEPx TS Enable FW register */
-    pIepTsCtrl->tsEnMask = tsEnMask;
-
-    /* Read IEPx TS Enable FW register */
-    iepTsEn = pIepTsCtrl->pIepTsRegs->TS_EN;
-
-    for (i = 0; i < 4; i++)
-    {
-        /* Extract TS enable parameter */
-        tsEnPrm = (tsEnMask >> i) & ICSSG_TS_DRV__BF_TS_EN_MASK;
-        /* Set TS enable in FW register */
-        iepTsEn &= ~(TS_EN_MASK << i);
-        if (tsEnPrm == ICSSG_TS_DRV__IEP_TS_EN_DISABLE) {
-            iepTsEn |= BF_TS_EN_DISABLE << i;
-        }
-        else if (tsEnPrm == ICSSG_TS_DRV__IEP_TS_EN_ENABLE) {
-            iepTsEn |= BF_TS_EN_ENABLE << i;
-        }
-        else {
-            return ICSSG_TS_DRV__STS_ERR_INV_PRM;
-        }
-    }
-
-    /* Write IEPx TS Enable FW register */
-    pIepTsCtrl->pIepTsRegs->TS_EN = iepTsEn;
-
-    /* Set flag indicating reconfiguration request parameter */
-    *pRecfgBf = RECFG_TS_EN_MASK;
-
-    return ICSSG_TS_DRV__STS_NERR;
-}
-
 /* Prepare IEP Period Count reconfiguration */
 int32_t icssgTsDrv_prepRecfgTsPrdCount(
     IcssgTsDrv_Handle handle,
@@ -317,8 +245,9 @@ int32_t icssgTsDrv_prepRecfgTsPrdCount(
 )
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
-    IcssgTsDrv_IepTsRegs *pIepTsRegs;
-    uint32_t prdCount;
+    IcssgTsDrv_TsCmpRegs *pTsCmpRegs;
+    volatile uint32_t *pTsCmpCount;
+    volatile int32_t *pTsCmpOffset;
     int32_t i;
 
     /* Check IEP ID */
@@ -328,87 +257,24 @@ int32_t icssgTsDrv_prepRecfgTsPrdCount(
 
     /* Get pointer to IEP TS control registers */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
-    pIepTsRegs = pTsDrv->iepTsCtrl[iepId].pIepTsRegs;
+    pTsCmpRegs = pTsDrv->tsCmp[iepId].pTsCmpRegs;
+    pTsCmpCount = &pTsCmpRegs->TS_CMP1_COUNT;
+    pTsCmpOffset = &pTsCmpRegs->TS_CMP3_OFFSET;
 
     for (i = 0; i < nPrdCount; i++)
     {
-        /* Read IEP TS Period Count register */
-        prdCount = pIepTsRegs->TS_PRD_COUNT[i];
-        /* Update IEP TS Period Count w/ Period Count parameter */
-        prdCount &= ~IEP_TS_PRD_COUNT_MASK;
-        prdCount |= (tsPrdCount[i] & PRD_COUNT_MASK) << IEP_TS_PRD_COUNT_SHIFT;
-        /* Write IEP TS Period Count register */
-        pIepTsRegs->TS_PRD_COUNT[i] = prdCount;
-        /* Write offset */
+        /* Write Period Count register */
+        *pTsCmpCount++ = tsPrdCount[i];   
+        
+        /* Write Period Offset register */
         if (i > 0)
         {
-            pIepTsRegs->TS_PRD_OFFSET[i-1] = tsPrdOffset[i-1];
+            *pTsCmpOffset++ = tsPrdOffset[i-1];
         }
     }
 
     /* Set flag indicating reconfiguration request parameter */
     *pRecfgBf = RECFG_TS_PRD_COUNT_MASK;
-
-    return ICSSG_TS_DRV__STS_NERR;
-}
-
-/* Execute prepared reconfigurations */
-int32_t icssgTsDrv_commitRecfg(
-    IcssgTsDrv_Handle handle,
-    uint8_t iepId,
-    uint32_t recfgBf
-)
-{
-    IcssgTsDrv_TsDrvObj *pTsDrv;
-    IcssgTsDrv_IepTsCtrlObj *pIepTsCtrl;
-    IcssgTsDrv_IepTsRegs *pIepTsRegs;
-    uint32_t tsRecfg;
-
-    /* Check IEP ID */
-    if (iepId >= ICSSG_TS_DRV__ICSSG_NUM_IEP) {
-        return ICSSG_TS_DRV__STS_ERR_INV_PRM;
-    }
-
-    /* Get IEP TS control */
-    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
-    pIepTsCtrl = &pTsDrv->iepTsCtrl[iepId];
-    pIepTsRegs = pIepTsCtrl->pIepTsRegs;
-
-    /* Update reconfiguration register */
-    tsRecfg = pIepTsRegs->TS_RECFG;
-    tsRecfg &= ~IEP_TS_RECFG_MASK;
-    tsRecfg |= recfgBf;
-    pIepTsRegs->TS_RECFG = tsRecfg;
-
-    return ICSSG_TS_DRV__STS_NERR;
-}
-
-/* Wait for reconfiguration completion */
-int32_t icssgTsDrv_waitRecfg(
-    IcssgTsDrv_Handle handle,
-    uint8_t iepId
-)
-{
-    IcssgTsDrv_TsDrvObj *pTsDrv;
-    IcssgTsDrv_IepTsCtrlObj *pIepTsCtrl;
-    IcssgTsDrv_IepTsRegs *pIepTsRegs;
-    uint32_t tsRecfg;
-
-    /* Check IEP ID */
-    if (iepId >= ICSSG_TS_DRV__ICSSG_NUM_IEP) {
-        return ICSSG_TS_DRV__STS_ERR_INV_PRM;
-    }
-
-    /* Get IEP TS control */
-    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
-    pIepTsCtrl = &pTsDrv->iepTsCtrl[iepId];
-    pIepTsRegs = pIepTsCtrl->pIepTsRegs;
-
-    /* Wait for FW to clear reconfiguration register */
-    do {
-        tsRecfg = pIepTsRegs->TS_RECFG;
-        tsRecfg &= IEP_TS_RECFG_MASK;
-    } while (tsRecfg != 0);
 
     return ICSSG_TS_DRV__STS_NERR;
 }

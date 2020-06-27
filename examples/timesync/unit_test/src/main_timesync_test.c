@@ -52,7 +52,6 @@
 #include "cfg_host_intr.h"
 #include "test_utils.h"
 #include "timesync_array.h"             /* TS PRU FW image data */
-#include "timesyncFwDefs.h"
 #include "timesyncDrv_api.h"            /* TS driver API */
 #include "timesync.h"
 
@@ -421,10 +420,8 @@ int32_t initTsDrvHlIf(
 {
     IcssgTsDrv_Handle hTsDrv;
     uint8_t tCfgMask8b;
-    uint16_t tCfgMask16b;
     uint8_t cfgMask;
     uint32_t recfgBf;
-    uint8_t tsIdx;
     int32_t status;
 
     /* Initialize TS DRV instance */
@@ -444,20 +441,6 @@ int32_t initTsDrvHlIf(
 
     /* Set non-default configuration */
     cfgMask = pTs->tsPrms.cfgMask;
-
-    /* Configure IEP TS enable */
-    if (cfgMask & TS_CFG_EN) {
-        /* Configure IEP0 TS enable */
-        tCfgMask16b = 0;
-        for (tsIdx = 0; tsIdx < pTs->tsPrms.nPrdCount; tsIdx += 2)
-        {
-            tCfgMask16b |= ICSSG_TS_DRV__IEP_TS_EN_ENABLE << tsIdx;
-        }
-        status = icssgTsDrv_prepRecfgTsEn(hTsDrv, ICSSG_TS_DRV__IEP_ID_0, tCfgMask16b, &recfgBf);
-        if (status != ICSSG_TS_DRV__STS_NERR) {
-            return TEST_TS_ERR_INIT_TS_DRV_HL;
-        }
-    }
 
     /* Configure TS Period Count */
     if (cfgMask & TS_CFG_PRD_COUNT) {

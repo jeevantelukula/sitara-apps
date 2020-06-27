@@ -73,7 +73,6 @@ TsFwRegs gTsFwRegs =
         DEF_TS_STAT,            /* TS_STAT */
         DEF_TS_IEP_PRD_NSEC     /* TS_IEP_NSEC */
     },
-    {0, 0, 0, 0, 0, 0, 0, 0},
     {
         DEF_TS_CMP_COUNT,       /* TS_CMP1_COUNT */
         DEF_TS_CMP_COUNT,       /* TS_CMP3_COUNT */

@@ -42,35 +42,28 @@
 #define ICSSG_TS_FW_REGS_BASE                           ( 0x1E00 )
 
 /* Firmware Information Registers */
-#define FW_REG_MAGIC_NUMBER_ADDR                        ( ICSSG_TS_FW_REGS_BASE + 0x0000 )
-#define FW_REG_TYPE_ADDR                                ( ICSSG_TS_FW_REGS_BASE + 0x0004 )
-#define FW_REG_VERSION_ADDR                             ( ICSSG_TS_FW_REGS_BASE + 0x0008 )
-#define FW_REG_FEATURE_ADDR                             ( ICSSG_TS_FW_REGS_BASE + 0x000C )
-#define FW_REG_EXT_FEATURE_ADDR                         ( ICSSG_TS_FW_REGS_BASE + 0x0010 )
+#define FW_REG_MAGIC_NUMBER                             ( ICSSG_TS_FW_REGS_BASE + 0x0000 )
+#define FW_REG_TYPE                                     ( ICSSG_TS_FW_REGS_BASE + 0x0004 )
+#define FW_REG_VERSION                                  ( ICSSG_TS_FW_REGS_BASE + 0x0008 )
+#define FW_REG_FEATURE                                  ( ICSSG_TS_FW_REGS_BASE + 0x000C )
+#define FW_REG_EXT_FEATURE                              ( ICSSG_TS_FW_REGS_BASE + 0x0010 )
 
-/* FW register sizes (in bytes) */
-#define FW_REG_TS_CTRL_SZ                               ( 4 )
-#define FW_REG_TS_STAT_SZ                               ( 4 )
+/* TS FW control register addresses */
+#define FW_REG_TS_CTRL                                  ( ICSSG_TS_FW_REGS_BASE + 0x0014 )
+#define FW_REG_TS_STAT                                  ( ICSSG_TS_FW_REGS_BASE + 0x0018 )
 
-/* FW register offsets from base (in bytes) */
-#define FW_REG_TS_CTRL_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0014 )
-#define FW_REG_TS_STAT_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0018 )
+/* TS FW CMPx COUNT register addresses */
+#define FW_REG_TS_CMP1_COUNT                            ( ICSSG_TS_FW_REGS_BASE + 0x0020 )
+#define FW_REG_TS_CMP3_COUNT                            ( ICSSG_TS_FW_REGS_BASE + 0x0024 )
+#define FW_REG_TS_CMP4_COUNT                            ( ICSSG_TS_FW_REGS_BASE + 0x0028 )
+#define FW_REG_TS_CMP5_COUNT                            ( ICSSG_TS_FW_REGS_BASE + 0x002C )
+#define FW_REG_TS_CMP6_COUNT                            ( ICSSG_TS_FW_REGS_BASE + 0x0030 )
 
-/* FW register addresses */
-#define FW_REG_TS_CTRL                                  ( ICSSG_TS_FW_REGS_BASE + FW_REG_TS_CTRL_OFFSET )
-#define FW_REG_TS_STAT                                  ( ICSSG_TS_FW_REGS_BASE + FW_REG_TS_STAT_OFFSET )
-
-/* FW register addresses */
-#define FW_REG_TS_CMP1_COUNT                            ( 0x0028 )
-#define FW_REG_TS_CMP3_COUNT                            ( 0x002C )
-#define FW_REG_TS_CMP4_COUNT                            ( 0x0030 )
-#define FW_REG_TS_CMP5_COUNT                            ( 0x0034 )
-#define FW_REG_TS_CMP6_COUNT                            ( 0x0038 )
-
-#define FW_REG_TS_CMP3_OFFSET                           ( 0x003C )
-#define FW_REG_TS_CMP4_OFFSET                           ( 0x0040 )
-#define FW_REG_TS_CMP5_OFFSET                           ( 0x0044 )
-#define FW_REG_TS_CMP6_OFFSET                           ( 0x0048 )
+/* TS FW CMPx OFFSET register addresses */
+#define FW_REG_TS_CMP3_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0034 )
+#define FW_REG_TS_CMP4_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0038 )
+#define FW_REG_TS_CMP5_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x003C )
+#define FW_REG_TS_CMP6_OFFSET                           ( ICSSG_TS_FW_REGS_BASE + 0x0040 )
 
 /*
  * Firmware register bit fields

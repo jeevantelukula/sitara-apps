@@ -73,7 +73,6 @@ typedef struct TsFwRegs_s
 {
     TsInfoFwRegs    tsInfoFwRegs;
     TsCtrlFwRegs    tsCtrlFwRegs;   
-    uint8_t         Rsvd[8];
     TsCmpFwRegs     tsCmpFwRegs;
 } TsFwRegs;
 

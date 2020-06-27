@@ -21,6 +21,7 @@ COMMON_LIB = $(abspath $(LIBDIR)/../)
 
 # Add directory to include search path
 IDIRS+=$(LIBDIR)/include
+IDIRS+=$(LIBDIR)/../firmware
 IDIRS+=$(COMMON_LIB)
 
 CFLAGS= --define=BUILD_MCU1_0
