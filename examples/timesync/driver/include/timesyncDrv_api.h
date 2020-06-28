@@ -60,8 +60,6 @@
 #define ICSSG_NUM_SLICE                ( 2 )   /* ICSSG number of Slices */
 
 #define ICSSG_TS_DRV__IEP_ID_0         ( 0 )   /* IEP0 hardware module ID */
-#define ICSSG_TS_DRV__IEP_ID_1         ( 1 )   /* IEP1 hardware module ID */
-#define ICSSG_TS_DRV__ICSSG_NUM_IEP    ( 2 )   /* ICSSG number of IEPs */
 
 /* Settings for icssgTsDrv_setTsGblEn() */
 #define ICSSG_TS_DRV__IEP_TS_GBL_EN_DISABLE               ( 0 )   /* Global Enable, disable setting */
@@ -138,7 +136,6 @@ int32_t icssgTsDrv_waitFwInit(
  *  @brief  Prepare IEP Period Count reconfiguration
  *
  *  @param[in]  handle          TS DRV instance handle
- *  @param[in]  iepId           IEP hardware module ID, 0...ICSSG_TS_DRV__ICSSG_NUM_IEP-1
  *  @param[in]  tsPrdCount      Compare periods/reloads (nPrdCount)
  *  @param[in]  tsPrdOffset     Compare offsets         (nPrdCount-1)
  *  @param[in]  nPrdCount       TS Period Count
@@ -149,11 +146,25 @@ int32_t icssgTsDrv_waitFwInit(
  */
 int32_t icssgTsDrv_prepRecfgTsPrdCount(
     IcssgTsDrv_Handle handle,
-    uint8_t iepId,
     uint32_t tsPrdCount[],
     int32_t tsPrdOffset[],
     uint8_t  nPrdCount,
     uint32_t *pRecfgBf
+);
+
+/* Start IEP0 counter */
+void icssgTsDrv_startIepCount(
+    IcssgTsDrv_Handle handle
+);
+
+/* Read IEP and comparator */
+void icssgTsDrv_readIepCmp(
+    IcssgTsDrv_Handle handle,
+    uint32_t   *curIep,
+    uint32_t   *curCmp3,
+    uint32_t   *curCmp4,
+    uint32_t   *curCmp5,
+    uint32_t   *curCmp6
 );
 
 #endif /* _TIMESYNC_DRV_API_H_ */

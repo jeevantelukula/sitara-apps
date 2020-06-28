@@ -53,7 +53,6 @@
 #include "test_utils.h"
 #include "timesync_array.h"             /* TS PRU FW image data */
 #include "timesyncDrv_api.h"            /* TS driver API */
-#include "timesync.h"
 
 
 /* ------------------------------------------------------------------------- *
@@ -139,10 +138,6 @@ typedef struct TsObj_s {
     uint8_t icssgId;                        /* TS DRV ICSSG hardware module ID */
     uint8_t pruId;                          /* TS DRV PRU hardware module ID */
     IcssgTsDrv_Handle hTsDrv;               /* TS DRV handle */
-    /* IEPx number of supported TSs */
-    uint8_t fwNumTss[ICSSG_TS_DRV__ICSSG_NUM_IEP];
-    /* IEPx number TSs */
-    uint8_t numTss[ICSSG_TS_DRV__ICSSG_NUM_IEP];
 } TsObj;
 
 /* ------------------------------------------------------------------------- *
@@ -178,9 +173,6 @@ int32_t initIcssgTsDrv(
 int32_t initTsDrvHlIf(
     TsObj *pTs
 );
-
-/* Initialize TS DRV LL interface */
-int32_t initTsDrvLlIf(void);
 
 /* Start ICSSG TS */
 int32_t startTs(
@@ -402,14 +394,6 @@ int32_t initIcssgTsDrv(
         return TEST_TS_ERR_INIT_TS_DRV;
     }
 
-    /*
-        Initialize DRV LL interface
-    */
-    status = initTsDrvLlIf();
-    if (status != TEST_TS_ERR_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
     return TEST_TS_ERR_NERR;
 }
 
@@ -441,7 +425,7 @@ int32_t initTsDrvHlIf(
     /* Configure TS Period Count */
     if (cfgMask & TS_CFG_PRD_COUNT) {
         /* Configure IEP0 Period Count */
-        status = icssgTsDrv_prepRecfgTsPrdCount(hTsDrv, ICSSG_TS_DRV__IEP_ID_0, pTs->tsPrms.prdCount, pTs->tsPrms.prdOffset, pTs->tsPrms.nPrdCount, &recfgBf);
+        status = icssgTsDrv_prepRecfgTsPrdCount(hTsDrv, pTs->tsPrms.prdCount, pTs->tsPrms.prdOffset, pTs->tsPrms.nPrdCount, &recfgBf);
         if (status != ICSSG_TS_DRV__STS_NERR) {
             return TEST_TS_ERR_INIT_TS_DRV_HL;
         }
@@ -453,35 +437,6 @@ int32_t initTsDrvHlIf(
     return TEST_TS_ERR_NERR;
 }
 
-/* Initialize timesync DRV LL interface */
-int32_t initTsDrvLlIf(void)
-{
-    int32_t status;
-
-    /* Reset TS FW control object */
-    status = resetTsCtrlObj(&gIcssgTsCtrlObj);
-    if (status != IEP_STS_NERR)
-    {
-        return TEST_TS_ERR_INIT_TS_DRV_LL;
-    }
-
-    /* Reset IEP 0 TS object */
-    status = resetIepTsObj(&gIcssgIep0TsObj, IEP_ID_0);
-    if (status != IEP_STS_NERR)
-    {
-        return TEST_TS_ERR_INIT_TS_DRV_LL;
-    }
-
-    /* Reset IEP 1 TS object */
-    status = resetIepTsObj(&gIcssgIep1TsObj, IEP_ID_1);
-    if (status != IEP_STS_NERR)
-    {
-        return TEST_TS_ERR_INIT_TS_DRV_LL;
-    }
-
-    return TEST_TS_ERR_NERR;
-}
-
 /* Start ICSSG Timesync */
 int32_t startTs(
     TsObj *pTs
@@ -489,9 +444,8 @@ int32_t startTs(
 {
     int32_t status;
 
-    /* Initialize IEP0 & 1 */
-    initIepTs(&gIcssgIep0TsObj);
-    initIepTs(&gIcssgIep1TsObj);
+    /* Start IEP0 counter */
+    icssgTsDrv_startIepCount(pTs->hTsDrv);
 
     /* Enable PRU */
     status = PRUICSS_pruEnable(pTs->pruIcssHandle, pTs->tsPrms.pruInstId);
@@ -663,8 +617,10 @@ Int main()
 void pruTsIrqHandler(uintptr_t foobar)
 {
     uint32_t curIep, curCmp3, thisDelay;
+    
     /* Benchmark */
-    readIepCmp(&gIcssgIep0TsObj, &curIep, &curCmp3, NULL, NULL, NULL);
+    icssgTsDrv_readIepCmp(gTestTs.hTsDrv, &curIep, &curCmp3, NULL, NULL, NULL);
+    
     /* Clear interrupt on Host */
     Osal_ClearInterrupt(224+32, 224+32);
 

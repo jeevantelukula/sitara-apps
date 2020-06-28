@@ -32,10 +32,13 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <ti/csl/soc.h>
+#include <ti/csl/cslr_icss.h>
 #include "tsFwRegs.h"
 #include "icssg_timesync.h"
 #include "timesyncDrv_api.h"
+
 
 /**    @brief    reconfigure TS Period Count */
 #define RECFG_TS_PRD_COUNT_MASK    ( 1<<1 )
@@ -43,44 +46,42 @@
 /* Default (reset) IEP TS Global Enable Mask */
 #define DEF_TS_GBL_EN_MASK     ( 0 )
 
-typedef TsInfoFwRegs IcssgTsDrv_TsInfoRegs;
-typedef TsCtrlFwRegs IcssgTsDrv_TsCtrlRegs;
-typedef TsCmpFwRegs IcssgTsDrv_TsCmpRegs;
-
 /* TS info object */
 typedef struct IcssgTsDrv_TsInfoObj_s
 {
-    /* TS info registers */
-    IcssgTsDrv_TsInfoRegs *pTsInfoRegs;
+    /* TS info firmware registers */
+    TsInfoFwRegs *pTsInfoFwRegs;
 } IcssgTsDrv_TsInfoObj;
 
 /* TS control object */
 typedef struct IcssgTsDrv_TsCtrlObj_s
 {
-    /* TS control registers */
-    IcssgTsDrv_TsCtrlRegs *pTsCtrlRegs;
+    /* TS control firmware registers */
+    TsCtrlFwRegs *pTsCtrlFwRegs;
 } IcssgTsDrv_TsCtrlObj;
 
-/* TS IEP CMP control object */
-typedef struct IcssgTsDrv_TsCmpObj_s
+/* TS IEP0 CMP control object */
+typedef struct IcssgTsDrv_TsCmpCtrlObj_s
 {
-    /* TS CMP registers */
-    IcssgTsDrv_TsCmpRegs *pTsCmpRegs;
-} IcssgTsDrv_TsCmpObj;
+    /* TS CMP firmware registers */
+    TsCmpFwRegs *pTsCmpFwRegs;
+    /* IEP0 CMP hardware registers */
+    CSL_icss_g_pr1_iep1_slvRegs *pIepHwRegs;
+} IcssgTsDrv_TsCmpCtrlObj;
 
 /* TS DRV object */
 typedef struct IcssgTsDrv_TsDrvObj_s
 {
     /* ICSSG hardware module ID */
-    uint8_t                icssgId;
+    uint8_t                 icssgId;
     /* PRU hardware module ID */
-    uint8_t                pruId;
+    uint8_t                 pruId;
     /* TS info */
-    IcssgTsDrv_TsInfoObj   tsInfo;
+    IcssgTsDrv_TsInfoObj    tsInfo;
     /* TS control */
-    IcssgTsDrv_TsCtrlObj   tsCtrl;
-    /* IEPx TS/CMP control */
-    IcssgTsDrv_TsCmpObj    tsCmp[ICSSG_TS_DRV__ICSSG_NUM_IEP];
+    IcssgTsDrv_TsCtrlObj    tsCtrl;
+    /* TS IEP0/CMP control */
+    IcssgTsDrv_TsCmpCtrlObj tsCmpCtrl;
 } IcssgTsDrv_TsDrvObj;
 
 /* Internal structure for managing TSs for each ICSSG */
@@ -105,6 +106,7 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
         (pruId < ICSSG_TS_DRV__NUM_PRU))
     {
         pTsDrvObj = &gTsDrvObj;
+        memset(pTsDrvObj, 0, sizeof(pTsDrvObj));
         
         /* Store ICSSG & PRU IDs */
         pTsDrvObj->icssgId = icssgId;
@@ -113,28 +115,38 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
         /* Determine PRU ID in slice */
         slicePruId = pruId - (uint8_t)pruId/ICSSG_NUM_SLICE * ICSSG_NUM_SLICE;
         
-        /* Determine DMEM base address */
+        /* Determine DMEM base address & 
+           IEP CMP hardware register address */
         if (icssgId == ICSSG_TS_DRV__ICSSG_ID_0)
         {
+            /* Assign ICSSG0 addresses */
             baseAddr = (slicePruId == ICSSG_TS_DRV__SLICE_PRU_ID_0) ? CSL_PRU_ICSSG0_DRAM0_SLV_RAM_BASE : 
                 CSL_PRU_ICSSG0_DRAM1_SLV_RAM_BASE;
+            pTsDrvObj->tsCmpCtrl.pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)CSL_PRU_ICSSG0_IEP0_BASE;
         }
         else if (icssgId == ICSSG_TS_DRV__ICSSG_ID_1)
         {
+            /* Assign ICSSG1 addresses */
             baseAddr = (slicePruId == ICSSG_TS_DRV__SLICE_PRU_ID_0) ? CSL_PRU_ICSSG1_DRAM0_SLV_RAM_BASE : 
                 CSL_PRU_ICSSG1_DRAM1_SLV_RAM_BASE;
+            pTsDrvObj->tsCmpCtrl.pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)CSL_PRU_ICSSG1_IEP0_BASE;
         }
         else if (icssgId == ICSSG_TS_DRV__ICSSG_ID_2)
         {
+            /* Assign ICSSG2 addresses */
             baseAddr = (slicePruId == ICSSG_TS_DRV__SLICE_PRU_ID_0) ? CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE : 
                 CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE;
+            pTsDrvObj->tsCmpCtrl.pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)CSL_PRU_ICSSG2_IEP0_BASE;
+        }
+        else 
+        {
+            return NULL;
         }
         
-        /* Initialize TS driver object pointers */
-        pTsDrvObj->tsInfo.pTsInfoRegs = (IcssgTsDrv_TsInfoRegs *)(baseAddr + FW_REG_MAGIC_NUMBER);
-        pTsDrvObj->tsCtrl.pTsCtrlRegs = (IcssgTsDrv_TsCtrlRegs *)(baseAddr + FW_REG_TS_CTRL);
-        pTsDrvObj->tsCmp[ICSSG_TS_DRV__IEP_ID_0].pTsCmpRegs = (IcssgTsDrv_TsCmpRegs *)(baseAddr + FW_REG_TS_CMP1_COUNT);
-        pTsDrvObj->tsCmp[ICSSG_TS_DRV__IEP_ID_1].pTsCmpRegs = NULL;
+        /* Initialize TS driver firmware register pointers */
+        pTsDrvObj->tsInfo.pTsInfoFwRegs = (TsInfoFwRegs *)(baseAddr + FW_REG_MAGIC_NUMBER);
+        pTsDrvObj->tsCtrl.pTsCtrlFwRegs = (TsCtrlFwRegs *)(baseAddr + FW_REG_TS_CTRL);
+        pTsDrvObj->tsCmpCtrl.pTsCmpFwRegs = (TsCmpFwRegs *)(baseAddr + FW_REG_TS_CMP1_COUNT);        
     }
     else {
         pTsDrvObj = NULL;
@@ -151,13 +163,13 @@ int32_t icssgTsDrv_setTsGblEn(
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
     IcssgTsDrv_TsCtrlObj *pTsCtrl;
-    IcssgTsDrv_TsCtrlRegs *tsCtrlRegs;
+    TsCtrlFwRegs *tsCtrlRegs;
     uint32_t tsCtrl;
 
     /* Get pointer to TS control */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
     pTsCtrl = &pTsDrv->tsCtrl;
-    tsCtrlRegs = pTsCtrl->pTsCtrlRegs;
+    tsCtrlRegs = pTsCtrl->pTsCtrlFwRegs;
 
     /* Read TS Global Control FW register */
     tsCtrl = tsCtrlRegs->TS_CTRL;
@@ -175,7 +187,7 @@ int32_t icssgTsDrv_setTsGblEn(
         return ICSSG_TS_DRV__STS_ERR_INV_PRM;
     }
 
-    /* Write IEP TS Global Control Mask FW register */
+    /* Write TS Global Control Mask FW register */
     tsCtrlRegs->TS_CTRL = tsCtrl;
 
     return ICSSG_TS_DRV__STS_NERR;
@@ -188,19 +200,19 @@ int32_t icssgTsDrv_waitTsGblEnAck(
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
     IcssgTsDrv_TsCtrlObj *pTsCtrl;
-    IcssgTsDrv_TsCtrlRegs *pTsCtrlRegs;
+    TsCtrlFwRegs *pTsCtrlFwRegs;
     uint32_t tsStat;
     uint8_t tsGblEnAckFlag;
     
     /* Get pointer to TS control */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
     pTsCtrl = &pTsDrv->tsCtrl;
-    pTsCtrlRegs = pTsCtrl->pTsCtrlRegs;
+    pTsCtrlFwRegs = pTsCtrl->pTsCtrlFwRegs;
 
     /* Wait for TS Global Enable ACK */
     do {
         /* Read TS Status FW register */
-        tsStat = pTsCtrlRegs->TS_STAT;
+        tsStat = pTsCtrlFwRegs->TS_STAT;
         /* Extract TS Global Enable ACK flag */
         tsGblEnAckFlag = (tsStat & TS_STAT_IEP0_TS_GBL_EN_ACK_MASK) >> TS_STAT_IEP0_TS_GBL_EN_ACK_SHIFT;
     } while (tsGblEnAckFlag == BF_TS_GBL_EN_ACK_DISABLE);
@@ -215,19 +227,19 @@ int32_t icssgTsDrv_waitFwInit(
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
     IcssgTsDrv_TsCtrlObj *pTsCtrl;
-    IcssgTsDrv_TsCtrlRegs *pTsCtrlRegs;
+    TsCtrlFwRegs *pTsCtrlFwRegs;
     uint32_t tsStat;
     uint8_t fwInitFlag;
 
     /* Get pointer to TS control */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
     pTsCtrl = &pTsDrv->tsCtrl;
-    pTsCtrlRegs = pTsCtrl->pTsCtrlRegs;
+    pTsCtrlFwRegs = pTsCtrl->pTsCtrlFwRegs;
 
     /* Wait for FW init */
     do {
         /* Read TS Status FW register */
-        tsStat = pTsCtrlRegs->TS_STAT;
+        tsStat = pTsCtrlFwRegs->TS_STAT;
         /* Extract FW init flag */
         fwInitFlag = (tsStat & TS_STAT_FW_INIT_MASK) >> TS_STAT_FW_INIT_SHIFT;
     } while (fwInitFlag == BF_TS_FW_INIT_UNINIT);
@@ -235,10 +247,9 @@ int32_t icssgTsDrv_waitFwInit(
     return ICSSG_TS_DRV__STS_NERR;
 }
 
-/* Prepare IEP Period Count reconfiguration */
+/* Prepare IEP0 Period Count reconfiguration */
 int32_t icssgTsDrv_prepRecfgTsPrdCount(
     IcssgTsDrv_Handle handle,
-    uint8_t iepId,
     uint32_t tsPrdCount[],
     int32_t tsPrdOffset[],
     uint8_t  nPrdCount,
@@ -246,21 +257,16 @@ int32_t icssgTsDrv_prepRecfgTsPrdCount(
 )
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
-    IcssgTsDrv_TsCmpRegs *pTsCmpRegs;
+    TsCmpFwRegs *pTsCmpFwRegs;
     volatile uint32_t *pTsCmpCount;
     volatile int32_t *pTsCmpOffset;
     int32_t i;
 
-    /* Check IEP ID */
-    if (iepId >= ICSSG_TS_DRV__ICSSG_NUM_IEP) {
-        return ICSSG_TS_DRV__STS_ERR_INV_PRM;
-    }
-
     /* Get pointer to IEP TS control registers */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
-    pTsCmpRegs = pTsDrv->tsCmp[iepId].pTsCmpRegs;
-    pTsCmpCount = &pTsCmpRegs->TS_CMP1_COUNT;
-    pTsCmpOffset = &pTsCmpRegs->TS_CMP3_OFFSET;
+    pTsCmpFwRegs = pTsDrv->tsCmpCtrl.pTsCmpFwRegs;
+    pTsCmpCount = &pTsCmpFwRegs->TS_CMP1_COUNT;
+    pTsCmpOffset = &pTsCmpFwRegs->TS_CMP3_OFFSET;
 
     for (i = 0; i < nPrdCount; i++)
     {
@@ -279,3 +285,55 @@ int32_t icssgTsDrv_prepRecfgTsPrdCount(
 
     return ICSSG_TS_DRV__STS_NERR;
 }
+
+/* Start IEP0 counter */
+void icssgTsDrv_startIepCount(
+    IcssgTsDrv_Handle handle
+)
+{
+    IcssgTsDrv_TsDrvObj *pTsDrv;
+    CSL_icss_g_pr1_iep1_slvRegs *pIepHwRegs;
+
+    /* Get pointer to IEP0 CMP hardware registers */
+    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
+    pIepHwRegs = pTsDrv->tsCmpCtrl.pIepHwRegs;
+
+    /* Enable IEP Counter -- this shouldn't be needed when EtherCAT is running! (TBD/FIXME) */
+    pIepHwRegs->GLOBAL_CFG_REG |= 0x1;
+}
+
+/* Read IEP and comparator */
+void icssgTsDrv_readIepCmp(
+    IcssgTsDrv_Handle handle,
+    uint32_t   *curIep,
+    uint32_t   *curCmp3,
+    uint32_t   *curCmp4,
+    uint32_t   *curCmp5,
+    uint32_t   *curCmp6
+)
+{
+    IcssgTsDrv_TsDrvObj *pTsDrv;
+    CSL_icss_g_pr1_iep1_slvRegs *pIepHwRegs;
+        
+    /* Get pointer to IEP0 CMP hardware registers */
+    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
+    pIepHwRegs = pTsDrv->tsCmpCtrl.pIepHwRegs;
+
+    /* Do IEP first (as soon as possible) for benchmarking */
+    if (curIep) {
+        *curIep = pIepHwRegs->COUNT_REG0;
+    }
+    if (curCmp3) {
+        *curCmp3 = pIepHwRegs->CMP3_REG0;
+    }
+    if (curCmp4) {
+        *curCmp4 = pIepHwRegs->CMP4_REG0;
+    }
+    if (curCmp5) {
+        *curCmp5 = pIepHwRegs->CMP5_REG0;
+    }
+    if (curCmp6) {
+        *curCmp6 = pIepHwRegs->CMP6_REG0;
+    }
+}
+

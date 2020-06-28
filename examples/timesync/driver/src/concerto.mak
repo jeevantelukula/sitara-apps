@@ -4,7 +4,7 @@
 
 # Filter based on OS so that concerto does not attempt any other
 # combinations.
-ifeq ($(TARGET_OS), $(filter $(TARGET_OS), SYSBIOS))
+ifeq ($(TARGET_OS), $(filter $(TARGET_OS), SYSBIOS NO_OS))
 
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
@@ -26,7 +26,7 @@ IDIRS+=$(COMMON_LIB)
 
 CFLAGS= --define=BUILD_MCU1_0
 
-CSOURCES    := icssgTimesyncDrv.c timesync.c
+CSOURCES    := icssgTimesyncDrv.c
 
 # End concerto module declarations
 include $(FINALE)
