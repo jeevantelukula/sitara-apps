@@ -63,23 +63,13 @@
 #define ICSSG_TS_DRV__IEP_ID_1         ( 1 )   /* IEP1 hardware module ID */
 #define ICSSG_TS_DRV__ICSSG_NUM_IEP    ( 2 )   /* ICSSG number of IEPs */
 
-/* Shifts & Masks for icssgTsDrv_setIepTsGblEn(), iepTsGblEnMask */
+/* Settings for icssgTsDrv_setTsGblEn() */
 #define ICSSG_TS_DRV__IEP_TS_GBL_EN_DISABLE               ( 0 )   /* Global Enable, disable setting */
 #define ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE                ( 1 )   /* Global Enable, enable setting */
-#define ICSSG_TS_DRV__BF_IEP_TS_GBL_EN_MASK               ( 0x1 )
-#define ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_SHIFT             ( 0 )
-#define ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_MASK              ( ICSSG_TS_DRV__BF_IEP_TS_GBL_EN_MASK << ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_SHIFT )
-#define ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_SHIFT             ( 1 )
-#define ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_MASK              ( ICSSG_TS_DRV__BF_IEP_TS_GBL_EN_MASK << ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_SHIFT )
 
-/* Shifts & Masks for icssgTsDrv_waitIepTsGblEnAck(), iepTsGblEnAckMask */
+/* Settings for icssgTsDrv_waitTsGblEnAck() */
 #define ICSSG_TS_DRV__IEP_TS_GBL_EN_ACK_DISABLE           ( 0 )   /* Global Enable ACK, disable setting */
 #define ICSSG_TS_DRV__IEP_TS_GBL_EN_ACK_ENABLE            ( 1 )   /* Global Enable ACK, enable setting */
-#define ICSSG_TS_DRV__BF_IEP_TS_GBL_EN_ACK_MASK           ( 0x1 )
-#define ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_ACK_SHIFT         ( 0 )
-#define ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_ACK_MASK          ( ICSSG_TS_DRV__BF_IEP_TS_GBL_EN_ACK_MASK << ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_ACK_SHIFT )
-#define ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_ACK_SHIFT         ( 1 )
-#define ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_ACK_MASK          ( ICSSG_TS_DRV__BF_IEP_TS_GBL_EN_ACK_MASK << ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_ACK_SHIFT )
 
 /* FW register base address */
 #define ICSSG_TS_BASE_ADDR  ( ICSSG_TS_FW_REGS_BASE )
@@ -103,18 +93,31 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
 );
 
 /**
- *  @name   icssgTsDrv_setIepTsGblEn
- *  @brief  Set IEP PWM Global Enable flags
+ *  @name   icssgTsDrv_setTsGblEn
+ *  @brief  Set TS Global Enable
  *
- *  @param[in]  handle              PWM DRV instance handle
- *  @param[in]  iepTsGblEnMask     IEP PWM global enable mask: BitX, X=0...1: global disable/enable flag for IEP<X> PWMs
+ *  @param[in]  handle              TS DRV instance handle
+ *  @param[in]  tsGblEnFlag         TS global enable flag: 0/1 - disable/enable
  *
  *  @retval Status code
  *
  */
-int32_t icssgTsDrv_setIepTsGblEn(
+int32_t icssgTsDrv_setTsGblEn(
     IcssgTsDrv_Handle handle,
-    uint8_t iepTsGblEnMask
+    uint8_t tsGblEnFlag
+);
+
+/**
+ *  @name   icssgTsDrv_waitTsGblEnAck
+ *  @brief  Wait for TS Global Enable ACK
+ *
+ *  @param[in]  handle      TS DRV instance handle
+ *
+ *  @retval Status code
+ *
+ */
+int32_t icssgTsDrv_waitTsGblEnAck(
+    IcssgTsDrv_Handle handle
 );
 
 /**

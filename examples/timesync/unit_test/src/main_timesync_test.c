@@ -419,7 +419,6 @@ int32_t initTsDrvHlIf(
 )
 {
     IcssgTsDrv_Handle hTsDrv;
-    uint8_t tCfgMask8b;
     uint8_t cfgMask;
     uint32_t recfgBf;
     int32_t status;
@@ -430,11 +429,8 @@ int32_t initTsDrvHlIf(
         return TEST_TS_ERR_INIT_TS_DRV_HL;
     }
 
-    /* Set IEP0,1 TS Global Enable bits */
-    tCfgMask8b = 0;
-    tCfgMask8b |= (ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE << ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_SHIFT);
-
-    status = icssgTsDrv_setIepTsGblEn(hTsDrv, tCfgMask8b);
+    /* Set TS Global Enable */
+    status = icssgTsDrv_setTsGblEn(hTsDrv, ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE);
     if (status != ICSSG_TS_DRV__STS_NERR) {
         return TEST_TS_ERR_INIT_TS_DRV_HL;
     }

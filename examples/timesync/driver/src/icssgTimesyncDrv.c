@@ -57,8 +57,6 @@ typedef struct IcssgTsDrv_TsInfoObj_s
 /* TS control object */
 typedef struct IcssgTsDrv_TsCtrlObj_s
 {
-    /* TS global enable mask */
-    uint8_t tsGblEnMask;
     /* TS control registers */
     IcssgTsDrv_TsCtrlRegs *pTsCtrlRegs;
 } IcssgTsDrv_TsCtrlObj;
@@ -137,9 +135,6 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
         pTsDrvObj->tsCtrl.pTsCtrlRegs = (IcssgTsDrv_TsCtrlRegs *)(baseAddr + FW_REG_TS_CTRL);
         pTsDrvObj->tsCmp[ICSSG_TS_DRV__IEP_ID_0].pTsCmpRegs = (IcssgTsDrv_TsCmpRegs *)(baseAddr + FW_REG_TS_CMP1_COUNT);
         pTsDrvObj->tsCmp[ICSSG_TS_DRV__IEP_ID_1].pTsCmpRegs = NULL;
-
-        /* Reset IEP TS global enable mask */
-        pTsDrvObj->tsCtrl.tsGblEnMask = DEF_TS_GBL_EN_MASK;
     }
     else {
         pTsDrvObj = NULL;
@@ -148,53 +143,32 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
     return (IcssgTsDrv_Handle)pTsDrvObj;
 }
 
-/* Set IEP TS Global Enable flags */
-int32_t icssgTsDrv_setIepTsGblEn(
+/* Set TS Global Enable */
+int32_t icssgTsDrv_setTsGblEn(
     IcssgTsDrv_Handle handle,
-    uint8_t tsGblEnMask
+    uint8_t tsGblEnFlag
 )
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
     IcssgTsDrv_TsCtrlObj *pTsCtrl;
     IcssgTsDrv_TsCtrlRegs *tsCtrlRegs;
     uint32_t tsCtrl;
-    uint8_t iepGblEnPrm;
 
     /* Get pointer to TS control */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
     pTsCtrl = &pTsDrv->tsCtrl;
     tsCtrlRegs = pTsCtrl->pTsCtrlRegs;
 
-    /* Stash IEP global control mask parameter */
-    pTsCtrl->tsGblEnMask = tsGblEnMask;
-
-    /* Read IEP TS Global Control FW register */
+    /* Read TS Global Control FW register */
     tsCtrl = tsCtrlRegs->TS_CTRL;
 
-    /* Extract IEP0 TS global enable parameter */
-    iepGblEnPrm = (tsGblEnMask & ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_MASK) >> ICSSG_TS_DRV__BF_IEP0_TS_GBL_EN_SHIFT;
-    /* Set IEP TS global enable in FW register */
+    /* Set TS global enable in FW register */
     tsCtrl &= ~TS_CTRL_IEP0_TS_GBL_EN_MASK;
-    if (iepGblEnPrm == ICSSG_TS_DRV__IEP_TS_GBL_EN_DISABLE) {
+    if (tsGblEnFlag == ICSSG_TS_DRV__IEP_TS_GBL_EN_DISABLE) {
         tsCtrl |= BF_TS_GBL_EN_DISABLE << TS_CTRL_IEP0_TS_GBL_EN_SHIFT;
     }
-    else if (iepGblEnPrm == ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE) {
+    else if (tsGblEnFlag == ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE) {
         tsCtrl |= BF_TS_GBL_EN_ENABLE << TS_CTRL_IEP0_TS_GBL_EN_SHIFT;
-    }
-    else
-    {
-        return ICSSG_TS_DRV__STS_ERR_INV_PRM;
-    }
-
-    /* Extract IEP1 TS global enable parameter */
-    iepGblEnPrm = (tsGblEnMask & ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_MASK) >> ICSSG_TS_DRV__BF_IEP1_TS_GBL_EN_SHIFT;
-    /* Set IEP TS global enable in FW register */
-    tsCtrl &= ~TS_CTRL_IEP1_TS_GBL_EN_MASK;
-    if (iepGblEnPrm == ICSSG_TS_DRV__IEP_TS_GBL_EN_DISABLE) {
-        tsCtrl |= BF_TS_GBL_EN_DISABLE << TS_CTRL_IEP1_TS_GBL_EN_SHIFT;
-    }
-    else if (iepGblEnPrm == ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE) {
-        tsCtrl |= BF_TS_GBL_EN_ENABLE << TS_CTRL_IEP1_TS_GBL_EN_SHIFT;
     }
     else
     {
@@ -207,7 +181,34 @@ int32_t icssgTsDrv_setIepTsGblEn(
     return ICSSG_TS_DRV__STS_NERR;
 }
 
-/* Wait FW initialization complete */
+/* Wait for TS Global Enable ACK complete */
+int32_t icssgTsDrv_waitTsGblEnAck(
+    IcssgTsDrv_Handle handle
+)
+{
+    IcssgTsDrv_TsDrvObj *pTsDrv;
+    IcssgTsDrv_TsCtrlObj *pTsCtrl;
+    IcssgTsDrv_TsCtrlRegs *pTsCtrlRegs;
+    uint32_t tsStat;
+    uint8_t tsGblEnAckFlag;
+    
+    /* Get pointer to TS control */
+    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
+    pTsCtrl = &pTsDrv->tsCtrl;
+    pTsCtrlRegs = pTsCtrl->pTsCtrlRegs;
+
+    /* Wait for TS Global Enable ACK */
+    do {
+        /* Read TS Status FW register */
+        tsStat = pTsCtrlRegs->TS_STAT;
+        /* Extract TS Global Enable ACK flag */
+        tsGblEnAckFlag = (tsStat & TS_STAT_IEP0_TS_GBL_EN_ACK_MASK) >> TS_STAT_IEP0_TS_GBL_EN_ACK_SHIFT;
+    } while (tsGblEnAckFlag == BF_TS_GBL_EN_ACK_DISABLE);
+    
+    return ICSSG_TS_DRV__STS_NERR;    
+}
+
+/* Wait for FW initialization complete */
 int32_t icssgTsDrv_waitFwInit(
     IcssgTsDrv_Handle handle
 )
@@ -223,11 +224,11 @@ int32_t icssgTsDrv_waitFwInit(
     pTsCtrl = &pTsDrv->tsCtrl;
     pTsCtrlRegs = pTsCtrl->pTsCtrlRegs;
 
-    /* Wait for IEP TS global enable ACK */
+    /* Wait for FW init */
     do {
-        /* Read IEP TS Global Status FW register */
+        /* Read TS Status FW register */
         tsStat = pTsCtrlRegs->TS_STAT;
-        /* Extract IEP TS global enable ACK */
+        /* Extract FW init flag */
         fwInitFlag = (tsStat & TS_STAT_FW_INIT_MASK) >> TS_STAT_FW_INIT_SHIFT;
     } while (fwInitFlag == BF_TS_FW_INIT_UNINIT);
 
