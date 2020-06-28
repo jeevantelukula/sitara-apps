@@ -73,15 +73,13 @@
       TS_CFG_PRD_COUNT )
 
 /* Status codes */
-#define TEST_TS_ERR_NERR               (  0 )  /* no error */
-#define TEST_TS_ERR_CFG_ICSSG_CLKSEL   ( -2 )  /* ICSSG clock selection error */
-#define TEST_TS_ERR_CFG_HOST_INTR      ( -3 )  /* interrupt configuration error */
-#define TEST_TS_ERR_INIT_ICSSG         ( -4 )  /* initialize ICSSG error */
-#define TEST_TS_ERR_INIT_PRU           ( -5 )  /* initialize PRU error */
-#define TEST_TS_ERR_INIT_TS_DRV       ( -6 )  /* initialize TS DRV error */
-#define TEST_TS_ERR_INIT_TS_DRV_HL    ( -7 )  /* initialize TS DRV HL error */
-#define TEST_TS_ERR_INIT_TS_DRV_LL    ( -8 )  /* initialize TS DRV LL error */
-#define TEST_TS_ERR_START_TS          ( -9 )  /* start TS error */
+#define TEST_TS_ERR_NERR                (  0 )  /* no error */
+#define TEST_TS_ERR_CFG_ICSSG_CLKSEL    ( -1 )  /* ICSSG clock selection error */
+#define TEST_TS_ERR_CFG_HOST_INTR       ( -2 )  /* interrupt configuration error */
+#define TEST_TS_ERR_INIT_ICSSG          ( -3 )  /* initialize ICSSG error */
+#define TEST_TS_ERR_INIT_PRU            ( -4 )  /* initialize PRU error */
+#define TEST_TS_ERR_INIT_TS_DRV         ( -5 )  /* initialize TS DRV error */
+#define TEST_TS_ERR_START_TS            ( -6 )  /* start TS error */
 
 /* Test ICSSG instance ID */
 #define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_ONE )
@@ -91,15 +89,7 @@
 /* Task priorities */
 #define TASK_SYSINIT_PRI                ( 3 )
 
-#define PHASE0_IDX              ( 0 )
-#define PHASE1_IDX              ( 1 )
-#define PHASE2_IDX              ( 2 )
-#define NUM_PHASE_PER_AXIS      ( 3 )   /* number of Phases per Axis */
-#define NUM_TS_PER_PHASE        ( 2 )   /* number of TS per Phase */
-#define NUM_AXIS                ( 3 )   /* number of Axis */
-/* Total number of TSs for 3 axes */
-#define TOT_NUM_TSS            ( NUM_PHASE_PER_AXIS * NUM_TS_PER_PHASE * NUM_AXIS )
-
+/* Test TS CMP periods */
 /* IEP frequency = 200 MHz, TS frequency = 32 kHz */
 #define TEST_PRD_COUNT0         ( 200000000u/1000u   )    /* 1ms     (1KHz) - sim sync0 */
 #define TEST_PRD_COUNT1         ( 200000000u/100000u )    /* 10us    (100Khz) (CMP3)    */
@@ -107,6 +97,7 @@
 #define TEST_PRD_COUNT3         ( 200000000u/8000u   )    /* 125us   (8Khz)   (CMP5)    */
 #define TEST_PRD_COUNT4         ( 200000000u/1000u   )    /* 1ms     (1Khz)   (CMP6)    */
 
+/* Test TS CMP offsets */
 #define TEST_PRD_OFFSET1        (     0 )  /* No offset */
 #define TEST_PRD_OFFSET2        (     0 )  /* No offset */
 #define TEST_PRD_OFFSET3        ( -2000 )  /* 10us before sync0 */
@@ -166,11 +157,6 @@ int32_t initPruTimesync(
 int32_t initIcssgTsDrv(
     PRUICSS_Handle pruIcssHandle,
     TsPrmsObj *pTsPrms,
-    TsObj *pTs
-);
-
-/* Initialize TS DRV HL interface */
-int32_t initTsDrvHlIf(
     TsObj *pTs
 );
 
@@ -369,6 +355,9 @@ int32_t initIcssgTsDrv(
     TsObj *pTs
 )
 {
+    IcssgTsDrv_Handle hTsDrv;
+    uint8_t cfgMask;
+    uint32_t recfgBf;
     int32_t status;
 
     /* Copy TS parameters to TS object */
@@ -386,37 +375,16 @@ int32_t initIcssgTsDrv(
         return TEST_TS_ERR_INIT_TS_DRV;
     }
 
-    /*
-        Initialize DRV HL interface
-    */
-    status = initTsDrvHlIf(pTs);
-    if (status != TEST_TS_ERR_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
-    return TEST_TS_ERR_NERR;
-}
-
-/* Initialize TS DRV HL interface */
-int32_t initTsDrvHlIf(
-    TsObj *pTs
-)
-{
-    IcssgTsDrv_Handle hTsDrv;
-    uint8_t cfgMask;
-    uint32_t recfgBf;
-    int32_t status;
-
     /* Initialize TS DRV instance */
     hTsDrv = icssgTsDrv_initDrv(pTs->icssgId, pTs->pruId);
     if (hTsDrv == NULL) {
-        return TEST_TS_ERR_INIT_TS_DRV_HL;
+        return TEST_TS_ERR_INIT_TS_DRV;
     }
 
     /* Set TS Global Enable */
     status = icssgTsDrv_setTsGblEn(hTsDrv, ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE);
     if (status != ICSSG_TS_DRV__STS_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV_HL;
+        return TEST_TS_ERR_INIT_TS_DRV;
     }
 
     /* Set non-default configuration */
@@ -427,12 +395,12 @@ int32_t initTsDrvHlIf(
         /* Configure IEP0 Period Count */
         status = icssgTsDrv_prepRecfgTsPrdCount(hTsDrv, pTs->tsPrms.prdCount, pTs->tsPrms.prdOffset, pTs->tsPrms.nPrdCount, &recfgBf);
         if (status != ICSSG_TS_DRV__STS_NERR) {
-            return TEST_TS_ERR_INIT_TS_DRV_HL;
+            return TEST_TS_ERR_INIT_TS_DRV;
         }
     }
 
     /* Store TS DRV handle to TS object */
-    pTs->hTsDrv = hTsDrv;
+    pTs->hTsDrv = hTsDrv;    
 
     return TEST_TS_ERR_NERR;
 }
