@@ -50,6 +50,7 @@
 #include <ti/drv/uart/UART_stdio.h>
 
 #include "cfg_host_intr.h"
+#include "timesyncDrv_utils.h"          /* TS driver utilities */
 #include "test_utils.h"
 #include "timesync_array.h"             /* TS PRU FW image data */
 #include "timesyncDrv_api.h"            /* TS driver API */
@@ -65,12 +66,14 @@
 /* Default ICSS pin mux setting */
 #define PRUICSS_PINMUX_DEF              ( 0x0 )
 
-/* Bits for timesync configuration mask */
-#define TS_CFG_EN              ( 1<<0 )
-#define TS_CFG_PRD_COUNT       ( 1<<1 )
-#define TS_CFG_ALL \
-    ( TS_CFG_EN | \
-      TS_CFG_PRD_COUNT )
+/* Bits for TS CMP configuration mask */
+#define TS_CFG_CMP3                     ( 1<<0 )
+#define TS_CFG_CMP4                     ( 1<<1 )
+#define TS_CFG_CMP5                     ( 1<<2 )
+#define TS_CFG_CMP6                     ( 1<<3 )
+#define TS_CFG_CMP_ALL  \
+    ( TS_CFG_CMP3 | TS_CFG_CMP4 | TS_CFG_CMP5 | TS_CFG_CMP6 )
+
 
 /* Status codes */
 #define TEST_TS_ERR_NERR                (  0 )  /* no error */
@@ -89,6 +92,9 @@
 /* Task priorities */
 #define TASK_SYSINIT_PRI                ( 3 )
 
+/* Test TS IEP0 Period (nsec.) */
+#define TEST_TS_IEP_PRD_NSEC            ( 5 )   /* 5 nsec = 1/200MHz */
+
 /* Test TS CMP periods */
 /* IEP frequency = 200 MHz, TS frequency = 32 kHz */
 #define TEST_PRD_COUNT0         ( 200000000u/1000u   )    /* 1ms     (1KHz) - sim sync0 */
@@ -103,9 +109,6 @@
 #define TEST_PRD_OFFSET3        ( -2000 )  /* 10us before sync0 */
 #define TEST_PRD_OFFSET4        (  4000 )  /* 20us after sync0 */
 
-/* TS parameters number of PRD */
-#define TS_NUM_PRDS   ( 5 )
-
 /* Compare event router i*/
 #define CMPEVT_INTRTR_IN    ( 35 )  /* ICSSG_0_IEP0_CMP_TIMER3_INT */
 
@@ -116,10 +119,14 @@
 typedef struct TsPrmsObj_s {
     PRUICSS_MaxInstances icssInstId;        /* ICSSG hardware instance ID */
     PRUSS_PruCores pruInstId;               /* PRU hardware instance ID */
-    uint8_t nPrdCount;                      /* Number of PRD counts to set */
-    uint32_t prdCount[TS_NUM_PRDS+1];       /* Period Count */
-    int32_t prdOffset[TS_NUM_PRDS];         /* Positive/Negative offset */
-    uint8_t cfgMask;                        /* Configuration mask */
+    /* IEP Period (nsec) */
+    uint32_t iepPrdNsec;
+    /* Period Count */
+    uint32_t prdCount[ICSSG_TS_DRV__NUM_IEP_CMP];
+    /* Positive/Negative Offset */
+    int32_t prdOffset[ICSSG_TS_DRV__NUM_IEP_CMP];
+    uint8_t cfgMask;                        /* Period/Offset configuration mask */
+    uint32_t testTsPrdCount;                /* Test Period */
 } TsPrmsObj;
 
 /* TS object */
@@ -168,10 +175,6 @@ int32_t startTs(
 /* PRU TS IRQ handler */
 void pruTsIrqHandler(uintptr_t foobar);
 
-/* PRU TS SWI function */
-void pruTsSwiFxn(UArg a0, UArg a1);
-
-#define TEST_DC_CNT_INCR            ( 5 ) /* max resolution increment for IEP @ 200 MHz */
 /* ------------------------------------------------------------------------- *
  *                                Globals                                    *
  * ------------------------------------------------------------------------- */
@@ -290,7 +293,7 @@ int32_t initPruTimesync(
     }
 
     /* Determine PRU ID in slice */
-    slicePruInstId = pruInstId - (uint8_t)pruInstId/ICSSG_NUM_SLICE * ICSSG_NUM_SLICE;
+    slicePruInstId = pruInstId - (uint8_t)pruInstId/ICSSG_TS_DRV__NUM_ICSSG_SLICE * ICSSG_TS_DRV__NUM_ICSSG_SLICE;
     /* Determine PRU DMEM address */
     pruDMem = PRU_ICSS_DATARAM(slicePruInstId);
     /* Determine PRU IMEM address */
@@ -356,8 +359,6 @@ int32_t initIcssgTsDrv(
 )
 {
     IcssgTsDrv_Handle hTsDrv;
-    uint8_t cfgMask;
-    uint32_t recfgBf;
     int32_t status;
 
     /* Copy TS parameters to TS object */
@@ -382,21 +383,24 @@ int32_t initIcssgTsDrv(
     }
 
     /* Set TS Global Enable */
-    status = icssgTsDrv_setTsGblEn(hTsDrv, ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE);
+    status = icssgTsDrv_setTsGblEn(hTsDrv, ICSSG_TS_DRV__TS_GBL_EN_ENABLE);
+    if (status != ICSSG_TS_DRV__STS_NERR) {
+        return TEST_TS_ERR_INIT_TS_DRV;
+    }
+
+    /* Set TS IEP0 Period (nsec) */
+    status = icssgTsDrv_cfgTsIepPrdNsec(hTsDrv, pTsPrms->iepPrdNsec);
     if (status != ICSSG_TS_DRV__STS_NERR) {
         return TEST_TS_ERR_INIT_TS_DRV;
     }
 
     /* Set non-default configuration */
-    cfgMask = pTs->tsPrms.cfgMask;
 
-    /* Configure TS Period Count */
-    if (cfgMask & TS_CFG_PRD_COUNT) {
-        /* Configure IEP0 Period Count */
-        status = icssgTsDrv_prepRecfgTsPrdCount(hTsDrv, pTs->tsPrms.prdCount, pTs->tsPrms.prdOffset, pTs->tsPrms.nPrdCount, &recfgBf);
-        if (status != ICSSG_TS_DRV__STS_NERR) {
-            return TEST_TS_ERR_INIT_TS_DRV;
-        }
+    /* Configure IEP0 Period Count */
+    status = icssgTsDrv_cfgTsPrdCount(hTsDrv, pTsPrms->prdCount, 
+        pTsPrms->prdOffset, pTsPrms->cfgMask, pTsPrms->testTsPrdCount);
+    if (status != ICSSG_TS_DRV__STS_NERR) {
+        return TEST_TS_ERR_INIT_TS_DRV;
     }
 
     /* Store TS DRV handle to TS object */
@@ -422,7 +426,7 @@ int32_t startTs(
     }
 
     /* Wait for PRU FW initialization complete */
-    status = icssgTsDrv_waitFwInit(pTs->hTsDrv);
+    status = icssgTsDrv_waitFwInit(pTs->hTsDrv, ICSSG_TS_DRV__TS_FW_INIT_INIT);
     if (status != ICSSG_TS_DRV__STS_NERR)
     {
         return TEST_TS_ERR_START_TS;
@@ -506,19 +510,17 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     /* Initialize PRU for TS */
     tsPrms.icssInstId = TEST_ICSSG_INST_ID;
     tsPrms.pruInstId = TEST_PRU_INST_ID;
-    tsPrms.nPrdCount = TS_NUM_PRDS;
-    tsPrms.prdCount[0] = TEST_PRD_COUNT0;
-    tsPrms.prdCount[1] = TEST_PRD_COUNT1;
-    tsPrms.prdCount[2] = TEST_PRD_COUNT2;
-    tsPrms.prdCount[3] = TEST_PRD_COUNT3;
-    tsPrms.prdCount[4] = TEST_PRD_COUNT4;
-
+    tsPrms.iepPrdNsec = TEST_TS_IEP_PRD_NSEC;
+    tsPrms.prdCount[0] = TEST_PRD_COUNT1;
+    tsPrms.prdCount[1] = TEST_PRD_COUNT2;
+    tsPrms.prdCount[2] = TEST_PRD_COUNT3;
+    tsPrms.prdCount[3] = TEST_PRD_COUNT4;
     tsPrms.prdOffset[0] = TEST_PRD_OFFSET1;
     tsPrms.prdOffset[1] = TEST_PRD_OFFSET2;
     tsPrms.prdOffset[2] = TEST_PRD_OFFSET3;
     tsPrms.prdOffset[3] = TEST_PRD_OFFSET4;
-
-    tsPrms.cfgMask = TS_CFG_ALL;
+    tsPrms.cfgMask = TS_CFG_CMP_ALL;
+    tsPrms.testTsPrdCount = TEST_PRD_COUNT0;
     status = initIcssgTsDrv(gPruIcssHandle, &tsPrms, &gTestTs);
     if (status != TEST_TS_ERR_NERR) {
         UART_printf("\n\rError=%d: ", status);

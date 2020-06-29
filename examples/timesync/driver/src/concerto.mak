@@ -26,7 +26,7 @@ IDIRS+=$(COMMON_LIB)
 
 CFLAGS= --define=BUILD_MCU1_0
 
-CSOURCES    := icssgTimesyncDrv.c
+CSOURCES    := icssgTimesyncDrv.c icssgTimesyncDrv_utils.c
 
 # End concerto module declarations
 include $(FINALE)

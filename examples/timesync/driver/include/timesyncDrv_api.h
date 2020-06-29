@@ -39,35 +39,37 @@
 #include "icssg_timesync.h"
 
 /* Return status codes */
-#define ICSSG_TS_DRV__STS_NERR         ( 0 )   /* no error */
-#define ICSSG_TS_DRV__STS_ERR_INV_PRM  ( 1 )   /* error, invalid parameters */
+#define ICSSG_TS_DRV__STS_NERR          ( 0 )   /* no error */
+#define ICSSG_TS_DRV__STS_ERR_INV_PRM   ( 1 )   /* error, invalid parameters */
 
-#define ICSSG_TS_DRV__ICSSG_ID_0       ( 0 )   /* ICSSG0 hardware module ID */
-#define ICSSG_TS_DRV__ICSSG_ID_1       ( 1 )   /* ICSSG1 hardware module ID */
-#define ICSSG_TS_DRV__ICSSG_ID_2       ( 2 )   /* ICSSG2 hardware module ID */
-#define ICSSG_TS_DRV__NUM_ICSSG        ( 3 )   /* AM65xx number of ICSSG */
+#define ICSSG_TS_DRV__ICSSG_ID_0        ( 0 )   /* ICSSG0 hardware module ID */
+#define ICSSG_TS_DRV__ICSSG_ID_1        ( 1 )   /* ICSSG1 hardware module ID */
+#define ICSSG_TS_DRV__ICSSG_ID_2        ( 2 )   /* ICSSG2 hardware module ID */
+#define ICSSG_TS_DRV__NUM_ICSSG         ( 3 )   /* AM65xx number of ICSSG */
 
-#define ICSSG_TS_DRV__PRU_ID_0         ( 0 )   /* PRU0 hardware module ID */
-#define ICSSG_TS_DRV__PRU_ID_1         ( 1 )   /* PRU1 hardware module ID */
-#define ICSSG_TS_DRV__RTU_ID_0         ( 2 )   /* RTU0 hardware module ID */
-#define ICSSG_TS_DRV__RTU_ID_1         ( 3 )   /* RTU1 hardware module ID */
-#define ICSSG_TS_DRV__TPRU_ID_0        ( 4 )   /* TPRU0 hardware module ID */
-#define ICSSG_TS_DRV__TPRU_ID_1        ( 5 )   /* TPRU1 hardware module ID */
-#define ICSSG_TS_DRV__NUM_PRU          ( 6 )   /* ICSSG number of ICSSG PRUs */
+#define ICSSG_TS_DRV__PRU_ID_0          ( 0 )   /* PRU0 hardware module ID */
+#define ICSSG_TS_DRV__PRU_ID_1          ( 1 )   /* PRU1 hardware module ID */
+#define ICSSG_TS_DRV__RTU_ID_0          ( 2 )   /* RTU0 hardware module ID */
+#define ICSSG_TS_DRV__RTU_ID_1          ( 3 )   /* RTU1 hardware module ID */
+#define ICSSG_TS_DRV__TPRU_ID_0         ( 4 )   /* TPRU0 hardware module ID */
+#define ICSSG_TS_DRV__TPRU_ID_1         ( 5 )   /* TPRU1 hardware module ID */
+#define ICSSG_TS_DRV__NUM_PRU           ( 6 )   /* ICSSG number of PRUs */
 
-#define ICSSG_TS_DRV__SLICE_PRU_ID_0   ( 0 )   /* Slice PRU0 ID */
-#define ICSSG_TS_DRV__SLICE_PRU_ID_1   ( 1 )   /* Slice PRU1 ID */
-#define ICSSG_NUM_SLICE                ( 2 )   /* ICSSG number of Slices */
+#define ICSSG_TS_DRV__NUM_ICSSG_SLICE   ( 2 )   /* ICSSG number of ICSSG Slices */
 
-#define ICSSG_TS_DRV__IEP_ID_0         ( 0 )   /* IEP0 hardware module ID */
+#define ICSSG_TS_DRV__NUM_IEP_CMP       ( 4 )   /* Number of TS IEP CMP */
 
 /* Settings for icssgTsDrv_setTsGblEn() */
-#define ICSSG_TS_DRV__IEP_TS_GBL_EN_DISABLE               ( 0 )   /* Global Enable, disable setting */
-#define ICSSG_TS_DRV__IEP_TS_GBL_EN_ENABLE                ( 1 )   /* Global Enable, enable setting */
+#define ICSSG_TS_DRV__TS_GBL_EN_DISABLE             ( 0 )   /* Global Enable, disable setting */
+#define ICSSG_TS_DRV__TS_GBL_EN_ENABLE              ( 1 )   /* Global Enable, enable setting */
 
 /* Settings for icssgTsDrv_waitTsGblEnAck() */
-#define ICSSG_TS_DRV__IEP_TS_GBL_EN_ACK_DISABLE           ( 0 )   /* Global Enable ACK, disable setting */
-#define ICSSG_TS_DRV__IEP_TS_GBL_EN_ACK_ENABLE            ( 1 )   /* Global Enable ACK, enable setting */
+#define ICSSG_TS_DRV__TS_GBL_EN_ACK_DISABLE         ( 0 )   /* Global Enable ACK, disable setting */
+#define ICSSG_TS_DRV__TS_GBL_EN_ACK_ENABLE          ( 1 )   /* Global Enable ACK, enable setting */
+
+/* Settings for icssgTsDrv_waitFwInit() */
+#define ICSSG_TS_DRV__TS_FW_INIT_INIT               ( 0 )   /* FW init, initialized setting */
+#define ICSSG_TS_DRV__TS_FW_INIT_UNINIT             ( 1 )   /* FW init, uninitialized setting */
 
 /* FW register base address */
 #define ICSSG_TS_BASE_ADDR  ( ICSSG_TS_FW_REGS_BASE )
@@ -109,62 +111,66 @@ int32_t icssgTsDrv_setTsGblEn(
  *  @name   icssgTsDrv_waitTsGblEnAck
  *  @brief  Wait for TS Global Enable ACK
  *
- *  @param[in]  handle      TS DRV instance handle
+ *  @param[in]  handle              TS DRV instance handle
+ *  @param[in]  tsGblEnFlag         TS global enable ACK flag: 0/1 - disable/enable
  *
  *  @retval Status code
  *
  */
 int32_t icssgTsDrv_waitTsGblEnAck(
-    IcssgTsDrv_Handle handle
+    IcssgTsDrv_Handle handle,
+    uint8_t tsGblEnAckFlag
 );
 
 /**
  *  @name   icssgTsDrv_waitFwInit
- *  @brief  Wait for FW initialization completion
+ *  @brief  Wait for FW initialization flag
  *
- *  @param[in]  handle      TS DRV instance handle
+ *  @param[in]  handle              TS DRV instance handle
+ *  @param[in]  tsGblEnFlag         TS FW init flag: 0/1 - uninit/init
  *
  *  @retval Status code
  *
  */
 int32_t icssgTsDrv_waitFwInit(
-    IcssgTsDrv_Handle handle
+    IcssgTsDrv_Handle handle, 
+    uint8_t fwInitFlag
 );
 
 /**
- *  @name   icssgTsDrv_prepRecfgTsPrdCount
- *  @brief  Prepare IEP Period Count reconfiguration
+ *  @name   icssgTsDrv_cfgTsIepPrdNsec
+ *  @brief  Configure TS IEP0 Period (nsec)
  *
  *  @param[in]  handle          TS DRV instance handle
- *  @param[in]  tsPrdCount      Compare periods/reloads (nPrdCount)
- *  @param[in]  tsPrdOffset     Compare offsets         (nPrdCount-1)
- *  @param[in]  nPrdCount       TS Period Count
- *  @param[out] pRecfgBf        Pointer to mask for TS Period Count reconfiguration request.
+ *  @param[in]  tsIepPrdNsec    TS IEP0 period (nsec)
  *
  *  @retval Status code
  *
  */
-int32_t icssgTsDrv_prepRecfgTsPrdCount(
+int32_t icssgTsDrv_cfgTsIepPrdNsec(
+    IcssgTsDrv_Handle handle,
+    uint32_t tsIepPrdNsec
+);
+
+/**
+ *  @name   icssgTsDrv_cfgTsPrdCount
+ *  @brief  Configure TS IEP0 Period Counts & Offsets
+ *
+ *  @param[in]  handle          TS DRV instance handle
+ *  @param[in]  tsPrdCount      Compare periods/reloads (ICSSG_TS_DRV__NUM_IEP_CMP)
+ *  @param[in]  tsPrdOffset     Compare offsets         (ICSSG_TS_DRV__NUM_IEP_CMP)
+ *  @param[in]  cfgBf           Mask for TS Period Count & Offset configuration request: Bit X: CMP(3+X), 0<=X<=3
+ *  @param[in]  testTsPrdCount  Test compare period, CMP1 period if not zero
+ *
+ *  @retval Status code
+ *
+ */
+int32_t icssgTsDrv_cfgTsPrdCount(
     IcssgTsDrv_Handle handle,
     uint32_t tsPrdCount[],
     int32_t tsPrdOffset[],
-    uint8_t  nPrdCount,
-    uint32_t *pRecfgBf
-);
-
-/* Start IEP0 counter */
-void icssgTsDrv_startIepCount(
-    IcssgTsDrv_Handle handle
-);
-
-/* Read IEP and comparator */
-void icssgTsDrv_readIepCmp(
-    IcssgTsDrv_Handle handle,
-    uint32_t   *curIep,
-    uint32_t   *curCmp3,
-    uint32_t   *curCmp4,
-    uint32_t   *curCmp5,
-    uint32_t   *curCmp6
+    uint32_t cfgBf,
+    uint32_t testTsPrdCount
 );
 
 #endif /* _TIMESYNC_DRV_API_H_ */
