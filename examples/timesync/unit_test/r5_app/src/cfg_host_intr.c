@@ -35,6 +35,7 @@
 #include <ti/csl/csl_intr_router.h>
 #include <ti/osal/osal.h>
 #include "cfg_host_intr.h"
+#include "cfg_soc.h"
 
 /* CMPEVENT_INTRTR0 number of input interrupts */
 #define NUM_CMPEVENT_INTRTR0_IN          ( 128 )
@@ -58,7 +59,7 @@ int32_t configureCmpEventInterruptRouter(
     int32_t retVal;
 
     /* Initialize Main to MCU Interrupt Router config structure */
-    intrRouterCmpEventCfg.pIntrRouterRegs = (CSL_intr_router_cfgRegs *)(uintptr_t)(CSL_CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE);
+    intrRouterCmpEventCfg.pIntrRouterRegs = (CSL_intr_router_cfgRegs *)(uintptr_t)(CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE);
     intrRouterCmpEventCfg.pIntdRegs       = (CSL_intr_router_intd_cfgRegs *)NULL;
     intrRouterCmpEventCfg.numInputIntrs   = NUM_CMPEVENT_INTRTR0_IN;
     intrRouterCmpEventCfg.numOutputIntrs  = NUM_CMPEVENT_INTRTR0_OUT;

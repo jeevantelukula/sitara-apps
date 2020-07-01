@@ -21,14 +21,14 @@ CSOURCES    := main_timesync_test.c app_timesync.c cfg_host_intr.c test_utils.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
+UNITTEST_PATH := $(APPDIR)/..
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
-IDIRS+=$(APPDIR)/ti_osal
-IDIRS+=$(APPDIR)/ti_board/include
-IDIRS+=$(APPDIR)/../firmware/include
-IDIRS+=$(APPDIR)/../driver/include
-IDIRS+=$(APPDIR)/../firmware
+IDIRS+=$(APPDIR)/include/$(SITARA_DEMO_SOC)
+IDIRS+=$(UNITTEST_PATH)/../firmware/include
+IDIRS+=$(UNITTEST_PATH)/../driver/include
+IDIRS+=$(UNITTEST_PATH)/../firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
@@ -54,10 +54,13 @@ ADDITIONAL_STATIC_LIBS += ti.csl.aer5f
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.i2c.aer5f
-ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
+ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
+ifeq ($(TARGET_CPU),AM65X)
+ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+endif
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
@@ -67,9 +70,9 @@ SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
 #- BUILD File
 #- CFG File
 #- Linker CMD file
-XDC_BLD_FILE = $(APPDIR)/build/config_r5f.bld
-XDC_IDIRS    = $(APPDIR)/build/
-XDC_CFG_FILE = $(APPDIR)/build/sysbios_r5f.cfg
+XDC_BLD_FILE = $(UNITTEST_PATH)/build/$(SITARA_DEMO_SOC)/r5/config_r5f.bld
+XDC_IDIRS    = $(UNITTEST_PATH)/build/$(SITARA_DEMO_SOC)
+XDC_CFG_FILE = $(UNITTEST_PATH)/build/$(SITARA_DEMO_SOC)/r5/sysbios_r5f.cfg
 
 # The default XDC_PLATFORM is provided by the concerto build target, and based
 # on TARGET_PLATFORM and TARGET_CPU
@@ -77,7 +80,10 @@ XDC_PLATFORM = $(SITARA_XDC_PLATFORM)
 
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
-LINKER_CMD_FILES +=  $(APPDIR)/build/linker_r5_sysbios.lds
+ifeq ($(TARGET_PLATFORM),AM64X)
+LINKER_CMD_FILES +=  $(UNITTEST_PATH)/build/$(SITARA_DEMO_SOC)/linker_mem_map.cmd
+endif
+LINKER_CMD_FILES +=  $(UNITTEST_PATH)/build/$(SITARA_DEMO_SOC)/r5/linker_r5_sysbios.lds
 
 # End concerto module declarations
 include $(FINALE)

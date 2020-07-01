@@ -104,20 +104,6 @@ IcssgTsDrv_Handle icssgTsDrv_initDrv(
             }
             pTsDrvObj->tsCmpCtrl.pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)CSL_PRU_ICSSG1_IEP0_BASE;
         }
-        else if (icssgId == ICSSG_TS_DRV__ICSSG_ID_2)
-        {
-            /* Assign ICSSG2 addresses */
-            if (slicePruId == ICSSG_SLICE_PRU_ID_0) {
-                baseAddr = CSL_PRU_ICSSG2_DRAM0_SLV_RAM_BASE;
-            }
-            else if (slicePruId == ICSSG_SLICE_PRU_ID_1) {
-                baseAddr = CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE;
-            }
-            else {
-                return NULL;
-            }
-            pTsDrvObj->tsCmpCtrl.pIepHwRegs = (CSL_icss_g_pr1_iep1_slvRegs *)CSL_PRU_ICSSG2_IEP0_BASE;
-        }
         else 
         {
             return NULL;

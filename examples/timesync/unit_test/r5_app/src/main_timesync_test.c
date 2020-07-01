@@ -53,11 +53,7 @@
 #include "timesyncDrv_utils.h"          /* TS driver utilities */
 #include "app_timesync.h"
 #include "test_utils.h"
-
-/* Test ICSSG instance ID */
-#define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_ONE )
-/* Test PRU instance ID */
-#define TEST_PRU_INST_ID                ( PRUICCSS_RTU0 )
+#include "cfg_soc.h"
 
 /* Task priorities */
 #define TASK_SYSINIT_PRI                ( 3 )
@@ -78,12 +74,6 @@
 #define TEST_PRD_OFFSET2        (     0 )  /* No offset */
 #define TEST_PRD_OFFSET3        ( -2000 )  /* 10us before sync0 */
 #define TEST_PRD_OFFSET4        (  4000 )  /* 20us after sync0 */
-
-/* Compare event router i*/
-#define CMPEVT_INTRTR_IN    ( 35 )  /* ICSSG_0_IEP0_CMP_TIMER3_INT */
-
-/* Compare event router output */
-#define CMPEVT_INTRTR_OUT   ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
 
 /* PRU TS IRQ handler */
 void pruTsIrqHandler(
@@ -155,7 +145,7 @@ Void taskSysInitFxn(
     }
 
     /* Configure CompareEvent Interrupt Router */
-    status = configureCmpEventInterruptRouter(CMPEVT_INTRTR_IN, CMPEVT_INTRTR_OUT);
+    status = configureCmpEventInterruptRouter(CMPEVT3_INTRTR_IN, CMPEVT3_INTRTR_OUT);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = APP_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
@@ -164,7 +154,7 @@ Void taskSysInitFxn(
     }
 
     /* Register interrupt */
-    status = registerIntrOnCmpEvent(224+32, &pruTsIrqHandler);
+    status = registerIntrOnCmpEvent(TS_CMPEVT_INTRTR_R5, &pruTsIrqHandler);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = APP_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
@@ -203,7 +193,7 @@ Void taskSysInitFxn(
     }
 
     /* Enable interrupt for event from PRU */
-    enableIntrOnPruEvent(224+32);
+    enableIntrOnPruEvent(TS_CMPEVT_INTRTR_R5);
 
     /* Start TSs */
     status = startTs(&gTestTs);
@@ -266,7 +256,7 @@ void pruTsIrqHandler(uintptr_t foobar)
     icssgTsDrv_readIepCmp(gTestTs.hTsDrv, &curIep, &curCmp3, NULL, NULL, NULL);
     
     /* Clear interrupt on Host */
-    Osal_ClearInterrupt(224+32, 224+32);
+    Osal_ClearInterrupt(TS_CMPEVT_INTRTR_R5, TS_CMPEVT_INTRTR_R5);
 
     if (resetDelay) {
         /* it is not necessary to reset min/max/tot because they are set to thisDelay next iteration */

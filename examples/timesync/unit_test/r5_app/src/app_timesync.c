@@ -60,10 +60,6 @@ int32_t getIcssgId(
         *pIcssId = ICSSG_TS_DRV__ICSSG_ID_1;
         return APP_TS_ERR_NERR;
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_MAX) {
-        *pIcssId = ICSSG_TS_DRV__ICSSG_ID_2;
-        return APP_TS_ERR_NERR;
-    }
     else {
         *pIcssId = 0;
         return APP_TS_ERR_INV_PRMS;
@@ -137,12 +133,6 @@ int32_t cfgIcssgClkSel(
         regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_CORE_CLKSEL_MASK;
         regVal |= source & 0x1;
         HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL, regVal);
-    }
-    else if (icssInstId == PRUICCSS_INSTANCE_MAX) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG2_CLKSEL);
-        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG2_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG2_CLKSEL, regVal);
     }
     else {
         return APP_TS_ERR_CFG_ICSSG_CLKSEL;
