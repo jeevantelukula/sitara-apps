@@ -31,31 +31,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TEST_UTILS_H_
-#define _TEST_UTILS_H_
+#include <xdc/std.h>
+#include <xdc/runtime/System.h>
+#include <ti/csl/csl_intr_router.h>
+#include <ti/osal/osal.h>
+#include <ti/drv/uart/UART.h>
+#include <ti/drv/uart/UART_stdio.h>
+#include "cfg_host_intr.h"
+#include "cfg_soc.h"
+#include "test_utils.h"
 
-#include <stdint.h>
-#include <ti/drv/pruss/pruicss.h>
-#include <ti/drv/pruss/soc/pruicss_v1.h>
-#include <ti/csl/soc.h>
+/* Configure interrupts */
+int32_t configureInterrupts()
+{
+    int32_t status = 0;
+    
+    /* Configure CompareEvent Interrupt Router */
+    status = configureCmpEventInterruptRouter(CMPEVT3_INTRTR_IN, CMPEVT3_INTRTR_OUT);
+    if (status != CFG_HOST_INTR_ERR_NERR) {
+        status = TEST_TS_ERR_CFG_HOST_INTR;
+        UART_printf("\n\rError=%d: ", status);
+        System_printf("taskSysInitFxn: Error=%d: ", status);
+        System_exit(-1);
+    }
 
-extern uint64_t gOverheadTime;
-extern uint64_t gStartTime, gEndTime, gTotalTime;
-
-void init_profiling(void);
-uint32_t readPmu(void);
-
-/* Status codes */
-#define TEST_UTILS_ERR_NERR     (  0 )  /* no error */
-#define TEST_UTILS_ERR_INV_PRMS ( -1 )  /* error, invalid parameters */
-
-/* Status codes */
-#define TEST_TS_ERR_NERR                (  0 )  /* no error */
-#define TEST_TS_ERR_CFG_ICSSG_CLKSEL    ( -1 )  /* ICSSG clock selection error */
-#define TEST_TS_ERR_CFG_HOST_INTR       ( -2 )  /* interrupt configuration error */
-#define TEST_TS_ERR_INIT_ICSSG          ( -3 )  /* initialize ICSSG error */
-#define TEST_TS_ERR_INIT_PRU            ( -4 )  /* initialize PRU error */
-#define TEST_TS_ERR_INIT_TS_DRV         ( -5 )  /* initialize TS DRV error */
-#define TEST_TS_ERR_START_TS            ( -6 )  /* start TS error */
-
-#endif /* _TEST_UTILS_H_ */
+    return 0;
+}

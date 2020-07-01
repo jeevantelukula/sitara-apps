@@ -17,7 +17,7 @@ TARGET      := ex_tirtos_mcu1_0_timesync
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
-CSOURCES    := main_timesync_test.c app_timesync.c cfg_host_intr.c test_utils.c
+CSOURCES    := main_timesync_test.c app_timesync.c cfg_host_intr.c test_utils.c $(SITARA_DEMO_SOC)/cfg_soc.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)

@@ -144,8 +144,8 @@ Void taskSysInitFxn(
         System_exit(-1);
     }
 
-    /* Configure CompareEvent Interrupt Router */
-    status = configureCmpEventInterruptRouter(CMPEVT3_INTRTR_IN, CMPEVT3_INTRTR_OUT);
+    /* Configure Interrupts */
+    status = configureInterrupts();
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = APP_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);

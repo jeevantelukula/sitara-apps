@@ -53,4 +53,15 @@
 /* Compare event router CFG base */
 #define CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE ( CSL_CMP_EVENT_INTROUTER0_CFG_BASE )
 
+/* Configure interrupt aggregator */
+int32_t configureInterruptAggregator(
+    int32_t iaLevi,
+    int32_t iaSevi,
+    int32_t iaVintr,
+    int32_t vintrStatusBit
+);
+
+/* Configure interrupts */
+int32_t configureInterrupts();
+
 #endif /* _CFG_SOC_ */

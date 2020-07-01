@@ -40,7 +40,7 @@
 /* CMPEVENT_INTRTR0 number of input interrupts */
 #define NUM_CMPEVENT_INTRTR0_IN          ( 128 )
 /* CMPEVENT_INTRTR0 number of output interrupts */
-#define NUM_CMPEVENT_INTRTR0_OUT         ( 32 )
+#define NUM_CMPEVENT_INTRTR0_OUT         ( 40 )
 
 /* MAIN2MCU_LVL_INTRTR0 number of input interrupts */
 #define NUM_MAIN2MCU_LVL_INTR0_IN        ( 192 )

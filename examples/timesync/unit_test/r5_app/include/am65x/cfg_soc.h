@@ -53,4 +53,7 @@
 /* Compare event router CFG base */
 #define CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE ( CSL_CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE )
 
+/* Configure interrupts */
+int32_t configureInterrupts();
+
 #endif /* _CFG_SOC_ */
