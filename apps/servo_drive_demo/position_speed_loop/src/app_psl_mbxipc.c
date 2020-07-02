@@ -231,7 +231,6 @@ int32_t appPslMbxIpcTxMsg(
         McuIntc_enableIntr(MCU_INTR_IDX(mcAxisIdx), true);
         
         txobj->u16AxisIndex = mcAxisIdx;
-        CacheP_wb(txobj, sizeof(mc2ecat_msg_obj_t));
         
         /* Translate the ATCM local view addr to SoC view addr */
         payload = (uint32_t)txobj;
@@ -255,7 +254,6 @@ void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
     if (src_cpu_id == IPC_ETHERCAT_CPU_ID)
     {
         payload_ptr = (ecat2mc_msg_obj_t *)payload;
-        CacheP_Inv(payload_ptr, sizeof(ecat2mc_msg_obj_t));
         axisIdx = payload_ptr->u16AxisIndex;
 
         if (axisIdx < MAX_NUM_AXES)

@@ -50,6 +50,7 @@
 
 /* IPC test message object to mimic Motor control scenarios */
 typedef struct {
+    uint32_t u32IterationCnt;
     int32_t i32Velocity;
     int32_t i32Position;
     int16_t i16State;

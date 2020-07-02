@@ -65,7 +65,7 @@ SECTIONS
 
     .safedata   : {} palign(8)  > OCSRAM6
 
-    .bss:ipcMCBuffSection > R5F_ATCM
+    .bss:ipcMCBuffSection > R5F_ATCM_IPC_RSVD
     .bss:taskStackSection > OCSRAM4
     .resource_table : {
         __RESOURCE_TABLE = .;

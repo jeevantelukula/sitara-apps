@@ -63,7 +63,7 @@ SECTIONS
     .sysmem     : {} align(8)    > MSMC_MCU1_0
     .stack      : {} align(4)    > MSMC_MCU1_0
 
-    .bss:ipcMCBuffSection > R5F_ATCM
+    .bss:ipcMCBuffSection > R5F_ATCM_IPC_RSVD
     .bss:taskStackSection > MSMC_MCU1_0
     .resource_table : {
         __RESOURCE_TABLE = .;

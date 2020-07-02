@@ -75,7 +75,6 @@ void mbxIpcMsgTestHandler (uint32_t src_cpu_id, uint32_t payload)
     test_msg_obj_t *rxobj = &gTestMsgObj.receiveObj;
     test_msg_obj_t *payload_ptr = (test_msg_obj_t*)payload;
 
-    CacheP_Inv(payload_ptr, sizeof(test_msg_obj_t));
     *rxobj = *payload_ptr;
     gTestMsgObj.srcCpuId = src_cpu_id;
     gTestMsgObj.isMsgReceived = 1;
@@ -86,17 +85,22 @@ int checkStatus (void)
     uintptr_t key;
     int32_t status = -1;
     test_msg_obj_t *rxobj = &gTestMsgObj.receiveObj;
+    uint16_t remoteId;
+    uint32_t iterationCnt;
 
     while (1!=gTestMsgObj.isMsgReceived);
 
     key = HwiP_disable();
     gTestMsgObj.isMsgReceived = 0;
     HwiP_restore(key);
+    remoteId = gTestMsgObj.srcCpuId;
+    iterationCnt = rxobj->u32IterationCnt;
+
     if (gTestMsgObj.srcCpuId < MAILBOX_IPC_MAX_PROCS)
     {
-        if ((rxobj->i32Velocity == VELOCITY+gTestMsgObj.srcCpuId) &&
-            (rxobj->i32Position == POSITION+gTestMsgObj.srcCpuId) &&
-            (rxobj->i16State == STATE+gTestMsgObj.srcCpuId))
+        if ((rxobj->i32Velocity == VELOCITY+remoteId+iterationCnt) &&
+            (rxobj->i32Position == POSITION+remoteId+iterationCnt) &&
+            (rxobj->i16State == STATE+remoteId+iterationCnt))
         {
             status = 0;
         }
@@ -127,10 +131,10 @@ int32_t ipcTestRun(int32_t iterationCnt)
             continue;
         }
 
-        txobj->i32Velocity = VELOCITY+selfId;
-        txobj->i32Position = POSITION+selfId;
-        txobj->i16State = STATE+selfId;
-        CacheP_wb(txobj, sizeof(test_msg_obj_t));
+        txobj->i32Velocity = VELOCITY+selfId+iterationCnt;
+        txobj->i32Position = POSITION+selfId+iterationCnt;
+        txobj->i16State = STATE+selfId+iterationCnt;
+        txobj->u32IterationCnt = iterationCnt;
 		
         /* Translate the ATCM local view addr to SoC view addr */
         if (MBXIPC_TEST_CPU_1 == appMbxIpcGetSelfCpuId())

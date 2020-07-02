@@ -50,6 +50,7 @@ IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 STATIC_LIBS += app_libs_logs
 STATIC_LIBS += app_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
+STATIC_LIBS += app_libs_r5f_no_os_mpu_cfg
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.csl.aer5f

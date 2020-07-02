@@ -46,7 +46,8 @@ MEMORY
 	/* load/run usecase or dma usecase for SoC, and otherwise use local.   */
     /* MCU0_R5F local view */
     R5F_ATCM_SBL_RSVD        (    X ) : ORIGIN = 0x00000000 , LENGTH = 0x00000100
-    R5F_ATCM                 (    X ) : ORIGIN = 0x00000100 , LENGTH = 0x00008000 - 0x100
+    R5F_ATCM_IPC_RSVD        (    X ) : ORIGIN = 0x00000100 , LENGTH = 0x00000100
+    R5F_ATCM                 (    X ) : ORIGIN = 0x00000200 , LENGTH = 0x00008000 - 0x200
 
     /* MCU0_R5F_0 SoC view */
     R5F0_ATCM (RWIX) 		: ORIGIN = 0x41000100, LENGTH = 0x8000 - 0x100

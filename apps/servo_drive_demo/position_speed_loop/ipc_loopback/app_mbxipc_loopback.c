@@ -59,7 +59,6 @@ void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
     ecat2mc_msg_obj_t *rxobj;
     ecat2mc_msg_obj_t *payload_ptr = (ecat2mc_msg_obj_t*)payload;
 
-    CacheP_Inv(payload_ptr, sizeof(ecat2mc_msg_obj_t));
     axisIndex = payload_ptr->u16AxisIndex;
     if (axisIndex < MAX_NUM_AXES)
     {
@@ -158,7 +157,6 @@ int main(void)
             txobj->i32VelocityActual = rxobj->i32TargetVelocity;
             txobj->u16AxisIndex = rxobj->u16AxisIndex;
             bRunState = rxobj->i16State;
-            CacheP_wb(txobj, sizeof(mc2ecat_msg_obj_t));
 
             /* Send back MC parameters to ECAT R5F */
             if (appMbxIpcGetSelfCpuId()==IPC_PSL_MC_CPU_ID)

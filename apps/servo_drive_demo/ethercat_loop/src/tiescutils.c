@@ -584,7 +584,6 @@ void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
     mc2ecat_msg_obj_t *rxobj;
     mc2ecat_msg_obj_t *payload_ptr = (mc2ecat_msg_obj_t*)payload;
 
-    CacheP_Inv(payload_ptr, sizeof(mc2ecat_msg_obj_t));
     axisIndex = payload_ptr->u16AxisIndex;
     if (axisIndex < MAX_NUM_AXES)
     {
@@ -630,7 +629,6 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
         txobj->i16ModesOfOperation = pCiA402Axis->Objects.objModesOfOperation;
         txobj->i16State = pCiA402Axis->i16State;
         txobj->u16AxisIndex = axisIndex;
-        CacheP_wb(txobj, sizeof(ecat2mc_msg_obj_t));
 
         if (appMbxIpcGetSelfCpuId()==IPC_ETHERCAT_CPU_ID)
         {

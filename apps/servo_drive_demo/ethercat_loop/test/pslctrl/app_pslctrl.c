@@ -117,7 +117,6 @@ void timerTickFxn(void *arg)
             txobj->i16ModesOfOperation = gModesOfOperation;
             txobj->i16State = gCtrlState;
             txobj->u16AxisIndex = axisIdx;
-            CacheP_wb(txobj, sizeof(appPslCtrlSendMsgObj_t));
 
             /* Translate the ATCM local view addr to SoC view addr */
             payload = (uint32_t)txobj;

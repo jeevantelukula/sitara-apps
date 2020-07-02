@@ -79,6 +79,28 @@ attrs.tex = 1;
 attrs.subregionDisableMask = 0;
 MPU.setRegionMeta(index++, 0x41000000, MPU.RegionSize_32K, attrs);
 
+/* make a portion of ATCM as non-cacheable for IPC buffers */
+attrs.enable = true;
+attrs.bufferable = false;
+attrs.cacheable = false;
+attrs.shareable = true;
+attrs.noExecute = true;
+attrs.accPerm = 1;          /* RW at PL1 */
+attrs.tex = 0;
+attrs.subregionDisableMask = 0;
+MPU.setRegionMeta(index++, 0x00000100, MPU.RegionSize_256, attrs);
+
+/* make a portion of ATCM as non-cacheable for IPC buffers */
+attrs.enable = true;
+attrs.bufferable = false;
+attrs.cacheable = false;
+attrs.shareable = true;
+attrs.noExecute = true;
+attrs.accPerm = 1;          /* RW at PL1 */
+attrs.tex = 0;
+attrs.subregionDisableMask = 0;
+MPU.setRegionMeta(index++, 0x41000100, MPU.RegionSize_256, attrs);
+
 /* make BTCM as cacheable */
 attrs.enable = true;
 attrs.bufferable = true;

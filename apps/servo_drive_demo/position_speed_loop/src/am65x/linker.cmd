@@ -106,7 +106,7 @@ SECTIONS
 
 /* Additional sections settings 	*/
 
-    .bss:ipcMCBuffSection > R5F_ATCM
+    .bss:ipcMCBuffSection > R5F_ATCM_IPC_RSVD
     .bss:l3mem              (NOLOAD)(NOINIT) : {} > MSMC_MCU1_1
     .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_1_SHARED_MEM
 

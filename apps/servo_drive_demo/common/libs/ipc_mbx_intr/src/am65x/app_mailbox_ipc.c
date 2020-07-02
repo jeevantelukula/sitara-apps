@@ -51,6 +51,7 @@
 /*                                 Macros                                     */
 /* ========================================================================== */
 
+#define INTERRUPT_OFFSET               (24)
 #define LOCAL_DELAY_COUNT              (0x10)
 #define MAILBOX_APP_SYNC_MESSAGE       (0xBABEFACE)
 #define MAILBOX_APP_ACK_MESSAGE        (0xC00DC00D)
@@ -266,10 +267,10 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
                  &res,
                  MAILBOX_SCICLIENT_TIMEOUT);
     }
-    /* Add an offset of 24 to avoid interrupt number resource
-       conflict with EtherCAT slave which uses the first 17 */
-    res.range_start += 24;
-    res.range_num = res.range_num - 24;
+    /* Add an offset (INTERRUPT_OFFSET) to avoid interrupt number resource
+       conflict with EtherCAT slave which uses the first 17 interrupts */
+    res.range_start += INTERRUPT_OFFSET;
+    res.range_num = res.range_num - INTERRUPT_OFFSET;
 
     if (CSL_PASS == retVal)
     {

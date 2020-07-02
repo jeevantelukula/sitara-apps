@@ -43,7 +43,8 @@ MEMORY
     /* MCU0/1_R5F local view */
 #ifdef R5F
     R5F_ATCM_SBL_RSVD		(    X )	: ORIGIN = 0x00000000 , LENGTH = 0x00000100
-    R5F_ATCM			(    X ) 	: ORIGIN = 0x00000100 , LENGTH = 0x00008000 - 0x100
+    R5F_ATCM_IPC_RSVD		(    X )	: ORIGIN = 0x00000100 , LENGTH = 0x00000100
+    R5F_ATCM			(    X ) 	: ORIGIN = 0x00000200 , LENGTH = 0x00008000 - 0x200
 #endif
 
     /* MCU0_R5F_0 SoC view */

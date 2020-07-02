@@ -104,7 +104,6 @@ void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
     if (src_cpu_id == IPC_PSL_MC_CPU_ID)
     {
         payload_ptr = (mc2ecat_msg_obj_t *)payload;
-        CacheP_Inv(payload_ptr, sizeof(mc2ecat_msg_obj_t));
         axisIdx = payload_ptr->u16AxisIndex;
 
         if (axisIdx < MAX_NUM_AXES)
