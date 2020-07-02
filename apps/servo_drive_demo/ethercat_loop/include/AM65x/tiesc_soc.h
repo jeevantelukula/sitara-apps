@@ -70,6 +70,11 @@
 #define SPI_EEPROM_DATA_OFFSET 0x100000
 #define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
 #define TIESC_TASK_STACK_SIZE_MUL          2
+#elif defined(SOC_AM64X)
+/* EEPROM data offset in SPI/QSPI Flash */
+#define SPI_EEPROM_DATA_OFFSET 0x100000
+#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
+#define TIESC_TASK_STACK_SIZE_MUL          2
 #elif defined(SOC_AM335x)
 /* EEPROM data offset in SPI/QSPI Flash */
 #ifdef AMIC11X_ONCHIP_MEM_MODE
@@ -127,6 +132,13 @@
 #elif defined(SOC_AM65XX)
 #define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
 #define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
+#elif defined(SOC_AM64X)
+#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
+#ifndef TIESC_EMULATION_PLATFORM
+#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
+#else
+#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
+#endif
 #else
 #define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
 #define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
@@ -161,7 +173,7 @@ void initSpinlock();
 
 void Send_BootComplete_Message_To_Partner(void);
 
-#ifdef SOC_AM65XX
+#if defined(SOC_AM65XX) || defined (SOC_AM64X)
 void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes);
 void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
 #else

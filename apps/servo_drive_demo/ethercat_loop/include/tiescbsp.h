@@ -217,7 +217,7 @@ For specific use cases (4SM with 3 FMMUs or multiple FMMUs (in a given ESC) are 
 process path latency improvement can be achieved by disabling below define */
 #define ENABLE_MULTIPLE_SM_ACCESS_IN_SINGLE_DATAGRAM     0
 
-#if (!CiA402_DEVICE ) && (!_JAILHOUSE_INMATE)
+#if !defined(CiA402_DEVICE) && !defined(_JAILHOUSE_INMATE) && !defined(TIESC_EMULATION_PLATFORM)
 #define EEPROM_SPI /*Comment this to enable volatile EEPROM support for debug*/
 #endif
 
@@ -231,7 +231,7 @@ process path latency improvement can be achieved by disabling below define */
 #ifdef SOC_AM335x
 #define FOE_APPL_BIN_OFFSET (SPI_APPL_BIN_OFFSET)
 #define FOE_FLASH_SECTOR_SIZE (0xFFF)
-#elif defined(SOC_AM437x) || defined(SOC_AM572x) || defined(SOC_AM571x) || defined(SOC_K2G) || defined(SOC_AM65XX)
+#elif defined(SOC_AM437x) || defined(SOC_AM572x) || defined(SOC_AM571x) || defined(SOC_K2G) || defined(SOC_AM65XX) || defined(SOC_AM64X)
 #define FOE_APPL_BIN_OFFSET (QSPI_APPL_BIN_OFFSET)
 #define FOE_FLASH_SECTOR_SIZE (0xFFFF)
 #endif
@@ -307,7 +307,7 @@ process path latency improvement can be achieved by disabling below define */
 #define USE_ECAT_TIMER
 #endif
 
-#ifndef _JAILHOUSE_INMATE
+#if !defined(_JAILHOUSE_INMATE) && !defined(TIESC_EMULATION_PLATFORM)
 #define ENABLE_ONLINE_FIRMWARE_UPGRADE
 #endif
 

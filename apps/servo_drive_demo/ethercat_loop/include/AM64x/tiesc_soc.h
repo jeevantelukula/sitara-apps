@@ -1,5 +1,5 @@
 /**
- *  \file   tiesc_soc_am64x.h
+ *  \file   tiesc_soc.h
  *
  */
 /*
@@ -34,8 +34,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
  
-#ifndef TIESC_SOC_AM64_H_
-#define TIESC_SOC_AM64_H_
+#ifndef TIESC_SOC
+#define TIESC_SOC
 
 #include <appmbox.h>
 #include <blackchannel.h>
@@ -49,8 +49,63 @@
 #define OCSRAM_BASE_ADDRESS 		0x70000000U
 #define OCSRAM_TRANSLATE_ADDRESS 	0x70000000U
 
+#define MAILBOX_BASE_ADDRESS        CSL_MAILBOX0_REGS6_BASE
+#define MAILBOX_USER                1U
+
+#define PRUICSS_INSTANCE_ONE   1
+#define PRUICSS_INSTANCE_TWO   2
+
+#if defined(SOC_AM64X)
+/* EEPROM data offset in SPI/QSPI Flash */
+#define SPI_EEPROM_DATA_OFFSET 0x100000
+#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
+#define TIESC_TASK_STACK_SIZE_MUL          2
+#endif
+
+/* Change this define to switch between PRUICSS for AM571x */
+#define PRUICSS_INSTANCE        DEFAULT_PRUICSS_INSTANCE
+
+#if defined(SOC_AM64X)
+#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
+#ifndef TIESC_EMULATION_PLATFORM
+#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
+#else
+#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
+#endif
+#endif
+
+#define SPINLOCK_GRANTED       0
+#define SPINLOCK_UNLOCK        0
+
+
+uint8_t isEtherCATDevice(void);
+
+void tiesc_mii_pinmuxConfig (void);
+
+int16_t getARMInterruptOffset();
+
+uint32_t getSpinlockClkCtrlOffset();
+
+uint32_t getSpinlockLockReg0Offset();
+
+void bsp_soft_reset();
+
+void bsp_soc_evm_init();
+
+void display_esc_version(uint16_t revision, uint16_t build);
+
+void initSpinlock();
+
+#if defined (SOC_AM64X)
+void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes);
+void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
+#else
+#define tiesc_memcpy    memcpy
+#define tiesc_memset    memset
+#endif
+
 void Configure_Rat(void);
 void Configure_Mbox(void);
 void Send_BootComplete_Message_To_Partner(void);
 
-#endif /* TIESC_SOC_AM64_H_ */
+#endif /* TIESC_SOC */

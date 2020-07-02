@@ -82,9 +82,15 @@ uint32_t mainloop_delta, mainloop_max, pdi_delta, pdi_max, sync_delta, sync_max;
 #endif
 #endif
 
+
 /* Time Sync */
 #include "app_ts.h"
 #include "tiesctscfg.h"
+=======
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+#include <ti/csl/soc/am64x/src/cslr_soc_baseaddress.h>
+#endif
+
 
 /* ========================================================================== */
 /*                           Macros & Typedefs                                */
@@ -95,9 +101,14 @@ PRUICSS_Handle pruIcss1Handle;
 /** \brief Global Structure pointer holding PRUSS1 memory Map. */
 PRUICSS_Handle pruIcss0Handle;
 
+#define ICSS0_RESET_ISOLATION_MEMORYREAD_ADDRESS (CSL_PRU_ICSSG0_RAM_SLV_RAM_BASE+0xF00) // 0xB010F00
+#define ICSS1_RESET_ISOLATION_MEMORYREAD_ADDRESS (CSL_PRU_ICSSG1_RAM_SLV_RAM_BASE+0xF00) // 0xB110F00
+#define ICSS_RESET_ISOLATION_VALUE              0x89ABCDEF
+
 /* ========================================================================== */
 /*                            Global Variables                                */
 /* ========================================================================== */
+
 
 #if CiA402_DEVICE
 extern UINT16 APPL_GenerateMapping(UINT16 *pInputSize, UINT16 *pOutputSize);
@@ -126,6 +137,10 @@ TaskP_Handle sync1Task; // ECAT SYNC1 ISR
 void Sync1task(uint32_t arg0, uint32_t arg1);
 #endif
 uint32_t appState = 0;
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+bool icssgResetIsolated = FALSE;
+#endif
+
 
 /* Global data MSG object used in IPC communication */
 static app_ipc_mc_obj_t gAppIpcMsgObj
@@ -173,6 +188,20 @@ uint8_t task1_init()
 
     /* initialize the Hardware and the EtherCAT Slave Controller */
     HW_Init();
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+    if((PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE) &&
+       ((*((volatile uint32_t *)ICSS0_RESET_ISOLATION_MEMORYREAD_ADDRESS)) != ICSS_RESET_ISOLATION_VALUE))
+    {
+        /*Write a known value to 0xB010F00. */
+        (*((volatile uint32_t *)(ICSS0_RESET_ISOLATION_MEMORYREAD_ADDRESS))) = ICSS_RESET_ISOLATION_VALUE;
+    }
+    else if((PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO) &&
+       ((*((volatile uint32_t *)ICSS1_RESET_ISOLATION_MEMORYREAD_ADDRESS)) != ICSS_RESET_ISOLATION_VALUE))
+    {
+        /*Write a known value to 0xB110F00. */
+        (*((volatile uint32_t *)(ICSS1_RESET_ISOLATION_MEMORYREAD_ADDRESS))) = ICSS_RESET_ISOLATION_VALUE;
+    }
+#endif
     u8Err = MainInit(); // EtherCAT stack init
 
 #if CiA402_DEVICE
@@ -243,7 +272,14 @@ void task1(uint32_t arg0, uint32_t arg1)
     u8Err = appSciclientInit();
     
     /* Perform PAD configuration */
-    tiesc_mii_pinmuxConfig();
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+    if(icssgResetIsolated==FALSE)
+    {
+#endif
+    tiesc_mii_pinmuxConfig();    
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+    }
+#endif
     
     /* initialize CSL Mbx IPC */
     appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
@@ -438,7 +474,9 @@ void LEDtask(uint32_t arg0, uint32_t arg1)
 #else
         TaskP_sleep(200 * OS_TICKS_IN_MILLI_SEC);
 
+#ifndef TIESC_EMULATION_PLATFORM
         Board_setDigOutput(0x6a);
+#endif
 #endif
 #ifdef BARE_METAL
     }
@@ -590,11 +628,39 @@ void common_main()
 {
     TaskP_Params taskParams;
 	
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+
+    if(((PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE) &&
+    /*Read a known value from ICSS to know if it's reset isolated. */
+    ((*((volatile uint32_t *)ICSS0_RESET_ISOLATION_MEMORYREAD_ADDRESS)) == ICSS_RESET_ISOLATION_VALUE))
+    ||
+    ((PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO) &&
+    /*Read a known value from ICSSG to know if it's reset isolated. */
+    ((*((volatile uint32_t *)ICSS1_RESET_ISOLATION_MEMORYREAD_ADDRESS)) == ICSS_RESET_ISOLATION_VALUE)))
+    {
+        icssgResetIsolated = TRUE;
+    }
+
+    /*Enable ICSSG0 Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL30 register. */
+	/*This needs to be moved to ICSSG1(PSC0_MDCTL31 0xA7C) when EtherCAT support is moved to ICSSG1 by PSW team. */
+    (*((volatile uint32_t *)(CSL_PSC0_BASE+0xA78))) |= 0x1800;
+#endif	
+	
     /* This is for debug purpose - see the description of function header */
     StartupEmulatorWaitFxn();
 
-    Board_init(BOARD_INIT_PINMUX_CONFIG | BOARD_INIT_MODULE_CLOCK |
-               BOARD_INIT_ICSS_PINMUX | BOARD_INIT_UART_STDIO);
+    Board_init( BOARD_INIT_MODULE_CLOCK |
+               BOARD_INIT_UART_STDIO );
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+    if(icssgResetIsolated==FALSE)
+    {
+#endif
+        /*These initializations are not required after a warm reset, as pinmux does not change for a warm reset. */
+		Board_init(BOARD_INIT_ICSS_PINMUX | BOARD_INIT_PINMUX_CONFIG);
+#ifdef ENABLE_ICSS_RESET_ISOLATION
+    }
+#endif			   
+
     TaskP_Params_init(&taskParams);
     taskParams.priority = 4;
     taskParams.stacksize = 2048*TIESC_TASK_STACK_SIZE_MUL;
@@ -628,6 +694,7 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
     uint32_t payload;
     ecat2mc_msg_obj_t *txobj;
     mc2ecat_msg_obj_t *rxobj;
+	uint16_t axisIndex;
 	static uint8_t msgsent=0U;
 	uint16_t axisIndex = pCiA402Axis->axisIndex;
 	
@@ -637,7 +704,8 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 		Send_BootComplete_Message_To_Partner();
 		msgsent = 1U;
 	}
-
+ 
+	axisIndex = pCiA402Axis->axisIndex;
     if (axisIndex < MAX_NUM_AXES)
     {
         txobj = &gAppIpcMsgObj.axisObj[axisIndex].sendObj;

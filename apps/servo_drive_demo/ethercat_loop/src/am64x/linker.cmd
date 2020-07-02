@@ -54,7 +54,7 @@ SECTIONS
     .text:ti_sysbios_family_arm_MPU*       : {} palign(8) > MCU0_R5F0_BTCM
     .utilsCopyVecsToAtcm                   : {} palign(8) > MCU0_R5F0_BTCM
     
-	.text       : {} palign(8)   > OCSRAM4
+    .text       : {} palign(8)   > OCSRAM4
     .cinit      : {} palign(8)   > OCSRAM4
     .bss        : {} align(8)    > DDR_MCU1_0
     .far        : {} align(8)    > OCSRAM4
@@ -63,7 +63,7 @@ SECTIONS
     .sysmem     : {} align(8)    > OCSRAM5
     .stack      : {} align(4)    > OCSRAM5
 
-    .safedata   : {} palign(8)  > OCSRAM5
+    .safedata   : {} palign(8)  > OCSRAM6
 
     .bss:ipcMCBuffSection > R5F_ATCM_IPC_RSVD
     .bss:taskStackSection > OCSRAM5

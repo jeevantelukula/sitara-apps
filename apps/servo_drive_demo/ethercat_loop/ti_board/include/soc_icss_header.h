@@ -42,7 +42,7 @@
 ------
 -----------------------------------------------------------------------------------------*/
 
-#if defined(SOC_AM65XX)
+#if defined(SOC_AM65XX) || defined(SOC_AM64X)
 #include <ti/csl/csl_mdio.h>
 #include <ti/csl/cslr_icss.h>
 #include <ti/csl/csl_mdioAux.h>

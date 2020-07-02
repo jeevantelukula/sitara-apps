@@ -34,6 +34,8 @@
 #ifndef BLACKCHANNEL_H_
 #define BLACKCHANNEL_H_
 
+#include <stdint.h>
+
 #define CHANNEL_BUFFER_SIZE     124U
 
 typedef struct {

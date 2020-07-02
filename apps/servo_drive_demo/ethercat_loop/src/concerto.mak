@@ -12,13 +12,14 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
-ifeq ($(TARGET_PLATFORM),AM64X)
-SKIPBUILD=1
-endif
-
 # Define object name (TARGET) and type (TARGET_TYPE)
 TARGET      := app_tirtos_mcu1_0_servo_drive_ethcat
 TARGETTYPE  := exe
+
+ifeq ($(TARGET_PLATFORM),AM64X)
+CFLAGS +=-D=TIESC_EMULATION_PLATFORM
+CFLAGS +=-D=ENABLE_ICSS_RESET_ISOLATION
+endif
 
 # Provide list of C files by using built-in macro
 CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c $(SITARA_DEMO_SOC)/app_ts.c $(SITARA_DEMO_SOC)/app_ts_cfg_mcu_intr.c
@@ -35,13 +36,14 @@ LDIRS += $(APPDIR)/lib/am65xx/r5f
 endif
 
 ifeq ($(TARGET_PLATFORM),AM64X)
-ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM64xx_r5f.lib
-STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM64xx
+ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM64x_r5f.lib
+STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM64x
 LDIRS += $(APPDIR)/lib/am64xx/r5f
 endif
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
+IDIRS+=$(APPDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/ti_osal
 IDIRS+=$(APPDIR)/beckhoff_ssc
 IDIRS+=$(APPDIR)/ti_board/include
@@ -96,7 +98,7 @@ ADDITIONAL_STATIC_LIBS += ti.csl.aer5f
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.i2c.aer5f
-ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+#ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f

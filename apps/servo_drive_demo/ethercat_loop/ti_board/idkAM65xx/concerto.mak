@@ -1,11 +1,8 @@
 ifeq ($(TARGET_OS),SYSBIOS)
 ifeq ($(TARGET_CPU),R5F)
+ifeq ($(TARGET_PLATFORM),AM65XX)
 
 include $(PRELUDE)
-
-ifeq ($(TARGET_PLATFORM),AM64X)
-SKIPBUILD=1
-endif
 
 TARGET      := app_servo_drive_ethcat_tiboard_idkAM65xx
 TARGETTYPE  := library
@@ -23,5 +20,6 @@ endif
 
 include $(FINALE)
 
+endif
 endif
 endif
