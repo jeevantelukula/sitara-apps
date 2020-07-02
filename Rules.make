@@ -17,7 +17,7 @@ find_package_in = $(lastword $(sort $(wildcard $(1)/$(2))))
 # Define prefixes for directories that contain versions
 TIARMCGT_PREFIX         = ti-cgt-arm_
 PDK_PREFIX              = pdk_
-GCC_SYSBIOS_ARM_PREFIX  = gcc-linaro-
+GCC_SYSBIOS_ARM_PREFIX  = gcc-arm-
 BIOS_PREFIX             = bios_
 XDCTOOLS_PREFIX         = xdctools_
 

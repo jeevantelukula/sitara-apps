@@ -105,6 +105,16 @@ int32_t configureInterrupts()
         System_exit(-1);
     }
 
+    /* CompareEvent Interrupt Router CMP4 */
+    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_4,
+                                              0);
+    if (status != CFG_HOST_INTR_ERR_NERR) {
+        status = TEST_TS_ERR_CFG_HOST_INTR;
+        UART_printf("\n\rError=%d: ", status);
+        System_printf("taskSysInitFxn: Error=%d: ", status);
+        System_exit(-1);
+    }
+
     /* CompareEvent Interrupt Router CMP5 -> M4 */
     status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_5,
                                               32);
