@@ -61,6 +61,7 @@ __attribute__ ((section(".bss:ipcMCBuffSection")))
 __attribute__ ((aligned(128)))={0}
     ;
 
+/* debug */
 /* MBX IPC Rx message ISR count */
 uint32_t gTotMbxIpcRxMsgCnt = 0;
 /* Per-axis MBX IPC Rx message ISR count */
@@ -210,12 +211,11 @@ int32_t appPslMbxIpcTxMsg(
     if ((mcAxisIdx < MAX_NUM_AXES) && 
         (gAppPslTxMsgAxes[mcAxisIdx].isMsgSend == 1))
     {
-        /* Enter critical section, disable Timer interrupt. */
-        // TO DO: replace w/ appropriate Time sync event when this is integrated
-        Osal_DisableInterrupt(0, SIM_ECAT_TIMER_INTNUM);
+        /* Enter critical section, disable Time Sync interrupt. */
+        Osal_DisableInterrupt(0, TS_INT_NUM);
         gAppPslTxMsgAxes[mcAxisIdx].isMsgSend = 0;
         /* Leave critical section, enable Timer interrupt */
-        Osal_EnableInterrupt(0, SIM_ECAT_TIMER_INTNUM);
+        Osal_EnableInterrupt(0, TS_INT_NUM);
 
         /* Get transmit object */
         txobj = &gAppPslTxMsgAxes[mcAxisIdx].sendObj;
@@ -249,6 +249,7 @@ void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
     ecat2mc_msg_obj_t *rxobj;
     uint16_t axisIdx;
     
+    /* debug, increment ISR counter */
     gTotMbxIpcRxMsgCnt++;
 
     if (src_cpu_id == IPC_ETHERCAT_CPU_ID)
@@ -258,6 +259,7 @@ void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
 
         if (axisIdx < MAX_NUM_AXES)
         {
+            /* debug, increment count of Rx messages for axis */
             gMbxIpcRxMsgCnt[axisIdx]++;
 
             rxobj = &gAppPslRxMsgAxes[axisIdx].receiveObj;
@@ -266,6 +268,7 @@ void appMbxIpcMsgHandler(uint32_t src_cpu_id, uint32_t payload)
         }
         else
         {
+            /* debug, increment error count */
             gMbxIpcRxMsgErrCnt++;
         }
     }

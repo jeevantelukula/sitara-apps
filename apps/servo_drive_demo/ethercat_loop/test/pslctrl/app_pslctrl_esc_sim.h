@@ -31,25 +31,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_CFG_SOC_H_
-#define APP_CFG_SOC_H_
+/* This is intended for Time Sync verification in the case that the EthCAT 
+   slave stack (ESC) isn't present in the system. This code should be 
+   excluded from the system when ESC is present. */
 
-#include <ti/board/board.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
-#include "cfg_mcu_intr_soc.h"
+#ifndef APP_PSL_CTRL_ESC_SIM_H_
+#define APP_PSL_CTRL_ESC_SIM_H_
 
-//#define ENABLE_BOARD
+#include <ti/csl/tistdtypes.h>
 
-extern pinmuxPerCfg_t gFsiPinCfg[];
+/* Status codes */
+#define APP_PSLCTRL_ESC_SIM_SOK         (  0 )  /* no error */
+#define APP_PSLCTRL_ESC_INV_PRMS        ( -1 )  /* error, invalid parameters */
 
-/* TS MCU interrupt number */
-#define TS_MAIN2MCU_RTR_PLS_MUX_INTR0 \
-    ( 33 )  /* MAIN2MCU_RTR_PLS_MUX_INTR17 */
+/* ESC AL Status, current state */
+#define STATE_PREOP     ((uint8_t) 0x02)    /* State PreOP */
+#define STATE_SAFEOP    ((uint8_t) 0x04)    /* State SafeOP */
 
-/* Time Sync Int */
-#define TS_INT_NUM                  ( CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 + TS_MAIN2MCU_RTR_PLS_MUX_INTR0 )
-#define TS_INT_TYPE                 ( CSL_VIM_INTR_TYPE_PULSE )
-#define TS_INT_MAP                  ( CSL_VIM_INTR_MAP_IRQ )
-#define TS_INT_PRI                  ( 0 ) /* 0(lowest)..15(highest) */
+/* Initialize ESC firmware regs */
+int32_t escFwRegsInit(
+    PRUICSS_MaxInstances icssInstId,    /* ICSSG hardware instance ID */
+    uint16_t alStatus,                  /* Value to write to "AL Status" ESC FW reg */
+    uint32_t escSync0CycleTime_nsec     /* Value to write to "SYNC0 Cycle Time" ESC FW reg */
+);
 
-#endif /* APP_CFG_SOC_H_ */
+#endif /* APP_PSL_CTRL_ESC_SIM_H_ */

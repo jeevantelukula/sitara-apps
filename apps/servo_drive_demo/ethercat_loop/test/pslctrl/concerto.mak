@@ -12,15 +12,20 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
+ifeq ($(TARGET_PLATFORM),AM64X)
+SKIPBUILD=1
+endif
+
 # Define object name (TARGET) and type (TARGET_TYPE)
 TARGET      := app_tirtos_mcu1_0_pslctrl
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
-CSOURCES    := app_pslctrl.c $(SITARA_DEMO_SOC)/app_pslctrl_cfg.c app_pslctrl_mbxipc.c app_pslctrl_save_data.c
+CSOURCES    := app_pslctrl.c $(SITARA_DEMO_SOC)/app_pslctrl_cfg.c app_pslctrl_mbxipc.c app_pslctrl_timesync.c app_pslctrl_cfg_mcu_intr.c app_pslctrl_esc_sim.c app_pslctrl_save_data.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/../..)
+EXAMPLEDIR := $(abspath $(SDIR)/../../../../../examples)
 
 # Add directory to include search path
 IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
@@ -33,10 +38,15 @@ IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 IDIRS+=$(APPDIR)/../common/libs/misc/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/misc/include
 IDIRS+=$(APPDIR)/beckhoff_ssc
+IDIRS+=$(EXAMPLEDIR)/timesync/driver/include
+IDIRS+=$(EXAMPLEDIR)/timesync/firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
+
+# Add directory to library search path
+LDIRS+=$(EXAMPLEDIR)/timesync/out/AM65X/R5F/SYSBIOS/release
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -59,6 +69,7 @@ STATIC_LIBS += app_libs_logs
 STATIC_LIBS += app_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_libs_misc
+STATIC_LIBS += ex_timesync_libs_driver
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f
@@ -69,6 +80,7 @@ ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 #ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
+ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 ifeq ($(TARGET_PLATFORM),AM64X)
 ADDITIONAL_STATIC_LIBS += mailbox.aer5f
 endif

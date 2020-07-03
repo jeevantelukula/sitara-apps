@@ -35,6 +35,7 @@
 #define APP_PSL_CTRL_CFG_H_
 
 #include <ti/csl/tistdtypes.h>
+#include <ti/drv/pruss/pruicss.h>
 #include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 
 #define ENABLE_BOARD
@@ -42,11 +43,33 @@
 #define TASK_PSL_CTRL_PRI       ( 1 )           /* Task PSL Control priority */
 #define TASK_PSL_CTRL_SZ        ( 2048 )        /* Task PSL Control stack size */
 
-/* Timer parameters -- simulated SYNC pulse */
-#define TIMER_ID                ( 0 )           /* Timer ID */
-#define TIMER_FREQ_HZ           ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define TIMER_PERIOD_USEC       ( 1000 )        /* Timer period (usec.) */
-#define TIMER_INTNUM            ( 38 )          /* Timer interrupt, MCU_TIMER_0_INT */
+/* Time Sync PRU firmware, ICSSG instance ID */
+#define TS_ICSSG_INST_ID        ( PRUICCSS_INSTANCE_ONE )
+/* Time Sync PRU firmware, PRU instance ID */
+#define TS_PRU_INST_ID          ( PRUICCSS_RTU0 )
+
+/* Time Sync IEP0 Period (nsec.) */
+#define TS_IEP_PRD_NSEC         ( 5 )           /* 5 nsec = 1/200MHz */
+/* Time Sync CMP Periods & Offsets */
+#define TS_PRD_COUNT1           ( TS_IEP_PRD_NSEC*200000000u/8000u )    /* 125us   (8Khz)   (CMP3)              */
+/* Time Sync CMP Offsets */
+#define TS_PRD_OFFSET1          ( -TS_IEP_PRD_NSEC*2000 )               /* 10 usec. pre-trigger */
+
+/* Time Sync Compare Event Router input & output */
+#define TS_CMPEVT_INTRTR_IN0    ( 35 )  /* ICSSG_0_IEP0_CMP_TIMER3_INT */
+#define TS_CMPEVT_INTRTR_OUT0   ( 17 )  /* COMPEVT_RTR_COMP_17_EVT */
+
+/* Simulated SYNC0 pulse, Time Sync CMP1 Period */
+#define SIM_SYNC0_TS_PRD_COUNT0 ( TS_IEP_PRD_NSEC*200000000u/1000u )    /* 1ms     (1KHz)   (CMP1)    sim Sync0 */
+
+/* Simulated SYNC0 pulse, Compare Event Router input & output */
+#define SIM_SYNC0_CMPEVT_INTRTR_IN  \
+    ( 33 )  /* ICSSG_0_IEP0_CMP_TIMER1_INT */
+#define SIM_SYNC0_CMPEVT_INTRTR_OUT \
+    ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
+/* Simulated SYNC0 pulse, MCU interrupt number */
+#define SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR \
+    ( 32 )  /* MAIN2MCU_RTR_PLS_MUX_INTR16 */
 
 extern pinmuxPerCfg_t gFsiPinCfg;
 

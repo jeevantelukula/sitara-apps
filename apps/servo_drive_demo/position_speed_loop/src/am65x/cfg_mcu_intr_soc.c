@@ -64,6 +64,7 @@ static McuIntrCfg gMcuIntrCfg[NUM_MCU_INTR] = {
     {{0, CSL_VIM_INTR_TYPE_LEVEL, CSL_VIM_INTR_MAP_IRQ, 15, NULL}, {0, 0}},
     {{0, CSL_VIM_INTR_TYPE_LEVEL, CSL_VIM_INTR_MAP_IRQ, 15, NULL}, {0, 0}},
     {{0, CSL_VIM_INTR_TYPE_LEVEL, CSL_VIM_INTR_MAP_IRQ, 15, NULL}, {0, 0}},
+    {{0, CSL_VIM_INTR_TYPE_LEVEL, CSL_VIM_INTR_MAP_IRQ, 15, NULL}, {0, 0}},
     {{0, CSL_VIM_INTR_TYPE_LEVEL, CSL_VIM_INTR_MAP_IRQ, 15, NULL}, {0, 0}}
 };
 
@@ -116,13 +117,19 @@ int32_t McuIntc_cfgIntr(
     
     /* Copy MCU interrupt parameters to MCU interrupt configuration */
     pMcuIntrCfg->mcuIntrRegPrms = *pMcuIntrRegPrms;
-    pMcuIntrCfg->mcuIntrRtrPrms = *pMcuIntrRtrPrms;
-    pMcuIntrCfg->intrRtrIntrCfgValid = true;
     
-    /* Configure Interrupt Router */
-    status = cfgMain2McuIntrRouter(pMcuIntrRegPrms->intrNum, pMcuIntrRtrPrms);
-    if (status != CFG_MCU_INTR_SOK) {
-        return status;
+    if (pMcuIntrRtrPrms != NULL) {
+        pMcuIntrCfg->mcuIntrRtrPrms = *pMcuIntrRtrPrms;
+        pMcuIntrCfg->intrRtrIntrCfgValid = true;
+        
+        /* Configure Interrupt Router */
+        status = cfgMain2McuIntrRouter(pMcuIntrRegPrms->intrNum, pMcuIntrRtrPrms);
+        if (status != CFG_MCU_INTR_SOK) {
+            return status;
+        }
+    }
+    else {
+        pMcuIntrCfg->intrRtrIntrCfgValid = false;
     }
     
     /* Register VIM Interrupt */    

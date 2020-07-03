@@ -31,25 +31,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APP_CFG_SOC_H_
-#define APP_CFG_SOC_H_
+#ifndef _APP_PSLCTRL_CFG_MCU_INTR_H_
+#define _APP_PSLCTRL_CFG_MCU_INTR_H_
 
-#include <ti/board/board.h>
-#include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
-#include "cfg_mcu_intr_soc.h"
+#include <stdint.h>
 
-//#define ENABLE_BOARD
+/* Status codes */
+#define APP_CSLCTRL_CFG_MCU_INTR_SOK                (  0 )  /* no error */
+#define APP_CSLCTRL_CFG_MCU_INTR_SERR_CFG_INTR_RTR  ( -1 )  /* interrupt router configuration error */
+#define APP_CSLCTRL_CFG_MCU_INTR_SERR_REG_INTR      ( -2 )  /* interrupt registration error */
 
-extern pinmuxPerCfg_t gFsiPinCfg[];
+/* Configures Compare Event router */
+int32_t configureCmpEventInterruptRouter(
+    int32_t intrRtrInIntNum, 
+    int32_t intrRtrOutIntNum
+);
 
-/* TS MCU interrupt number */
-#define TS_MAIN2MCU_RTR_PLS_MUX_INTR0 \
-    ( 33 )  /* MAIN2MCU_RTR_PLS_MUX_INTR17 */
+/* Registers an interrupt for event from compare event router */
+int32_t registerIntrOnCmpEvent(
+    int32_t intrNum,
+    void (*isrRoutine)(uintptr_t) /* The ISR routine to hook the corepacEventNum to */
+);
 
-/* Time Sync Int */
-#define TS_INT_NUM                  ( CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 + TS_MAIN2MCU_RTR_PLS_MUX_INTR0 )
-#define TS_INT_TYPE                 ( CSL_VIM_INTR_TYPE_PULSE )
-#define TS_INT_MAP                  ( CSL_VIM_INTR_MAP_IRQ )
-#define TS_INT_PRI                  ( 0 ) /* 0(lowest)..15(highest) */
+/* Disables interrupt for event from PRU */
+void disableIntrOnPruEvent(
+    int32_t intrNum
+);
 
-#endif /* APP_CFG_SOC_H_ */
+/* Enables Host interrupt for event from PRU */
+void enableIntrOnPruEvent(
+    int32_t intrNum
+);
+
+#endif /* _APP_PSLCTRL_CFG_MCU_INTR_H_ */

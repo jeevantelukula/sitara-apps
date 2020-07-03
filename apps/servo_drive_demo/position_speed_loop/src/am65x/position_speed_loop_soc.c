@@ -51,16 +51,16 @@
 #include "app_psl_mbxipc.h"
 #include "position_speed_loop_if.h"
 
-// debug
+/* debug */
 #include <ti/drv/gpio/GPIO.h>
 #include "GPIO_board.h"
 
 /* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
-//#define _CTRL_SYN_ENABLE
+/* #define _CTRL_SYN_ENABLE */
 
-/* Timer -- simulate ECAT interrupt */
-void timerTickFxn(void *arg);   /* Timer tick function */
-uint32_t gTimerIsrCnt=0;
+/* Time Sync interrupt */
+uint32_t gTsIsrCnt=0;
+
 
 /* 
  * PRU IRQ handlers
@@ -70,11 +70,14 @@ __attribute__((interrupt("IRQ")))   void fsiRxInt2IrqHandler(void);
 __attribute__((interrupt("IRQ")))   void fsiTxInt1IrqHandler(void);
 __attribute__((interrupt("IRQ")))   void fsiTxInt2IrqHandler(void);
 
-// debug
-uint32_t gFsiRxInt1IsrCnt=0;
-uint32_t gFsiRxInt2IsrCnt=0;
-uint32_t gFsiTxInt1IsrCnt=0;
-uint32_t gFsiTxInt2IsrCnt=0;
+/* Time Sync IRQ handler */
+__attribute__((interrupt("IRQ")))   void tsIrqHandler(void);
+
+/* debug */
+uint32_t gFsiRxInt1IsrCnt=0;    /* FSI Rx INT1 ISR count */
+uint32_t gFsiRxInt2IsrCnt=0;    /* FSI Rx INT2 ISR count */
+uint32_t gFsiTxInt1IsrCnt=0;    /* FSI Tx INT1 ISR count */
+uint32_t gFsiTxInt2IsrCnt=0;    /* FSI Tx INT2 ISR count */
 
 /* ------------------------------------------------------------------------- *
  *                                Globals                                    *
@@ -88,19 +91,15 @@ uint32_t gFsiRxBase = CSL_PRU_ICSSG2_DRAM1_SLV_RAM_BASE;
 /* Global ping frame counter for handshake */
 volatile uint8_t numPingFrames = 0;
 volatile uint32_t numDataFrames = 0;
- 
-/* Timer handle -- simulate ECAT interrupt */
-TimerP_Handle gTimerHandle;
 
 /* Initialization function */
 int32_t appPositionSpeedLoopInit(void)
 {
     McuIntrRegPrms mcuIntrRegPrms;
     McuIntrRtrPrms mcuIntrRtrPrms;
-    TimerP_Params timerParams;
     int32_t status;
 
-    // initialize system parameters
+    /* initialize system parameters */
 #if (BUILDLEVEL >= FCL_LEVEL5 && BUILDLEVEL <= FCL_LEVEL9)
 #ifndef _CTRL_SYN_ENABLE
     sysVars.ctrlSynSet = CTRL_SYN_DISABLE;
@@ -118,15 +117,15 @@ int32_t appPositionSpeedLoopInit(void)
 
         for(nodes = SYS_NODEM; nodes< SYS_NODE_NUM; nodes++)
         {
-            // initialize controller parameters for each motor
+            /* initialize controller parameters for each motor */
             initCtrlParameters(&ctrlVars[nodes]);
 
-            // reset some controller variables for each motor
+            /* reset some controller variables for each motor */
             resetControllerVars(&ctrlVars[nodes]);
         }
     }
 
-#if (BUILDLEVEL >= FCL_LEVEL5)       // Control Over FSI    
+#if (BUILDLEVEL >= FCL_LEVEL5)       /* Control Over FSI */
     FSI_initParams();
 #endif
 
@@ -197,7 +196,7 @@ int32_t appPositionSpeedLoopInit(void)
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }
-       
+
     /* Initialize PRU0 for FSI TX */
     status = initPruFsi(gPruIcssHandle, FSI_TX_PRU_INST_ID, 
         (uint32_t *)PRU_FSI_Transmit_image_1, sizeof(PRU_FSI_Transmit_image_1), 
@@ -213,44 +212,35 @@ int32_t appPositionSpeedLoopInit(void)
     if (status != CFG_ICSS_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     }    
-           
-    /* Enable Host interrupts for events from PRU */
+
+    /* Configure MCU interrupt for Time Sync */
+    mcuIntrRegPrms.intrNum = TS_INT_NUM;
+    mcuIntrRegPrms.intrType = TS_INT_TYPE;
+    mcuIntrRegPrms.intrMap = TS_INT_MAP;
+    mcuIntrRegPrms.intrPri = TS_INT_PRI;
+    mcuIntrRegPrms.isrRoutine = &tsIrqHandler;
+    status = McuIntc_cfgIntr(&mcuIntrRegPrms, NULL, MCU_INTR_IDX(4));
+    if (status != CFG_MCU_INTR_SOK) {
+        return POSITION_SPEED_LOOP_SERR_INIT;
+    }
+       
+    /* Enable Host interrupts for events from FSI PRU FW */
     McuIntc_enableIntr(MCU_INTR_IDX(0), true);
     McuIntc_enableIntr(MCU_INTR_IDX(1), true);
     McuIntc_enableIntr(MCU_INTR_IDX(2), true);
     McuIntc_enableIntr(MCU_INTR_IDX(3), true);
-    
-    /*
-        Set up timer -- simulate ECAT interrupt
+       
+    /* Debug, GPIOs:
+        see GPIO_board.h for GPIO definitions
+        GPIOs can be driven low/high at different locations in code to observe timing of code
     */
-    
-    // TODO: update to use CSL-FL DM Timer + VIM configuration
-    /* Timer parameters */
-    TimerP_Params_init(&timerParams);
-    timerParams.name = "simEcatTimer";
-    timerParams.periodType = TimerP_PeriodType_MICROSECS;
-    timerParams.extfreqLo = SIM_ECAT_TIMER_FREQ_HZ;
-    timerParams.extfreqHi = 0;
-    timerParams.startMode = TimerP_StartMode_USER;
-    timerParams.runMode = TimerP_RunMode_CONTINUOUS;
-    timerParams.period = SIM_ECAT_TIMER_PERIOD_USEC;
-    timerParams.arg = 0;
-    timerParams.intNum = SIM_ECAT_TIMER_INTNUM;
-    
-    /* Create timer -- simulate ECAT interrupt */
-    gTimerHandle = TimerP_create(SIM_ECAT_TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
-    if (gTimerHandle == NULL)
-    {
-        return POSITION_SPEED_LOOP_SERR_INIT;
-    }
-    
-    // debug
+    /*
     GPIO_init();
     GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH);
     GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW);
-
     GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH);
     GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW);
+    */
 
     return POSITION_SPEED_LOOP_SOK;
 }
@@ -269,10 +259,10 @@ int32_t appPositionSpeedLoopStart(void)
 
     FSI_setupTRxFrameData(gFsiTxBase, gFsiRxBase);
 
-    /* Start timer */
-    TimerP_start(gTimerHandle);
+    /* Enable Time Sync Interrupts */
+    McuIntc_enableIntr(MCU_INTR_IDX(4), true);
 
-    appLogPrintf("APP: Timer started !!!\n");
+    appLogPrintf("APP: Time Sync started !!!\n");
 
     /* move to background task */
     while (run_flag) {
@@ -292,31 +282,46 @@ int32_t appPositionSpeedLoopStart(void)
     return POSITION_SPEED_LOOP_SOK;
 }
 
-/* Timer tick function -- simulate ECAT interrupt */
-void timerTickFxn(void *arg)
+/* Time Sync IRQ handler -- simulate SYNC0 */
+void tsIrqHandler(void)
 {
-    // debug
-    gTimerIsrCnt++;
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW);
+    volatile uint32_t intNum;
+    int32_t status;
 
-    buildLevel7_9();
-    FSI_updateTransmissionData();
+    /* debug, increment ISR count */
+    gTsIsrCnt++;
+    /* debug, observe timing of Time Sync ISR using GPIO */
+    /* GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW); */
 
-    FSI_setTxBufferPtr(gFsiTxBase, 0U);
-    FSI_setTxFrameType(gFsiTxBase, 0x3);
-    FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
+    status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
+        CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
+    if (status == CSL_PASS)
+    {
+        /* Clear pulse-type interrupt before executing ISR code */
+        CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
 
-    FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
+        buildLevel7_9();
+        FSI_updateTransmissionData();
 
-    FSI_startTxTransmit(gFsiTxBase);
+        FSI_setTxBufferPtr(gFsiTxBase, 0U);
+        FSI_setTxFrameType(gFsiTxBase, 0x3);
+        FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
+
+        FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
+
+        FSI_startTxTransmit(gFsiTxBase);
+        
+        /* Inform background task to transmit latest actual values to EtherCAT   */
+        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
+        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
+        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
+
+        /* Acknowledge interrupt servicing */
+        CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );
+    }
     
-    /* Inform background task to transmit latest actual values to EtherCAT   */
-    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
-    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
-    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
-
-    // debug
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH);
+    /* debug */
+    /* GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH); */
 }
 
 /* IRQ handler, FSI RX INT1 */
@@ -326,9 +331,10 @@ void fsiRxInt1IrqHandler(void)
     uint16_t fsiRxStatus = 0;
     int32_t status;
 
-    // debug
+    /* debug, increment ISR count */
     gFsiRxInt1IsrCnt++;
-    GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW);
+    /* debug, observe timing of FSI RX INT1 ISR using GPIO */
+    /* GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW); */
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
@@ -367,8 +373,8 @@ void fsiRxInt1IrqHandler(void)
 
     }
 
-    // debug
-    GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH);
+    /* debug */
+    /* GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH); */
 }
 
 /* IRQ handler, FSI RX INT2 */
@@ -377,7 +383,7 @@ void fsiRxInt2IrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    // debug
+    /* debug, increment ISR counter */
     gFsiRxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -401,7 +407,7 @@ void fsiTxInt1IrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    // debug
+    /* debug, increment ISR count */
     gFsiTxInt1IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -425,7 +431,7 @@ void fsiTxInt2IrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    // debug
+    /* debug, increment ISR count */
     gFsiTxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 

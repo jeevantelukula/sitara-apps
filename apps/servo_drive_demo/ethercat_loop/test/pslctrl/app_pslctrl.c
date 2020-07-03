@@ -51,21 +51,22 @@
 
 #include <app_pslctrl_cfg.h>
 #include "app_pslctrl_mbxipc.h"
+#include "app_pslctrl_cfg_mcu_intr.h"
+#include "app_pslctrl_timesync.h"
+#include "app_pslctrl_esc_sim.h"
 #include "app_pslctrl_save_data.h"
 
 /* Status codes */
 #define PSL_CTRL_INIT_SOK                   (  0 )
 #define PSL_CTRL_INIT_SERR_SCICLIENT_INIT   ( -1 )
 #define PSL_CTRL_INIT_SERR_MBXIPC_INIT      ( -2 )
-#define PSL_CTRL_INIT_SERR_TIMER_CREATE     ( -3 )
+#define PSL_CTRL_INIT_SERR_TS_INIT          ( -3 )
 
 /* Function prototypes */
 int32_t pslCtrlInit(
-    pinmuxPerCfg_t *pPinmuxPerCfg, 
-    appPslCtrlMbxIpcCfg_t *pPslCtrlMbxIpcCfg
+    pinmuxPerCfg_t *pPinmuxPerCfg
 );
 void StartupEmulatorWaitFxn(void);
-void timerTickFxn(void *arg);
 
 /* Task stack */
 uint8_t gTskStackMain[8*1024]
@@ -76,9 +77,8 @@ __attribute__ ((aligned(8192)))
 /* Task handle */
 Task_Handle hTaskPslCtrl;
 
-/* Timer handle */
-TimerP_Handle gTimerHandle;
-uint32_t gTimerIsrCnt=0; /* timer ISR count */
+/* Time Sync object */
+TsObj gTs;
 
 /* MC parameters -- set via JTAG, sent to PSL via IPC */
 volatile int32_t    gVelocityTarget = 0.2*10000;
@@ -97,14 +97,16 @@ volatile int16_t    gCtrlState = STATE_READY_TO_SWITCH_ON;
 /* Indicates whether to continue sending/receiving IPC data */
 volatile bool gRunState = TRUE;
 
-/* Timer tick function -- IPC gen interrupt */
-void timerTickFxn(void *arg)
+uint32_t gSimSync0IsrCnt=0; /* Simulated SYNC0 ISR count */
+
+/* Simulated SYNC0 ISR -- IPC gen traffic to Pos/Speed Loop */
+void simSync0IrqHandler(uintptr_t arg)
 {
     ecat2mc_msg_obj_t *txobj;
     uint32_t payload;
     uint16_t axisIdx;
 
-    gTimerIsrCnt++;
+    gSimSync0IsrCnt++;
     
     if (appMbxIpcGetSelfCpuId() == IPC_ETHERCAT_CPU_ID)
     {
@@ -129,11 +131,9 @@ void timerTickFxn(void *arg)
 
 /* Initialize PSL Control */
 int32_t pslCtrlInit(
-    pinmuxPerCfg_t *pPinmuxPerCfg, 
-    appPslCtrlMbxIpcCfg_t *pPslCtrlMbxIpcCfg
+    pinmuxPerCfg_t *pPinmuxPerCfg
 )
 {
-    TimerP_Params timerParams;
     int32_t status;
 
 #ifdef ENABLE_BOARD
@@ -158,32 +158,6 @@ int32_t pslCtrlInit(
         return PSL_CTRL_INIT_SERR_SCICLIENT_INIT;
     }
 
-    /* Initialize MBX IPC */
-    status = appPslCtrlMbxIpcInit(pPslCtrlMbxIpcCfg);
-    if (status != 0)
-    {
-        appLogPrintf("pslCtrlInit: appPslCtrlMbxIpcInit() failed.\n");
-        return PSL_CTRL_INIT_SERR_MBXIPC_INIT;
-    }
-
-    /* Create timer -- PSL Control Tx timer */    
-    TimerP_Params_init(&timerParams);
-    timerParams.name = "ipcGenTimer";
-    timerParams.periodType = TimerP_PeriodType_MICROSECS;
-    timerParams.extfreqLo = TIMER_FREQ_HZ;
-    timerParams.extfreqHi = 0;
-    timerParams.startMode = TimerP_StartMode_USER;
-    timerParams.runMode = TimerP_RunMode_CONTINUOUS;
-    timerParams.period = TIMER_PERIOD_USEC;
-    timerParams.arg = 0;
-    timerParams.intNum = TIMER_INTNUM;
-    gTimerHandle = TimerP_create(TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
-    if (gTimerHandle == NULL)
-    {
-        appLogPrintf("pslCtrlInit: TimerP_create() failed.\n");
-        return PSL_CTRL_INIT_SERR_TIMER_CREATE;
-    }
-
     return PSL_CTRL_INIT_SOK;
 }
 
@@ -191,7 +165,7 @@ int32_t pslCtrlInit(
 void taskPslCtrl(uint32_t arg0, uint32_t arg1)
 {
     appPslCtrlMbxIpcCfg_t appPslCtrlMbxIpcCfg;
-    TimerP_Status timerStatus;
+    TsPrmsObj tsPrms;
     mc2ecat_msg_obj_t *rxobj;
     bool isMsgFound = FALSE;
     uint16_t i;
@@ -201,24 +175,61 @@ void taskPslCtrl(uint32_t arg0, uint32_t arg1)
     uintptr_t key;
 
     /* Initialize PSL Control */
+    status = pslCtrlInit(&gFsiPinCfg);
+    if (status != PSL_CTRL_INIT_SOK)
+    {
+        appLogPrintf("taskPslCtrl: pslCtrlInit() failed.\n");
+        Task_exit();
+    }
+
+    /* Initialize MBX IPC */
     appPslCtrlMbxIpcCfg.appMbxIpcInitPrm.self_cpu_id = IPC_ETHERCAT_CPU_ID;
     appPslCtrlMbxIpcCfg.appMbxIpcInitPrm.master_cpu_id = IPC_ETHERCAT_CPU_ID;
     appPslCtrlMbxIpcCfg.appMbxIpcInitPrm.num_cpus = 2;
     appPslCtrlMbxIpcCfg.appMbxIpcInitPrm.enabled_cpu_id_list[0] = IPC_ETHERCAT_CPU_ID;
     appPslCtrlMbxIpcCfg.appMbxIpcInitPrm.enabled_cpu_id_list[1] = IPC_PSL_MC_CPU_ID;
     appPslCtrlMbxIpcCfg.appMbxIpcMsgHandler = appMbxIpcMsgHandler;
-    status = pslCtrlInit(&gFsiPinCfg, &appPslCtrlMbxIpcCfg);
-    if (status != 0)
+    status = appPslCtrlMbxIpcInit(&appPslCtrlMbxIpcCfg);
+    if (status != APP_PSLCTRL_MBXIPC_SOK)
     {
-        appLogPrintf("taskPslCtrl: pslCtrlInit() failed.\n");
+        appLogPrintf("taskPslCtrl: appPslCtrlMbxIpcInit() failed.\n");
         Task_exit();
     }
 
-    /* Start timer */
-    timerStatus = TimerP_start(gTimerHandle);
-    if (timerStatus != TimerP_OK)
+    /* Initialize Time Sync */
+    memset(&tsPrms, 0, sizeof(tsPrms));
+    tsPrms.icssInstId = TS_ICSSG_INST_ID;
+    tsPrms.pruInstId = TS_PRU_INST_ID;
+    tsPrms.iepPrdNsec = TS_IEP_PRD_NSEC;
+    tsPrms.prdCount[0] = TS_PRD_COUNT1;
+    tsPrms.prdOffset[0] = TS_PRD_OFFSET1;
+    tsPrms.cmpEvtRtrInIntNum[0] = TS_CMPEVT_INTRTR_IN0;
+    tsPrms.cmpEvtRtrOutIntNum[0] = TS_CMPEVT_INTRTR_OUT0;
+    tsPrms.prdCfgMask = TS_CFG_CMP3;
+    tsPrms.simSync0PrdCount = SIM_SYNC0_TS_PRD_COUNT0;
+    tsPrms.simSync0CmpEvtRtrInIntNum = SIM_SYNC0_CMPEVT_INTRTR_IN;
+    tsPrms.simSync0CmpEvtRtrOutIntNum = SIM_SYNC0_CMPEVT_INTRTR_OUT;
+    tsPrms.simSync0IntrNum = SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR;
+    tsPrms.simSync0IsrRoutine = simSync0IrqHandler;
+    status = appPslCtrlTsInit(&tsPrms, &gTs);
+    if (status != APP_PSLCTRL_TS_SOK)
     {
-        appLogPrintf("taskPslCtrl: TimerP_start() failed.\n");
+        appLogPrintf("taskPslCtrl: appPslCtrlTsInit() failed.\n");
+        Task_exit();
+    }
+    
+    /* Initialze ESC firmware regs */
+    status = escFwRegsInit(TS_ICSSG_INST_ID, STATE_SAFEOP, 
+        SIM_SYNC0_TS_PRD_COUNT0);
+    if (status != APP_PSLCTRL_ESC_SIM_SOK) {
+        appLogPrintf("taskPslCtrl: escFwRegsInit() failed.\n");
+        Task_exit();
+    }
+
+    /* Start Time Sync */
+    status = startTs(&gTs);
+    if (status != APP_PSLCTRL_TS_SOK) {
+        appLogPrintf("taskPslCtrl: startTs() failed.\n");
         Task_exit();
     }
 
