@@ -49,17 +49,4 @@ uint32_t readPmu(void);
 #define TEST_UTILS_ERR_NERR     (  0 )  /* no error */
 #define TEST_UTILS_ERR_INV_PRMS ( -1 )  /* error, invalid parameters */
 
-
-/* Get ICSSG ID for PWM DRV */
-int32_t getIcssgId(
-    PRUICSS_MaxInstances icssInstId,
-    uint8_t *pIcssgId
-);
-
-/* Get PRU ID for PWM DRV */
-int32_t getPruId(
-    PRUSS_PruCores pruInstId,
-    uint8_t *pPruId
-);
-
 #endif /* _TEST_UTILS_H_ */

@@ -51,38 +51,8 @@
 
 #include "cfg_host_intr.h"
 #include "timesyncDrv_utils.h"          /* TS driver utilities */
+#include "app_timesync.h"
 #include "test_utils.h"
-#include "timesync_array.h"             /* TS PRU FW image data */
-#include "timesyncDrv_api.h"            /* TS driver API */
-
-
-/* ------------------------------------------------------------------------- *
- *                          Macros & Structures                              *
- * ------------------------------------------------------------------------- */
-/* ICSSG functional clock source selection options */
-#define CORE_CLKSEL_PER1HSDIV_CLKOUT1   ( 0 )
-#define CORE_CLKSEL_CPSWHSDIV_CLKOUT2   ( 1 )
-
-/* Default ICSS pin mux setting */
-#define PRUICSS_PINMUX_DEF              ( 0x0 )
-
-/* Bits for TS CMP configuration mask */
-#define TS_CFG_CMP3                     ( 1<<0 )
-#define TS_CFG_CMP4                     ( 1<<1 )
-#define TS_CFG_CMP5                     ( 1<<2 )
-#define TS_CFG_CMP6                     ( 1<<3 )
-#define TS_CFG_CMP_ALL  \
-    ( TS_CFG_CMP3 | TS_CFG_CMP4 | TS_CFG_CMP5 | TS_CFG_CMP6 )
-
-
-/* Status codes */
-#define TEST_TS_ERR_NERR                (  0 )  /* no error */
-#define TEST_TS_ERR_CFG_ICSSG_CLKSEL    ( -1 )  /* ICSSG clock selection error */
-#define TEST_TS_ERR_CFG_HOST_INTR       ( -2 )  /* interrupt configuration error */
-#define TEST_TS_ERR_INIT_ICSSG          ( -3 )  /* initialize ICSSG error */
-#define TEST_TS_ERR_INIT_PRU            ( -4 )  /* initialize PRU error */
-#define TEST_TS_ERR_INIT_TS_DRV         ( -5 )  /* initialize TS DRV error */
-#define TEST_TS_ERR_START_TS            ( -6 )  /* start TS error */
 
 /* Test ICSSG instance ID */
 #define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_ONE )
@@ -115,65 +85,10 @@
 /* Compare event router output */
 #define CMPEVT_INTRTR_OUT   ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
 
-/* TS configuration parameters */
-typedef struct TsPrmsObj_s {
-    PRUICSS_MaxInstances icssInstId;        /* ICSSG hardware instance ID */
-    PRUSS_PruCores pruInstId;               /* PRU hardware instance ID */
-    /* IEP Period (nsec) */
-    uint32_t iepPrdNsec;
-    /* Period Count */
-    uint32_t prdCount[ICSSG_TS_DRV__NUM_IEP_CMP];
-    /* Positive/Negative Offset */
-    int32_t prdOffset[ICSSG_TS_DRV__NUM_IEP_CMP];
-    uint8_t cfgMask;                        /* Period/Offset configuration mask */
-    uint32_t testTsPrdCount;                /* Test Period */
-} TsPrmsObj;
-
-/* TS object */
-typedef struct TsObj_s {
-    PRUICSS_Handle pruIcssHandle;           /* PRUSS DRV handle */
-    TsPrmsObj tsPrms;                       /* TS configuration parameters */
-    uint8_t icssgId;                        /* TS DRV ICSSG hardware module ID */
-    uint8_t pruId;                          /* TS DRV PRU hardware module ID */
-    IcssgTsDrv_Handle hTsDrv;               /* TS DRV handle */
-} TsObj;
-
-/* ------------------------------------------------------------------------- *
- *                          Function Prototypes                              *
- * ------------------------------------------------------------------------- */
-
-/* Configure ICSSG clock selection */
-int32_t cfgIcssgClkSel(
-    PRUICSS_MaxInstances icssInstId,
-    uint8_t source
-);
-
-/* Initialize ICSSG */
-int32_t initIcss(
-    PRUICSS_MaxInstances icssInstId,
-    PRUICSS_Handle *pPruIcssHandle
-);
-
-/* Initialize PRU for TS */
-int32_t initPruTimesync(
-    PRUICSS_Handle pruIcssHandle,
-    PRUSS_PruCores pruInstId
-);
-
-/* Initialize ICSSG TS DRV */
-int32_t initIcssgTsDrv(
-    PRUICSS_Handle pruIcssHandle,
-    TsPrmsObj *pTsPrms,
-    TsObj *pTs
-);
-
-/* Start ICSSG TS */
-int32_t startTs(
-    TsObj *pTs
-);
-
 /* PRU TS IRQ handler */
-void pruTsIrqHandler(uintptr_t foobar);
+void pruTsIrqHandler(
+    uintptr_t foobar
+);
 
 /* ------------------------------------------------------------------------- *
  *                                Globals                                    *
@@ -191,254 +106,13 @@ volatile uint32_t interrupts = 0;
 /* Interrupt stats */
 volatile uint32_t minDelay, maxDelay, totDelay, numDelay, lastCmp, errorDelay, resetDelay=1;
 
-
-/*
- *  ======== cfgIcssgClkSel ========
- */
-/* Configure ICSSG clock selection */
-int32_t cfgIcssgClkSel(
-    PRUICSS_MaxInstances icssInstId,
-    uint8_t source
-)
-{
-    CSL_main_ctrl_mmr_cfg0Regs *pCtrlMmrCfg0Regs = (CSL_main_ctrl_mmr_cfg0Regs *)CSL_CTRL_MMR0_CFG0_BASE;
-    uint32_t regVal;
-
-    if (icssInstId == PRUICCSS_INSTANCE_ONE) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG0_CLKSEL);
-        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG0_CLKSEL, regVal);
-    }
-    else if (icssInstId == PRUICCSS_INSTANCE_TWO) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL);
-        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL, regVal);
-    }
-    else if (icssInstId == PRUICCSS_INSTANCE_MAX) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG2_CLKSEL);
-        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG2_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG2_CLKSEL, regVal);
-    }
-    else {
-        return TEST_TS_ERR_CFG_ICSSG_CLKSEL;
-    }
-
-    return TEST_TS_ERR_NERR;
-}
-
-/*
- *  ======== initIcss ========
- */
-/* Initialize ICSSG */
-int32_t initIcss(
-    PRUICSS_MaxInstances icssInstId,
-    PRUICSS_Handle *pPruIcssHandle
-)
-{
-    PRUICSS_Config *pruIcssCfg; /* ICSS configuration */
-    PRUICSS_Handle pruIcssHandle;
-    uint8_t i;
-    int32_t status;
-
-    /* Get SoC level PRUICSS initial configuration */
-    status = PRUICSS_socGetInitCfg(&pruIcssCfg);
-    if (status != PRUICSS_RETURN_SUCCESS) {
-        return TEST_TS_ERR_INIT_ICSSG;
-    }
-
-    /* Create ICSS PRU instance */
-    pruIcssHandle = PRUICSS_create(pruIcssCfg, icssInstId);
-    if (pruIcssHandle == NULL) {
-        return TEST_TS_ERR_INIT_ICSSG;
-    }
-
-    /* Disable PRUs & RTUs */
-    for (i = 0; i < PRUICSS_MAX_PRU; i++)
-    {
-        status = PRUICSS_pruDisable(pruIcssHandle, i);
-        if (status != PRUICSS_RETURN_SUCCESS) {
-            return TEST_TS_ERR_INIT_ICSSG;
-        }
-    }
-
-    /* Set ICSS pin mux to default */
-    PRUICSS_pinMuxConfig(pruIcssHandle, PRUICSS_PINMUX_DEF);
-
-    *pPruIcssHandle = pruIcssHandle;
-
-    return TEST_TS_ERR_NERR;
-}
-
-/* Initialize PRU for timesync */
-int32_t initPruTimesync(
-    PRUICSS_Handle pruIcssHandle,
-    PRUSS_PruCores pruInstId
-)
-{
-    uint8_t slicePruInstId;
-    uint32_t pruDMem, pruIMem;
-    int32_t size;
-    const uint32_t *sourceMem;    /* Source memory[ Array of uint32_t ] */
-    uint32_t offset;              /* Offset at which write will happen */
-    uint32_t byteLen;             /* Total number of bytes to be written */
-    int32_t status;
-
-    /* Reset PRU */
-    status = PRUICSS_pruReset(pruIcssHandle, pruInstId);
-    if (status != PRUICSS_RETURN_SUCCESS) {
-        return TEST_TS_ERR_INIT_PRU;
-    }
-
-    /* Determine PRU ID in slice */
-    slicePruInstId = pruInstId - (uint8_t)pruInstId/ICSSG_TS_DRV__NUM_ICSSG_SLICE * ICSSG_TS_DRV__NUM_ICSSG_SLICE;
-    /* Determine PRU DMEM address */
-    pruDMem = PRU_ICSS_DATARAM(slicePruInstId);
-    /* Determine PRU IMEM address */
-    switch (pruInstId)
-    {
-        case PRUICCSS_PRU0:
-        case PRUICCSS_PRU1:
-            pruIMem = PRU_ICSS_IRAM_PRU(slicePruInstId);
-            break;
-        case PRUICCSS_RTU0:
-        case PRUICCSS_RTU1:
-            pruIMem = PRU_ICSS_IRAM_RTU(slicePruInstId);
-            break;
-        case PRUICCSS_TPRU0:
-        case PRUICCSS_TPRU1:
-            pruIMem = PRU_ICSS_IRAM_TXPRU(slicePruInstId);
-            break;
-        default:
-            break;
-    }
-
-    /* Initialize DMEM */
-    size = PRUICSS_pruInitMemory(pruIcssHandle, pruDMem);
-    if (size == 0) {
-        return TEST_TS_ERR_INIT_PRU;
-    }
-
-    /* Initialize IMEM */
-    size = PRUICSS_pruInitMemory(pruIcssHandle, pruIMem);
-    if (size == 0)
-    {
-        return TEST_TS_ERR_INIT_PRU;
-    }
-
-    /* Write DMEM */
-    offset = ICSSG_TS_BASE_ADDR;
-    sourceMem = (uint32_t *)pru_timesync_image_1;
-    byteLen = sizeof(pru_timesync_image_1);
-    size = PRUICSS_pruWriteMemory(pruIcssHandle, pruDMem, offset, sourceMem, byteLen);
-    if (size == 0)
-    {
-        return TEST_TS_ERR_INIT_PRU;
-    }
-
-    /* Write IMEM */
-    offset = 0;
-    sourceMem = pru_timesync_image_0;
-    byteLen = sizeof(pru_timesync_image_0);
-    size = PRUICSS_pruWriteMemory(pruIcssHandle, pruIMem, offset, sourceMem, byteLen);
-    if (size == 0)
-    {
-        return TEST_TS_ERR_INIT_PRU;
-    }
-
-    return TEST_TS_ERR_NERR;
-}
-
-/* Initialize ICSSG timesync DRV */
-int32_t initIcssgTsDrv(
-    PRUICSS_Handle pruIcssHandle,
-    TsPrmsObj *pTsPrms,
-    TsObj *pTs
-)
-{
-    IcssgTsDrv_Handle hTsDrv;
-    int32_t status;
-
-    /* Copy TS parameters to TS object */
-    pTs->tsPrms = *pTsPrms;
-    /* Copy ICSS handle to TS object */
-    pTs->pruIcssHandle = pruIcssHandle;
-
-    /* Translate ICSSG & PRU hardware module IDs to TS API */
-    status = getIcssgId(pTsPrms->icssInstId, &pTs->icssgId);
-    if (status != TEST_UTILS_ERR_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-    getPruId(pTsPrms->pruInstId, &pTs->pruId);
-    if (status != TEST_UTILS_ERR_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
-    /* Initialize TS DRV instance */
-    hTsDrv = icssgTsDrv_initDrv(pTs->icssgId, pTs->pruId);
-    if (hTsDrv == NULL) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
-    /* Set TS Global Enable */
-    status = icssgTsDrv_setTsGblEn(hTsDrv, ICSSG_TS_DRV__TS_GBL_EN_ENABLE);
-    if (status != ICSSG_TS_DRV__STS_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
-    /* Set TS IEP0 Period (nsec) */
-    status = icssgTsDrv_cfgTsIepPrdNsec(hTsDrv, pTsPrms->iepPrdNsec);
-    if (status != ICSSG_TS_DRV__STS_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
-    /* Set non-default configuration */
-
-    /* Configure IEP0 Period Count */
-    status = icssgTsDrv_cfgTsPrdCount(hTsDrv, pTsPrms->prdCount, 
-        pTsPrms->prdOffset, pTsPrms->cfgMask, pTsPrms->testTsPrdCount);
-    if (status != ICSSG_TS_DRV__STS_NERR) {
-        return TEST_TS_ERR_INIT_TS_DRV;
-    }
-
-    /* Store TS DRV handle to TS object */
-    pTs->hTsDrv = hTsDrv;    
-
-    return TEST_TS_ERR_NERR;
-}
-
-/* Start ICSSG Timesync */
-int32_t startTs(
-    TsObj *pTs
-)
-{
-    int32_t status;
-
-    /* Start IEP0 counter */
-    icssgTsDrv_startIepCount(pTs->hTsDrv);
-
-    /* Enable PRU */
-    status = PRUICSS_pruEnable(pTs->pruIcssHandle, pTs->tsPrms.pruInstId);
-    if (status != PRUICSS_RETURN_SUCCESS) {
-        return TEST_TS_ERR_START_TS;
-    }
-
-    /* Wait for PRU FW initialization complete */
-    status = icssgTsDrv_waitFwInit(pTs->hTsDrv, ICSSG_TS_DRV__TS_FW_INIT_INIT);
-    if (status != ICSSG_TS_DRV__STS_NERR)
-    {
-        return TEST_TS_ERR_START_TS;
-    }
-
-    return TEST_TS_ERR_NERR;
-}
-
 /*
  *  ======== taskSysInitFxn ========
  */
-Void taskSysInitFxn(UArg a0, UArg a1)
+Void taskSysInitFxn(
+    UArg a0, 
+    UArg a1
+)
 {
     Board_IDInfo boardInfo;
     TsPrmsObj tsPrms;
@@ -465,8 +139,8 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     UART_printf("\r\nBuild Timestamp      : %s %s", __DATE__, __TIME__);
 
     /* Configure ICSSG clock selection */
-    status = cfgIcssgClkSel(TEST_ICSSG_INST_ID, CORE_CLKSEL_CPSWHSDIV_CLKOUT2);
-    if (status != TEST_TS_ERR_NERR) {
+    status = cfgIcssgClkSel(TEST_ICSSG_INST_ID, APP_TS_CORE_CLKSEL_CPSWHSDIV_CLKOUT2);
+    if (status != APP_TS_ERR_NERR) {
         UART_printf("\n\rtaskSysInitFxn: Error=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
@@ -474,7 +148,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
 
     /* Initialize ICSSG */
     status = initIcss(TEST_ICSSG_INST_ID, &gPruIcssHandle);
-    if (status != TEST_TS_ERR_NERR) {
+    if (status != APP_TS_ERR_NERR) {
         UART_printf("\n\rtaskSysInitFxn: Error=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
@@ -483,7 +157,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     /* Configure CompareEvent Interrupt Router */
     status = configureCmpEventInterruptRouter(CMPEVT_INTRTR_IN, CMPEVT_INTRTR_OUT);
     if (status != CFG_HOST_INTR_ERR_NERR) {
-        status = TEST_TS_ERR_CFG_HOST_INTR;
+        status = APP_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
@@ -492,7 +166,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     /* Register interrupt */
     status = registerIntrOnCmpEvent(224+32, &pruTsIrqHandler);
     if (status != CFG_HOST_INTR_ERR_NERR) {
-        status = TEST_TS_ERR_CFG_HOST_INTR;
+        status = APP_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
@@ -500,7 +174,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
 
     /* Initialize PRU for Timesync */
     status = initPruTimesync(gPruIcssHandle, TEST_PRU_INST_ID);
-    if (status != TEST_TS_ERR_NERR) {
+    if (status != APP_TS_ERR_NERR) {
         UART_printf("\n\rError=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
@@ -522,7 +196,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
     tsPrms.cfgMask = TS_CFG_CMP_ALL;
     tsPrms.testTsPrdCount = TEST_PRD_COUNT0;
     status = initIcssgTsDrv(gPruIcssHandle, &tsPrms, &gTestTs);
-    if (status != TEST_TS_ERR_NERR) {
+    if (status != APP_TS_ERR_NERR) {
         UART_printf("\n\rError=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
@@ -533,7 +207,7 @@ Void taskSysInitFxn(UArg a0, UArg a1)
 
     /* Start TSs */
     status = startTs(&gTestTs);
-    if (status != TEST_TS_ERR_NERR) {
+    if (status != APP_TS_ERR_NERR) {
         UART_printf("\n\rError=%d: ", status);
         System_printf("taskSysInitFxn: Error=%d: ", status);
         System_exit(-1);
