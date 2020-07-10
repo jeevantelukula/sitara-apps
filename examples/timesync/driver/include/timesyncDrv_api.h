@@ -68,8 +68,8 @@
 #define ICSSG_TS_DRV__TS_GBL_EN_ACK_ENABLE          ( 1 )   /* Global Enable ACK, enable setting */
 
 /* Settings for icssgTsDrv_waitFwInit() */
-#define ICSSG_TS_DRV__TS_FW_INIT_INIT               ( 0 )   /* FW init, initialized setting */
-#define ICSSG_TS_DRV__TS_FW_INIT_UNINIT             ( 1 )   /* FW init, uninitialized setting */
+#define ICSSG_TS_DRV__TS_FW_INIT_UNINIT             ( 0 )   /* FW init, uninitialized setting */
+#define ICSSG_TS_DRV__TS_FW_INIT_INIT               ( 1 )   /* FW init, initialized setting */
 
 /* FW register base address */
 #define ICSSG_TS_BASE_ADDR  ( ICSSG_TS_FW_REGS_BASE )

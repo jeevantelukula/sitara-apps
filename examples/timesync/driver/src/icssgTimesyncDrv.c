@@ -182,7 +182,7 @@ int32_t icssgTsDrv_waitTsGblEnAck(
         tsStatFwReg = pTsCtrlFwRegs->TS_STAT;
         /* Extract TS Global Enable ACK flag */
         tsGblEnAckFwReg = (tsStatFwReg & TS_STAT_IEP0_TS_GBL_EN_ACK_MASK) >> TS_STAT_IEP0_TS_GBL_EN_ACK_SHIFT;
-    } while (tsGblEnAckFwReg == tsGblEnAckFlag);
+    } while (tsGblEnAckFwReg != tsGblEnAckFlag);
     
     return ICSSG_TS_DRV__STS_NERR;    
 }
@@ -210,7 +210,7 @@ int32_t icssgTsDrv_waitFwInit(
         tsStatFwReg = pTsCtrlFwRegs->TS_STAT;
         /* Extract FW init flag */
         fwInitFwReg = (tsStatFwReg & TS_STAT_FW_INIT_MASK) >> TS_STAT_FW_INIT_SHIFT;
-    } while (fwInitFwReg == fwInitFlag);
+    } while (fwInitFwReg != fwInitFlag);
 
     return ICSSG_TS_DRV__STS_NERR;
 }
