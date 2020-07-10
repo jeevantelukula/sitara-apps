@@ -11,6 +11,10 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
+ifeq ($(TARGET_PLATFORM),AM64X)
+SKIPBUILD=1
+endif
+
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
 # so define this here. The PDK libraries may also be unique for individual core

@@ -21,10 +21,11 @@ TARGET      := app_tirtos_mcu1_0_servo_drive_ethcat
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
-CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c
+CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c $(SITARA_DEMO_SOC)/app_ts.c $(SITARA_DEMO_SOC)/app_ts_cfg_mcu_intr.c
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
+EXAMPLEDIR := $(abspath $(SDIR)/../../../../examples)
 
 # FIXME
 ifeq ($(TARGET_PLATFORM),AM65X)
@@ -57,6 +58,12 @@ IDIRS+=$(APPDIR)/../safety_app/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 
+# Add this for time sync
+IDIRS+=$(EXAMPLEDIR)/timesync/driver/include
+IDIRS+=$(EXAMPLEDIR)/timesync/firmware
+IDIRS+=$(APPDIR)/src/$(SITARA_DEMO_SOC)
+LDIRS+=$(EXAMPLEDIR)/timesync/out/$(TARGET_PLATFORM)/R5F/SYSBIOS/release
+
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
 # so define this here.
@@ -80,6 +87,7 @@ STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_servo_drive_ethcat_beckhoff_ssc
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_common
 STATIC_LIBS += app_servo_drive_ethcat_osal
+STATIC_LIBS += ex_timesync_libs_driver
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f

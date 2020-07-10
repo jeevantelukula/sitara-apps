@@ -42,11 +42,15 @@
 
 #define ESC_DC_SYNC0_CYCLETIME_OFFSET   ( 0x09A0 )  /* Register Description: 32Bit Time between two consecutive SYNC0 pulses in ns */
 
-
-
 /* ESC AL Status, current state */
 #define STATE_PREOP     ((uint8_t) 0x02)    /* State PreOP */
 #define STATE_SAFEOP    ((uint8_t) 0x04)    /* State SafeOP */
+#define STATE_OP        ((uint8_t) 0x08)    /* State OP */
+
+/* Determines wether ESC SYNC0 Cycle Time register used for calculating next CMP1 location during initialization:
+    not defined:    ESC SYNC0 CT not:   base CMP1 time for first CMPx (3,4,5,6) is CMP1 read from HW register
+    defined:        ESC SYNC0 CT used:  base CMP1 time for first CMPx (3,4,5,6) is CMP1 read from HW register + calculated CT */
+/* #define USE_SYNC0_CT */
 
 /* Pointer to Shared DMEM containing ESC Registers */
 uint8_t * const pEscRegs = (uint8_t *)CSL_ICSS_G_RAM_SLV_RAM_REGS_BASE;
@@ -63,13 +67,15 @@ void main(void)
     uint32_t tsCtrl, tsStat;
     uint8_t iepTsGblEn;
     uint8_t iepDefInc;
-    uint32_t cmp1Count;
     uint8_t mask = 0;
-    uint64_t nextCmp1;
+    uint64_t countReg, nextCmp1;
     uint64_t nextCmp3, nextCmp4, nextCmp5, nextCmp6;
     uint16_t escCurState;
     uint32_t escSync0CycleTime_nsec;
     uint32_t temp;
+#ifdef USE_SYNC0_CT
+    uint32_t cmp1Count;
+#endif
 
     pTsCtrlFwRegs = &pTsFwRegs->tsCtrlFwRegs;   /* get pointer to firmware control registers */
     pTsCmpFwRegs = &pTsFwRegs->tsCmpFwRegs;     /* get pointer to firmware CMP registers */
@@ -90,7 +96,7 @@ void main(void)
 
     while (1)
     {
-        if (pTsCmpFwRegs->TS_CMP1_COUNT == 0)
+        if (pTsCmpFwRegs->TS_CMP1_COUNT == 0) 
         {
             /* Test mode disabled */
 
@@ -99,7 +105,8 @@ void main(void)
                 escCurState = *(volatile uint16_t *)&pEscRegs[ESC_AL_STATUS_OFFSET] & 
                     ESC_AL_STATUS_CUR_STATE_MASK;
             } while (escCurState != STATE_SAFEOP);
-            
+
+#ifdef USE_SYNC0_CT
             /* Read ESC SYNC0 Cycle Time register */
             escSync0CycleTime_nsec = *(volatile uint32_t *)&pEscRegs[ESC_DC_SYNC0_CYCLETIME_OFFSET];
             
@@ -108,11 +115,23 @@ void main(void)
                 >> CSL_ICSS_G_PR1_IEP0_SLV_GLOBAL_CFG_REG_DEFAULT_INC_SHIFT;
             
             /* Compute CMP1 count corresponding to SYNC0 period */
-            cmp1Count = (escSync0CycleTime_nsec / pTsCtrlFwRegs->TS_IEP_PRD_NSEC) * iepDefInc;
+            cmp1Count = (escSync0CycleTime_nsec / pTsCtrlFwRegs->TS_IEP_PRD_NSEC) * iepDefInc;            
+#endif
+            
+            /* Wait for IEP enable */
+            do {
+                temp = *(volatile uint32_t *)&pIepHwRegs->GLOBAL_CFG_REG & 0x1;
+            } while (temp == 0);
             
             /* Compute count for next CMP1 event */
-            nextCmp1 = *(volatile uint64_t *)&pIepHwRegs->COUNT_REG0;
-            nextCmp1 += cmp1Count;
+            countReg = *(volatile uint64_t *)&pIepHwRegs->COUNT_REG0;            
+            do {
+                nextCmp1 = *(volatile uint64_t *)&pIepHwRegs->CMP1_REG0;
+            } while (nextCmp1 < countReg);
+            
+#ifdef USE_SYNC0_CT
+            nextCmp1 += cmp1Count;            
+#endif
         }
         else
         {
@@ -167,7 +186,7 @@ void main(void)
         
         /* Clear pending events on CMP1, 3,4,5,6 */
         temp = pIepHwRegs->CMP_STATUS_REG;
-        temp &= ~0xFF;
+        temp &= ~0xFFFF;
         temp |= mask;
         pIepHwRegs->CMP_STATUS_REG = temp;
         
@@ -175,7 +194,7 @@ void main(void)
         temp = pIepHwRegs->CMP_CFG_REG;
         temp |= mask << 1;
         pIepHwRegs->CMP_CFG_REG = temp;
-
+        
         /* Set firmware init flag */
         tsStat = pTsCtrlFwRegs->TS_STAT;
         tsStat &= ~TS_STAT_FW_INIT_MASK;
@@ -185,11 +204,22 @@ void main(void)
         /* Read ESC current state */
         escCurState = (pTsCmpFwRegs->TS_CMP1_COUNT == 0) ? 
             *(volatile uint16_t *)&pEscRegs[ESC_AL_STATUS_OFFSET] & ESC_AL_STATUS_CUR_STATE_MASK : STATE_SAFEOP;
-        while (escCurState == STATE_SAFEOP)
+        while ((escCurState == STATE_SAFEOP) || (escCurState == STATE_OP))
         {
+            /* 
+               ESC firmware clears IEP_CMP_CFG_REG CMP3 enable bit.
+               Temporary workaround for this issue it to continusly re-enable IEP_CMP_CFG_REG CMP3.
+               Note a similar workaround would need to be added for other enabled CMPx (4,5,6).
+            */
+            temp = pIepHwRegs->CMP_CFG_REG;
+            temp |= 1<<4;
+            pIepHwRegs->CMP_CFG_REG = temp;
+            
             /* Read CMP status */
-            temp = pIepHwRegs->CMP_STATUS_REG;
-            temp &= mask;
+            temp = pIepHwRegs->CMP_STATUS_REG & mask;
+
+            /* Clear status */
+            pIepHwRegs->CMP_STATUS_REG = temp;           
             
             if (pTsCmpFwRegs->TS_CMP1_COUNT != 0)
             {
@@ -230,14 +260,11 @@ void main(void)
                 *(volatile uint64_t *)&pIepHwRegs->CMP6_REG0 = nextCmp6;
             }
             
-            /* Clear status */
-            pIepHwRegs->CMP_STATUS_REG = temp;
-            
             /* Read ESC current state */
             escCurState = (pTsCmpFwRegs->TS_CMP1_COUNT == 0) ? 
                 *(volatile uint16_t *)&pEscRegs[ESC_AL_STATUS_OFFSET] & ESC_AL_STATUS_CUR_STATE_MASK : STATE_SAFEOP;
         }
-        
+       
         /* Disable events on CMP1, 3,4,5,6 */
         temp = pIepHwRegs->CMP_CFG_REG;
         temp &= ~mask << 1;

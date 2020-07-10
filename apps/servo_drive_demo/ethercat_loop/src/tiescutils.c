@@ -82,6 +82,10 @@ uint32_t mainloop_delta, mainloop_max, pdi_delta, pdi_max, sync_delta, sync_max;
 #endif
 #endif
 
+/* Time Sync */
+#include "app_ts.h"
+#include "tiesctscfg.h"
+
 /* ========================================================================== */
 /*                           Macros & Typedefs                                */
 /* ========================================================================== */
@@ -129,6 +133,8 @@ __attribute__ ((section(".bss:ipcMCBuffSection")))
 __attribute__ ((aligned(128)))={0}
     ;
 
+/* Time Sync object */
+TsObj gTs;
 
 uint8_t task1_init()
 {
@@ -137,6 +143,7 @@ uint8_t task1_init()
 #ifdef ENABLE_PDI_SWI
     SwiP_Params swiParams;
 #endif
+    TsPrmsObj tsPrms;
 
 #ifndef DISABLE_UART_PRINT
     UART_printf("\nVersion - ");
@@ -169,6 +176,20 @@ uint8_t task1_init()
     u8Err = MainInit(); // EtherCAT stack init
 
 #if CiA402_DEVICE
+    /* Initialize Time Sync */
+    memset(&tsPrms, 0, sizeof(tsPrms));
+    tsPrms.icssInstId = TS_ICSSG_INST_ID;
+    tsPrms.pruInstId = TS_PRU_INST_ID;
+    tsPrms.iepPrdNsec = TS_IEP_PRD_NSEC;
+    tsPrms.prdCount[0] = TS_PRD_COUNT1;
+    tsPrms.prdOffset[0] = TS_PRD_OFFSET1;
+    tsPrms.cmpEvtRtrInIntNum[0] = TS_CMPEVT_INTRTR_IN0;
+    tsPrms.cmpEvtRtrOutIntNum[0] = TS_CMPEVT_INTRTR_OUT0;
+    tsPrms.prdCfgMask = TS_CFG_CMP3;
+    u8Err |= appTs_initTs(pruIcss1Handle, &tsPrms, &gTs);
+    /* Start Time Sync */
+    u8Err |= appTs_startTs(&gTs);
+    
     /*Initialize Axes structures*/
     CiA402_Init();
     /*Create basic mapping*/
@@ -249,6 +270,7 @@ void task1(uint32_t arg0, uint32_t arg1)
         /* If task1_init() fails, better loop here as system will not work */
         while (u8Err);
     }
+    
     bRunApplication = TRUE;
 #ifndef BARE_METAL
         do

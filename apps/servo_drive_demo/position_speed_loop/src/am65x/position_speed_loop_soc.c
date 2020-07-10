@@ -282,7 +282,7 @@ int32_t appPositionSpeedLoopStart(void)
     return POSITION_SPEED_LOOP_SOK;
 }
 
-/* Time Sync IRQ handler -- simulate SYNC0 */
+/* Time Sync IRQ handler */
 void tsIrqHandler(void)
 {
     volatile uint32_t intNum;
