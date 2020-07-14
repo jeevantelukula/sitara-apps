@@ -44,6 +44,9 @@
 #include <ti/csl/arch/csl_arch.h>
 #include <ti/csl/csl_mailbox.h>
 #include <ti/csl/csl_rat.h>
+#include <ti/drv/pruss/pruicss.h>
+
+#include <ti/csl/soc/am64x/src/cslr_soc_baseaddress.h>
 
 #define OCSRAM_SIZE_INBYTES 		0x00200000U /*2MB*/
 #define OCSRAM_BASE_ADDRESS 		0x70000000U
@@ -52,13 +55,13 @@
 #define MAILBOX_BASE_ADDRESS        CSL_MAILBOX0_REGS6_BASE
 #define MAILBOX_USER                1U
 
-#define PRUICSS_INSTANCE_ONE   1
-#define PRUICSS_INSTANCE_TWO   2
+#define PRUICSS_INSTANCE_ONE   (PRUICCSS_INSTANCE_ONE)
+#define PRUICSS_INSTANCE_TWO   (PRUICCSS_INSTANCE_TWO)
 
 #if defined(SOC_AM64X)
 /* EEPROM data offset in SPI/QSPI Flash */
 #define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
+#define DEFAULT_PRUICSS_INSTANCE    PRUICCSS_INSTANCE_TWO
 #define TIESC_TASK_STACK_SIZE_MUL          2
 #endif
 

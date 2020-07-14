@@ -82,6 +82,8 @@
 #include <ti/board/src/am64x_evm/include/board_cfg.h>
 #endif
 
+#include <ti/drv/sciclient/sciclient.h>
+
 #if defined (__aarch64__)
 /* A53 */
 #define ARM_INTERRUPT_OFFSET_ICSS0 (286-20)
@@ -107,9 +109,10 @@ extern PRUICSS_Config pruss_config[2 + 1];
 void tiesc_mii_pinmuxConfig (void);
 void tiesc_icssg_route_interrupts (void);
 
-#ifdef ENABLE_ICSS_RESET_ISOLATION
+/* FIXME: This is a workaround function. Need an API from PDK for the same. Tracked by PDK-7103*/
+int32_t tiesc_setPLLClk(uint32_t modId, uint32_t clkId, uint64_t clkRate);
+
 extern bool icssgResetIsolated;
-#endif
 
 /* "safedata" should be defined as a section in linker command file and should be placed in OCSRAM5.*/
 #pragma DATA_SECTION(BlackChannel, ".safedata")
@@ -227,14 +230,12 @@ void bsp_soc_evm_init()
 #ifndef TIESC_EMULATION_PLATFORM
     GPIO_init();
 #endif
-#ifdef ENABLE_ICSS_RESET_ISOLATION
+
     if(icssgResetIsolated==FALSE)
     {
-#endif
-    Board_init(BOARD_INIT_ICSS_ETH_PHY);
-#ifdef ENABLE_ICSS_RESET_ISOLATION
+		/*This configuration is required only after poweron reset. Is not required after a warm reset.*/
+		Board_init(BOARD_INIT_ICSS_ETH_PHY);
     }
-#endif
     delay_us(100);
 
     /* FIXME: Remove this when it is being done in the board library*/
@@ -250,52 +251,49 @@ void bsp_soc_evm_init()
     (*((volatile uint32_t *)(CSL_CTRL_MMR0_CFG0_BASE + CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL))) |= 0x01;
 
     pruIcss1Handle = PRUICSS_create(pruss_config, PRUICSS_INSTANCE);
-#ifdef ENABLE_ICSS_RESET_ISOLATION
+
     if(icssgResetIsolated==FALSE)
     {
-#endif
-
-    /* Selecting MII-RT mode in GPCFG mux */
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG0))) = 0x8000003;
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG1))) = 0x8000003;
+		/* Selecting MII-RT mode in GPCFG mux */
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG0))) = 0x8000003;
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG1))) = 0x8000003;
 
 #ifdef ECAT_RGMII
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_ICSS_G_CFG))) |= (0x28); // ICSS_G_CFG make it RGMII
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_ICSS_G_CFG))) |= (0x28); // ICSS_G_CFG make it RGMII
 #else
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_ICSS_G_CFG))) = (0x10001); // ICSS_G_CFG make it MII
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_ICSS_G_CFG))) = (0x10001); // ICSS_G_CFG make it MII
 #endif
 
 #ifdef ECAT_RGMII
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_RGMII_CFG))) = 0x440000; //RGMII CFG make it 100Mbs
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_CFG_RX_FRMS0))) = 0x05F1001F; //Min frame size
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_CFG_RX_FRMS1))) = 0x05F1001F; //min frame size
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_RGMII_CFG))) = 0x440000; //RGMII CFG make it 100Mbs
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_CFG_RX_FRMS0))) = 0x05F1001F; //Min frame size
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_CFG_RX_FRMS1))) = 0x05F1001F; //min frame size
 
 #ifndef TIESC_EMULATION_PLATFORM
-    CSL_MDIO_phyRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_CFG1_REG, 0x100);
-    CSL_MDIO_phyRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_CFG1_REG, 0x100);
+		CSL_MDIO_phyRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_CFG1_REG, 0x100);
+		CSL_MDIO_phyRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_CFG1_REG, 0x100);
 #endif
 #else
 
 #ifndef TIESC_EMULATION_PLATFORM
-    /* Setting up RX_ER/GPIO pin on the PHY as RX_ERR pin and COL/GPIO pin as LED_3 */
-    MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_GPIO_MUX_CTRL2, 0x60);
-    MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_GPIO_MUX_CTRL2, 0x60);
+		/* Setting up RX_ER/GPIO pin on the PHY as RX_ERR pin and COL/GPIO pin as LED_3 */
+		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_GPIO_MUX_CTRL2, 0x60);
+		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_GPIO_MUX_CTRL2, 0x60);
 
-    /* Disable RGMII interface */
-    MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_RGMIICTL, 0x50);
-    MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_RGMIICTL, 0x50);
+		/* Disable RGMII interface */
+		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_RGMIICTL, 0x50);
+		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_RGMIICTL, 0x50);
 #endif
 
 #endif
 
 
-    PRUICSS_pinMuxConfig(pruIcss1Handle, 0x0);   // PRUSS pinmuxing
-    //Disable PRUs - This is to ensure PRUs are not running when application is not initialized
-    PRUICSS_pruDisable(pruIcss1Handle, 0);
-    PRUICSS_pruDisable(pruIcss1Handle, 1);
-#ifdef ENABLE_ICSS_RESET_ISOLATION
+		PRUICSS_pinMuxConfig(pruIcss1Handle, 0x0);   // PRUSS pinmuxing
+		//Disable PRUs - This is to ensure PRUs are not running when application is not initialized
+		PRUICSS_pruDisable(pruIcss1Handle, 0);
+		PRUICSS_pruDisable(pruIcss1Handle, 1);
     }
-#endif
+
 #if !defined (__aarch64__) && !defined(TIESC_EMULATION_PLATFORM)
     /* Route I2C0 interrupts to R5F */
     /* Main Domain I2C0 events are mapped to MAIN2MCU_INTRTR_LVL_IN_100 */
@@ -303,16 +301,11 @@ void bsp_soc_evm_init()
     /* If 177 is used as I2C interrupt number, MAIN2MCU_INTRTR_LVL_IN_100 should be written to 0xA10048. */
     HW_WR_REG8_RAW(0xA10044, 100);
 
-#ifdef ENABLE_ICSS_RESET_ISOLATION
     if(icssgResetIsolated==FALSE)
     {
-#endif
         /* Route ICSS Interrupts to R5F. */
         tiesc_icssg_route_interrupts();
-
-#ifdef ENABLE_ICSS_RESET_ISOLATION
     }
-#endif
     /* LED's and Rotary Switch are connected to Main Domain I2C0. Reconfigure I2C to use I2C0 of main domain. */
     /* Get the default I2C init configurations */
     I2C_socGetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
@@ -333,6 +326,12 @@ void bsp_soc_evm_init()
     Board_initRotarySwitch();
 
     QSPI_init();
+#endif
+
+#if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
+    tiesc_setPLLClk(TISCI_DEV_PRU_ICSSG0, TISCI_DEV_PRU_ICSSG0_CORE_CLK_PARENT_POSTDIV4_16FF_MAIN_0_HSDIVOUT9_CLK, 200000000);
+#elif (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
+    tiesc_setPLLClk(TISCI_DEV_PRU_ICSSG1, TISCI_DEV_PRU_ICSSG1_CORE_CLK_PARENT_POSTDIV4_16FF_MAIN_0_HSDIVOUT9_CLK, 200000000);
 #endif
 
 }
@@ -953,4 +952,129 @@ void tiesc_mii_pinmuxConfig (void)
             set_pinmux(PINMUX_MAIN_ICSSG0_RGMII1_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_RGMII1_APP2_array)/sizeof(pinmux_t)));
             set_pinmux(PINMUX_MAIN_ICSSG0_RGMII2_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_RGMII2_APP2_array)/sizeof(pinmux_t)));
 #endif
+}
+
+int32_t tiesc_setPLLClk(uint32_t modId, uint32_t clkId, uint64_t clkRate)
+{
+    uint8_t parentId = 0;
+    uint32_t i = 0U;
+    int32_t status   = 0;
+    uint64_t respClkRate = 0;
+    uint32_t clockBaseId = 0U;
+    uint32_t numParents = 0U;
+    uint32_t clockStatus;
+
+    status = Sciclient_pmQueryModuleClkFreq(modId,
+                                        clkId,
+                                        clkRate,
+                                        &respClkRate,
+                                        SCICLIENT_SERVICE_WAIT_FOREVER);
+    if(status == CSL_PASS)
+    {
+        /* Check if the clock is enabled or not */
+        status = Sciclient_pmModuleGetClkStatus(modId,
+                                                clkId,
+                                                &clockStatus,
+                                                SCICLIENT_SERVICE_WAIT_FOREVER);
+    }
+
+    if(status == CSL_PASS)
+    {
+        /* Check if the clock is enabled or not */
+        status = Sciclient_pmGetModuleClkNumParent(modId,
+                                                clkId,
+                                                &numParents,
+                                                SCICLIENT_SERVICE_WAIT_FOREVER);
+    }
+
+    if ((status == CSL_PASS) && (respClkRate == clkRate))
+    {
+        status = Sciclient_pmSetModuleClkFreq(
+                                modId,
+                                clkId,
+                                clkRate,
+                                TISCI_MSG_FLAG_CLOCK_ALLOW_FREQ_CHANGE,
+                                SCICLIENT_SERVICE_WAIT_FOREVER);
+        if (status == CSL_PASS)
+        {
+            if (clockStatus == TISCI_MSG_VALUE_CLOCK_SW_STATE_UNREQ)
+            {
+                /* Enable the clock */
+                status = Sciclient_pmModuleClkRequest(
+                                                    modId,
+                                                    clkId,
+                                                    TISCI_MSG_VALUE_CLOCK_SW_STATE_REQ,
+                                                    0U,
+                                                    SCICLIENT_SERVICE_WAIT_FOREVER);
+            }
+        }
+    }
+    else if (status == CSL_PASS)
+    {
+        /* Try to loop and change parents of the clock */
+        for(i = 0U; i < numParents; i++)
+        {
+            /* Disabling the clock */
+            status = Sciclient_pmModuleClkRequest(modId,
+                                                  clkId,
+                                                  TISCI_MSG_VALUE_CLOCK_SW_STATE_UNREQ,
+                                                  0U,
+                                                  SCICLIENT_SERVICE_WAIT_FOREVER);
+            if (status == CSL_PASS)
+            {
+                clockStatus = TISCI_MSG_VALUE_CLOCK_SW_STATE_UNREQ;
+                /* Setting the new parent */
+                status = Sciclient_pmSetModuleClkParent(
+                                        modId,
+                                        clkId,
+                                        clkId+i+1,
+                                        SCICLIENT_SERVICE_WAIT_FOREVER);
+            }
+            /* Check if the clock can be set to desirable freq. */
+            if (status == CSL_PASS)
+            {
+                status = Sciclient_pmQueryModuleClkFreq(modId,
+                                                        clkId,
+                                                        clkRate,
+                                                        &respClkRate,
+                                                        SCICLIENT_SERVICE_WAIT_FOREVER);
+            }
+            if (status == CSL_PASS)
+            {
+                if(respClkRate == clkRate)
+                {
+                    break;
+                }
+                else
+                {
+                    status = CSL_EFAIL;
+                }
+            }
+            parentId++;
+            clockBaseId++;
+        }
+
+        if (status == CSL_PASS)
+        {
+            /* Set the clock at the desirable frequency*/
+            status = Sciclient_pmSetModuleClkFreq(
+                                    modId,
+                                    clkId,
+                                    clkRate,
+                                    TISCI_MSG_FLAG_CLOCK_ALLOW_FREQ_CHANGE,
+                                    SCICLIENT_SERVICE_WAIT_FOREVER);
+        }
+        if((status == CSL_PASS) && (clockStatus == TISCI_MSG_VALUE_CLOCK_SW_STATE_UNREQ))
+        {
+            /*Enable the clock again */
+            status = Sciclient_pmModuleClkRequest(
+                                                modId,
+                                                clkId,
+                                                TISCI_MSG_VALUE_CLOCK_SW_STATE_REQ,
+                                                0U,
+                                                SCICLIENT_SERVICE_WAIT_FOREVER);
+        }
+    }
+
+    return status;
 }

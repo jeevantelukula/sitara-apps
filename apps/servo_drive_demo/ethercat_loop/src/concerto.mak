@@ -22,11 +22,17 @@ CFLAGS +=-D=ENABLE_ICSS_RESET_ISOLATION
 endif
 
 # Provide list of C files by using built-in macro
+ifeq ($(TARGET_PLATFORM),AM65X)
 CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c $(SITARA_DEMO_SOC)/app_ts.c $(SITARA_DEMO_SOC)/app_ts_cfg_mcu_intr.c
+endif
+ifeq ($(TARGET_PLATFORM),AM64X)
+CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c
+endif
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
 EXAMPLEDIR := $(abspath $(SDIR)/../../../../examples)
+
 
 # FIXME
 ifeq ($(TARGET_PLATFORM),AM65X)
@@ -64,7 +70,7 @@ IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(EXAMPLEDIR)/timesync/driver/include
 IDIRS+=$(EXAMPLEDIR)/timesync/firmware
 IDIRS+=$(APPDIR)/src/$(SITARA_DEMO_SOC)
-LDIRS+=$(EXAMPLEDIR)/timesync/out/$(TARGET_PLATFORM)/R5F/SYSBIOS/release
+LDIRS+=$(EXAMPLEDIR)/timesync/out/$(TARGET_PLATFORM)/R5F/SYSBIOS/$(TARGET_BUILD)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -98,7 +104,10 @@ ADDITIONAL_STATIC_LIBS += ti.csl.aer5f
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.i2c.aer5f
-#ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+# FIXME : gpio library is not yet available from PDK. Once available, library will be included for AM64X and AM65X.
+ifeq ($(TARGET_PLATFORM),AM65X)
+ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+endif
 ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 ADDITIONAL_STATIC_LIBS += sciclient.aer5f
