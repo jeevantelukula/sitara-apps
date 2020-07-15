@@ -12,10 +12,6 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
-ifeq ($(TARGET_PLATFORM),AM64X)
-SKIPBUILD=1
-endif
-
 # Define object name (TARGET) and type (TARGET_TYPE)
 TARGET      := app_tirtos_mcu1_0_pslctrl
 TARGETTYPE  := exe
@@ -46,7 +42,7 @@ IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 
 # Add directory to library search path
-LDIRS+=$(EXAMPLEDIR)/timesync/out/AM65X/R5F/SYSBIOS/release
+LDIRS+=$(EXAMPLEDIR)/timesync/out/$(TARGET_PLATFORM)/R5F/SYSBIOS/$(TARGET_BUILD)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,

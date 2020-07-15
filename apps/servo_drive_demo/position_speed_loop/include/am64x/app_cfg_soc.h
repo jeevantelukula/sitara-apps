@@ -41,10 +41,11 @@
 
 extern pinmuxPerCfg_t gFsiPinCfg[];
 
-/* Simulated ECAT timer */
-#define SIM_ECAT_TIMER_ID           ( 2 )           /* Timer ID */
-#define SIM_ECAT_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define SIM_ECAT_TIMER_PERIOD_USEC  ( 50 )          /* Timer period (usec.) */
-#define SIM_ECAT_TIMER_INTNUM       ( 154 )         /* Timer interrupt, R5F1_0 DMTIMER2 INT */
+/* Time Sync Int */
+ /* CMP_EVT_RTR_OUT_24 -> R5F2_0/R5F2_1_IN_48 */
+#define TS_INT_NUM                  ( CSLR_R5FSS1_CORE0_INTR_CMP_EVENT_INTROUTER0_OUTP_24 )
+#define TS_INT_TYPE                 ( CSL_VIM_INTR_TYPE_PULSE )
+#define TS_INT_MAP                  ( CSL_VIM_INTR_MAP_IRQ )
+#define TS_INT_PRI                  ( 0 ) /* 0(lowest)..15(highest) */
 
 #endif /* APP_CFG_SOC_H_ */

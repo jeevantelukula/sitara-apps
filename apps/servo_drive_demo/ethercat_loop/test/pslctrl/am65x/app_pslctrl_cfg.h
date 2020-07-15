@@ -70,6 +70,12 @@
 /* Simulated SYNC0 pulse, MCU interrupt number */
 #define SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR \
     ( 32 )  /* MAIN2MCU_RTR_PLS_MUX_INTR16 */
+/* Simulated SYNC0 pulse MCU interrupt number + MAIN2MCU_PULSE_INTR0_OUTP_0 offset */
+#define SIM_SYNC0_INTR_NUM \
+    ( SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR + CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 )
+
+/* Compare Event Router configuration base address */
+#define CMPEVTRTR_INTRTR0_CFG_BASE_ADDRESS  ( CSL_CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE )
 
 extern pinmuxPerCfg_t gFsiPinCfg;
 

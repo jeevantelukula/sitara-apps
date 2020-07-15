@@ -42,11 +42,37 @@
 #define TASK_PSL_CTRL_PRI       ( 1 )           /* Task PSL Control priority */
 #define TASK_PSL_CTRL_SZ        ( 2048 )        /* Task PSL Control stack size */
 
-/* Timer parameters -- simulated SYNC pulse */
-#define TIMER_ID                ( 0 )           /* Timer ID */
-#define TIMER_FREQ_HZ           ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
-#define TIMER_PERIOD_USEC       ( 1000 )        /* Timer period (usec.) */
-#define TIMER_INTNUM            ( 152 )         /* Timer interrupt, R5F1_0 DMTIMER0 INT */
+/* Time Sync PRU firmware, ICSSG instance ID */
+/* TODO: move to PRUICCSS_INSTANCE_TWO once EtherCAT has been moved to ICSSG1 */
+#define TS_ICSSG_INST_ID                    ( PRUICCSS_INSTANCE_ONE )
+/* Time Sync PRU firmware, PRU instance ID */
+#define TS_PRU_INST_ID                      ( PRUICCSS_RTU0 )
+
+/* Time Sync IEP0 Period (nsec.) */
+#define TS_IEP_PRD_NSEC                     ( 5 )           /* 5 nsec = 1/200MHz */
+/* Time Sync CMP Periods & Offsets */
+#define TS_PRD_COUNT1                       ( TS_IEP_PRD_NSEC*200000000u/8000u )    /* 125us (8Khz) (CMP3) */
+/* Time Sync CMP Offsets */
+#define TS_PRD_OFFSET1                      ( -TS_IEP_PRD_NSEC*2000 )               /* 10 usec. pre-trigger */
+
+/* Time Sync Compare Event Router input & output */
+/* ICSSG_0_IEP0_CMP_TIMER3_INT (19)/ICSSG_1_IEP0_CMP_TIMER3_INT (51) */
+#define TS_CMPEVT_INTRTR_IN0                ( CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG0_PR1_IEP0_CMP_INTR_REQ_3 )
+#define TS_CMPEVT_INTRTR_OUT0               ( 24 )  /* CMP_EVT_RTR_OUT_24 -> R5F2_0/R5F2_1_IN_48  */
+
+/* Simulated SYNC0 pulse, Time Sync CMP1 Period */
+#define SIM_SYNC0_TS_PRD_COUNT0             ( TS_IEP_PRD_NSEC*200000000u/1000u )    /* 1ms (1KHz) (CMP1) sim Sync0 */
+
+/* Simulated SYNC0 pulse, Compare Event Router input & output */
+/* ICSSG_0_IEP0_CMP_TIMER1_INT (17)/ICSSG_1_IEP0_CMP_TIMER1_INT (49) */
+#define SIM_SYNC0_CMPEVT_INTRTR_IN          ( CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG0_PR1_IEP0_CMP_INTR_REQ_1 )
+#define SIM_SYNC0_CMPEVT_INTRTR_OUT         ( 16 )  /* CMP_EVT_RTR_OUT_16 -> R5F1_0/R5F1_1_IN_48 */
+/* Simulated SYNC0 pulse, MCU interrupt number */
+/* CMP_EVT_RTR_OUT_16 -> R5FSS0_0_IN_48 */
+#define SIM_SYNC0_INTR_NUM                  ( CSLR_R5FSS0_CORE0_INTR_CMP_EVENT_INTROUTER0_OUTP_16 )
+
+/* Compare Event Router configuration base address */
+#define CMPEVTRTR_INTRTR0_CFG_BASE_ADDRESS  ( CSL_CMP_EVENT_INTROUTER0_CFG_BASE )
 
 extern pinmuxPerCfg_t gFsiPinCfg;
 

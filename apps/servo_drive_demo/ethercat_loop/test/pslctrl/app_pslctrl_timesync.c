@@ -148,12 +148,6 @@ int32_t cfgIcssgClkSel(
         regVal |= source & 0x1;
         HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL, regVal);
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_MAX) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG2_CLKSEL);
-        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG2_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG2_CLKSEL, regVal);
-    }
     else {
         return APP_PSLCTRL_TS_SERR_CFG_ICSSG_CLKSEL;
     }
@@ -424,7 +418,7 @@ int32_t appPslCtrlTsInit(
         }
         
         /* Register interrupt */
-        status = registerIntrOnCmpEvent(CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 + pTsPrms->simSync0IntrNum, 
+        status = registerIntrOnCmpEvent(pTsPrms->simSync0IntrNum, 
             pTsPrms->simSync0IsrRoutine);
         if (status != APP_CSLCTRL_CFG_MCU_INTR_SOK) {
             appLogPrintf("appPslCtrlTsInit: registerIntrOnCmpEvent() failed.\n");
@@ -449,7 +443,7 @@ int32_t appPslCtrlTsInit(
     
     if (pTsPrms->simSync0PrdCount != 0) {
         /* Enable interrupt for event from CMP Event Router */
-        enableIntrOnPruEvent(CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 + pTsPrms->simSync0IntrNum);
+        enableIntrOnPruEvent(pTsPrms->simSync0IntrNum);
     }
 
     return APP_PSLCTRL_TS_SOK;

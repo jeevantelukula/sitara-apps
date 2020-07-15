@@ -48,9 +48,8 @@
 /* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
 //#define _CTRL_SYN_ENABLE
 
-/* Timer -- simulate ECAT interrupt */
-void timerTickFxn(void *arg);   /* Timer tick function */
-uint32_t gTimerIsrCnt=0;
+/* Time Sync interrupt */
+uint32_t gTsIsrCnt=0;
 
 /* 
  * PRU IRQ handlers
@@ -60,7 +59,10 @@ __attribute__((interrupt("IRQ")))   void fsiRxInt2IrqHandler(void);
 __attribute__((interrupt("IRQ")))   void fsiTxInt1IrqHandler(void);
 __attribute__((interrupt("IRQ")))   void fsiTxInt2IrqHandler(void);
 
-// debug
+/* Time Sync IRQ handler */
+__attribute__((interrupt("IRQ")))   void tsIrqHandler(void);
+
+/* FSI interrupt statistics counters */
 uint32_t gFsiRxInt1IsrCnt=0;
 uint32_t gFsiRxInt2IsrCnt=0;
 uint32_t gFsiTxInt1IsrCnt=0;
@@ -76,15 +78,11 @@ uint32_t gFsiRxBase = CSL_FSIRX0_CFG_BASE;
 /* Global ping frame counter for handshake */
 volatile uint8_t numPingFrames = 0;
 volatile uint32_t numDataFrames = 0;
- 
-/* Timer handle -- simulate ECAT interrupt */
-TimerP_Handle gTimerHandle;
 
 /* Initialization function */
 int32_t appPositionSpeedLoopInit(void)
 {
     McuIntrRegPrms mcuIntrRegPrms;
-    TimerP_Params timerParams;
     int32_t status;
 
     // initialize system parameters
@@ -170,36 +168,23 @@ int32_t appPositionSpeedLoopInit(void)
     if (status != CFG_MCU_INTR_SOK) {
         return POSITION_SPEED_LOOP_SERR_INIT;
     } 
-      
+    
+    /* Configure MCU interrupt for Time Sync */
+    mcuIntrRegPrms.intrNum = TS_INT_NUM;
+    mcuIntrRegPrms.intrType = TS_INT_TYPE;
+    mcuIntrRegPrms.intrMap = TS_INT_MAP;
+    mcuIntrRegPrms.intrPri = TS_INT_PRI;
+    mcuIntrRegPrms.isrRoutine = &tsIrqHandler;
+    status = McuIntc_cfgIntr(&mcuIntrRegPrms, MCU_INTR_IDX(4));
+    if (status != CFG_MCU_INTR_SOK) {
+        return POSITION_SPEED_LOOP_SERR_INIT;
+    }
+
     /* Enable Host interrupts for events from PRU */
     McuIntc_enableIntr(MCU_INTR_IDX(0), true);
     McuIntc_enableIntr(MCU_INTR_IDX(1), true);
     McuIntc_enableIntr(MCU_INTR_IDX(2), true);
     McuIntc_enableIntr(MCU_INTR_IDX(3), true);
-    
-    /*
-        Set up timer -- simulate ECAT interrupt
-    */
-    
-    // TODO: update to use CSL-FL DM Timer + VIM configuration
-    /* Timer parameters */
-    TimerP_Params_init(&timerParams);
-    timerParams.name = "simEcatTimer";
-    timerParams.periodType = TimerP_PeriodType_MICROSECS;
-    timerParams.extfreqLo = SIM_ECAT_TIMER_FREQ_HZ;
-    timerParams.extfreqHi = 0;
-    timerParams.startMode = TimerP_StartMode_USER;
-    timerParams.runMode = TimerP_RunMode_CONTINUOUS;
-    timerParams.period = SIM_ECAT_TIMER_PERIOD_USEC;
-    timerParams.arg = 0;
-    timerParams.intNum = SIM_ECAT_TIMER_INTNUM;
-    
-    /* Create timer -- simulate ECAT interrupt */
-    gTimerHandle = TimerP_create(SIM_ECAT_TIMER_ID, (TimerP_Fxn)&timerTickFxn, &timerParams);
-    if (gTimerHandle == NULL)
-    {
-        return POSITION_SPEED_LOOP_SERR_INIT;
-    }
 
     return POSITION_SPEED_LOOP_SOK;
 }
@@ -218,10 +203,10 @@ int32_t appPositionSpeedLoopStart(void)
 
     FSI_setupTRxFrameData(gFsiTxBase, gFsiRxBase);
 
-    /* Start timer */
-    TimerP_start(gTimerHandle);
+    /* Enable Time Sync Interrupts */
+    McuIntc_enableIntr(MCU_INTR_IDX(4), true);
 
-    appLogPrintf("APP: Timer started !!!\n");
+    appLogPrintf("APP: Time Sync started !!!\n");
 
     /* move to background task */
     while (run_flag) {
@@ -241,28 +226,42 @@ int32_t appPositionSpeedLoopStart(void)
     return POSITION_SPEED_LOOP_SOK;
 }
 
-/* Timer tick function -- simulate ECAT interrupt */
-void timerTickFxn(void *arg)
+/* Time Sync IRQ handler -- simulate SYNC0 */
+void tsIrqHandler(void)
 {
-    // debug
-    gTimerIsrCnt++;
+    volatile uint32_t intNum;
+    int32_t status;
 
-    buildLevel7_9();
-    FSI_updateTransmissionData();
-
-    FSI_setTxBufferPtr(gFsiTxBase, 0U);
-    FSI_setTxFrameType(gFsiTxBase, 0x3);
-    FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
-
-    /* Application level function used to avoid RMW for Frame Tag and User Data update */
-    FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
-
-    FSI_startTxTransmit(gFsiTxBase);
+    /* Update statistics */
+    gTsIsrCnt++;
     
-    /* Inform background task to transmit latest actual values to EtherCAT   */
-    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
-    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
-    gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
+    status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
+        CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
+    if (status == CSL_PASS)
+    {
+        /* Clear pulse-type interrupt before executing ISR code */
+        CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
+    
+        buildLevel7_9();
+        FSI_updateTransmissionData();
+
+        FSI_setTxBufferPtr(gFsiTxBase, 0U);
+        FSI_setTxFrameType(gFsiTxBase, 0x3);
+        FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
+
+        /* Application level function used to avoid RMW for Frame Tag and User Data update */
+        FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
+
+        FSI_startTxTransmit(gFsiTxBase);
+    
+        /* Inform background task to transmit latest actual values to EtherCAT   */
+        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
+        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
+        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
+
+        /* Acknowledge interrupt servicing */
+        CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );
+    }
 }
 
 /* IRQ handler, FSI RX INT1 */
@@ -272,7 +271,7 @@ void fsiRxInt1IrqHandler(void)
     uint16_t fsiRxStatus = 0;
     int32_t status;
 
-    // debug
+    /* Update statistics */
     gFsiRxInt1IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -312,7 +311,7 @@ void fsiRxInt2IrqHandler(void)
     uint16_t fsiRxStatus = 0;
     int32_t status;
 
-    // debug
+    /* Update statistics */
     gFsiRxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -339,7 +338,7 @@ void fsiTxInt1IrqHandler(void)
     uint16_t fsiTxStatus = 0;
     int32_t status;
 
-    // debug
+    /* Update statistics */
     gFsiTxInt1IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -366,7 +365,7 @@ void fsiTxInt2IrqHandler(void)
     uint16_t fsiTxStatus = 0;
     int32_t status;
 
-    // debug
+    /* Update statistics */
     gFsiTxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 

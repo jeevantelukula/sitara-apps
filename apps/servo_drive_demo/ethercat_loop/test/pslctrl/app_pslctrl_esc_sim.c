@@ -64,9 +64,6 @@ int32_t escFwRegsInit(
     else if (icssInstId == PRUICCSS_INSTANCE_TWO) {
         pEscRegs = (uint8_t *)CSL_PRU_ICSSG1_RAM_SLV_RAM_BASE;
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_MAX) {
-        pEscRegs = (uint8_t *)CSL_PRU_ICSSG2_RAM_SLV_RAM_BASE;
-    }
     else {
         return APP_PSLCTRL_ESC_INV_PRMS;
     }

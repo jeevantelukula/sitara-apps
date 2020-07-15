@@ -209,7 +209,7 @@ void taskPslCtrl(uint32_t arg0, uint32_t arg1)
     tsPrms.simSync0PrdCount = SIM_SYNC0_TS_PRD_COUNT0;
     tsPrms.simSync0CmpEvtRtrInIntNum = SIM_SYNC0_CMPEVT_INTRTR_IN;
     tsPrms.simSync0CmpEvtRtrOutIntNum = SIM_SYNC0_CMPEVT_INTRTR_OUT;
-    tsPrms.simSync0IntrNum = SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR;
+    tsPrms.simSync0IntrNum = SIM_SYNC0_INTR_NUM;
     tsPrms.simSync0IsrRoutine = simSync0IrqHandler;
     status = appPslCtrlTsInit(&tsPrms, &gTs);
     if (status != APP_PSLCTRL_TS_SOK)
