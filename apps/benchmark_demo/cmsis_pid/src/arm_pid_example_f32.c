@@ -162,14 +162,12 @@ arm_pid_instance_f32 myPIDInstance __attribute__((section(".testInData")));
 
 int32_t main(void)
 {
-  uint32_t i, j;
-  float pidOutput;
+    uint32_t i, j;
+    float pidOutput;
 
 #ifndef IO_CONSOLE
 	Board_initCfg boardCfg;
-#endif
-    
-#ifndef IO_CONSOLE
+
     boardCfg = BOARD_INIT_PINMUX_CONFIG |
                BOARD_INIT_MODULE_CLOCK  |
                BOARD_INIT_UART_STDIO;
@@ -189,7 +187,6 @@ int32_t main(void)
   myPIDInstance.Kp = 350;
   myPIDInstance.Ki = 300;
   myPIDInstance.Kd = 50;
-  pidOutput = 0.1;
   
   MCBENCH_log("\n START PID benchmark\n");
 
@@ -207,16 +204,20 @@ int32_t main(void)
 #endif        
     for (j=0; j<NUM_PID_LOOP; j++)
       pidOutput = arm_pid_f32(&myPIDInstance, 0.1);
+
 #if PROFILE == COMPONENTS
   /*********** Compute benchmark in cycles ********/
     gEndTime = readPmu();
     gTotalTime = gEndTime - gStartTime - gOverheadTime;
     MCBENCH_log("\n Test used %d cycles\n", (uint32_t)gTotalTime);
-    MCBENCH_log("PID output = %d\n", (int32_t)(pidOutput));
+#endif        
   }
 
-#endif        
+  MCBENCH_log("PID output = %d\n", (int32_t)(pidOutput));
   MCBENCH_log("\n END PID benchmark\n");
+  /* MCBENCH_log is blank, if the DEBUG_PRINT is not defined in benchmark_log.h */ 
+  /* supress the unused variable build warning */
+  (void) pidOutput;
 
   /* ----------------------------------------------------------------------
   ** Compare the generated output against the reference output computed
