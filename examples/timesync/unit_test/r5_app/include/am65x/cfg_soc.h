@@ -41,11 +41,10 @@
 #define TEST_PRU_INST_ID                ( PRUICCSS_RTU0 )
 
 /* Compare event router i*/
-#define CMPEVT3_INTRTR_IN    ( 35 )  /* ICSSG_0_IEP0_CMP_TIMER3_INT */
-//#define CMPEVT3_INTRTR_IN    ( 67 )  /* ICSSG_1_IEP0_CMP_TIMER3_INT */
+#define CMPEVT7_INTRTR_IN    ( 39 )  /* ICSSG_0_IEP0_CMP_TIMER7_INT */
 
 /* Compare event router output */
-#define CMPEVT3_INTRTR_OUT   ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
+#define CMPEVT7_INTRTR_OUT   ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
 
 /* Compare event router ouput R5 interrupt */
 #define TS_CMPEVT_INTRTR_R5 ( 224+32 )

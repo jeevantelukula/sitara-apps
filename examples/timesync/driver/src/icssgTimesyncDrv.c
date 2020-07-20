@@ -215,27 +215,6 @@ int32_t icssgTsDrv_waitFwInit(
     return ICSSG_TS_DRV__STS_NERR;
 }
 
-/* Configure TS IEP0 Period (nsec) */
-int32_t icssgTsDrv_cfgTsIepPrdNsec(
-    IcssgTsDrv_Handle handle,
-    uint32_t tsIepPrdNsec
-)
-{
-    IcssgTsDrv_TsDrvObj *pTsDrv;
-    IcssgTsDrv_TsCtrlObj *pTsCtrl;
-    TsCtrlFwRegs *pTsCtrlFwRegs;
-
-    /* Get pointer to IEP TS control registers */
-    pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
-    pTsCtrl = &pTsDrv->tsCtrl;
-    pTsCtrlFwRegs = pTsCtrl->pTsCtrlFwRegs;
-
-    /* Write TS IEP Perdiod FW register */
-    pTsCtrlFwRegs->TS_IEP_PRD_NSEC = tsIepPrdNsec;
-
-    return ICSSG_TS_DRV__STS_NERR;
-}
-
 /* Configure TS IEP0 Period Counts & Offsets */
 int32_t icssgTsDrv_cfgTsPrdCount(
     IcssgTsDrv_Handle handle,
@@ -254,8 +233,8 @@ int32_t icssgTsDrv_cfgTsPrdCount(
     /* Get pointer to IEP TS control registers */
     pTsDrv = (IcssgTsDrv_TsDrvObj *)handle;
     pTsCmpFwRegs = pTsDrv->tsCmpCtrl.pTsCmpFwRegs;
-    pTsCmpCountFwReg = &pTsCmpFwRegs->TS_CMP3_COUNT;
-    pTsCmpOffsetFwReg = &pTsCmpFwRegs->TS_CMP3_OFFSET;
+    pTsCmpCountFwReg = &pTsCmpFwRegs->TS_CMP7_COUNT;
+    pTsCmpOffsetFwReg = &pTsCmpFwRegs->TS_CMP7_OFFSET;
 
     /* Configure IEP CMP Period & Offset */
     for (i = 0; i < ICSSG_TS_DRV__NUM_IEP_CMP; i++)

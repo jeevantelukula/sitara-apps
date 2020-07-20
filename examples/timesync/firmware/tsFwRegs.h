@@ -51,21 +51,20 @@ typedef struct TsCtrlFwRegs_s
 {
     volatile uint32_t  TS_CTRL;             /* TS Control Fw Reg */
     volatile uint32_t  TS_STAT;             /* TS Status Fw Reg */
-    volatile uint32_t  TS_IEP_PRD_NSEC;     /* TS IEP period in nsec */
 } TsCtrlFwRegs;
 
 /* TS Firmware Compare registers */
 typedef struct TsCmpFwRegs_s
 {
     volatile uint32_t  TS_CMP1_COUNT;       /* TS CMP1 Fw Reg */
-    volatile uint32_t  TS_CMP3_COUNT;       /* TS CMP3 Fw Reg Count Fw 1 */
-    volatile uint32_t  TS_CMP4_COUNT;       /* TS CMP4 Fw Reg Count Fw Reg */
-    volatile uint32_t  TS_CMP5_COUNT;       /* TS CMP5 Fw Reg Count Fw Reg */
-    volatile uint32_t  TS_CMP6_COUNT;       /* TS CMP6 Fw Reg Count Fw Reg */
-    volatile int32_t   TS_CMP3_OFFSET;      /* TS CMP3 Fw Reg Offset Fw Reg */
-    volatile int32_t   TS_CMP4_OFFSET;      /* TS CMP4 Fw Reg Offset Fw Reg */
-    volatile int32_t   TS_CMP5_OFFSET;      /* TS CMP5 Fw Reg Offset Fw Reg */
-    volatile int32_t   TS_CMP6_OFFSET;      /* TS CMP6 Fw Reg Offset Fw Reg */
+    volatile uint32_t  TS_CMP7_COUNT;       /* TS CMP7 Fw Reg Count Fw 1 */
+    volatile uint32_t  TS_CMP8_COUNT;       /* TS CMP8 Fw Reg Count Fw Reg */
+    volatile uint32_t  TS_CMP9_COUNT;       /* TS CMP9 Fw Reg Count Fw Reg */
+    volatile uint32_t  TS_CMP10_COUNT;      /* TS CMP10 Fw Reg Count Fw Reg */
+    volatile int32_t   TS_CMP7_OFFSET;      /* TS CMP7 Fw Reg Offset Fw Reg */
+    volatile int32_t   TS_CMP8_OFFSET;      /* TS CMP8 Fw Reg Offset Fw Reg */
+    volatile int32_t   TS_CMP9_OFFSET;      /* TS CMP9 Fw Reg Offset Fw Reg */
+    volatile int32_t   TS_CMP10_OFFSET;     /* TS CMP10 Fw Reg Offset Fw Reg */
 } TsCmpFwRegs;
 
 /* TS Firmware registers */

@@ -58,16 +58,13 @@
 /* Task priorities */
 #define TASK_SYSINIT_PRI                ( 3 )
 
-/* Test TS IEP0 Period (nsec.) */
-#define TEST_TS_IEP_PRD_NSEC            ( 5 )   /* 5 nsec = 1/200MHz */
-
 /* Test TS CMP periods */
 /* IEP frequency = 200 MHz, TS frequency = 32 kHz */
 #define TEST_PRD_COUNT0         ( 200000000u/1000u   )    /* 1ms     (1KHz) - sim sync0 */
-#define TEST_PRD_COUNT1         ( 200000000u/100000u )    /* 10us    (100Khz) (CMP3)    */
-#define TEST_PRD_COUNT2         ( 200000000u/32000u  )    /* 31.25us (32Khz)  (CMP4)    */
-#define TEST_PRD_COUNT3         ( 200000000u/8000u   )    /* 125us   (8Khz)   (CMP5)    */
-#define TEST_PRD_COUNT4         ( 200000000u/1000u   )    /* 1ms     (1Khz)   (CMP6)    */
+#define TEST_PRD_COUNT1         ( 200000000u/100000u )    /* 10us    (100Khz) (CMP7)    */
+#define TEST_PRD_COUNT2         ( 200000000u/32000u  )    /* 31.25us (32Khz)  (CMP8)    */
+#define TEST_PRD_COUNT3         ( 200000000u/8000u   )    /* 125us   (8Khz)   (CMP9)    */
+#define TEST_PRD_COUNT4         ( 200000000u/1000u   )    /* 1ms     (1Khz)   (CMP10)   */
 
 /* Test TS CMP offsets */
 #define TEST_PRD_OFFSET1        (     0 )  /* No offset */
@@ -174,7 +171,6 @@ Void taskSysInitFxn(
     /* Initialize PRU for TS */
     tsPrms.icssInstId = TEST_ICSSG_INST_ID;
     tsPrms.pruInstId = TEST_PRU_INST_ID;
-    tsPrms.iepPrdNsec = TEST_TS_IEP_PRD_NSEC;
     tsPrms.prdCount[0] = TEST_PRD_COUNT1;
     tsPrms.prdCount[1] = TEST_PRD_COUNT2;
     tsPrms.prdCount[2] = TEST_PRD_COUNT3;
@@ -250,10 +246,10 @@ Int main()
 /* PRU TS IRQ handler */
 void pruTsIrqHandler(uintptr_t foobar)
 {
-    uint32_t curIep, curCmp3, thisDelay;
+    uint32_t curIep, curCmp7, thisDelay;
     
     /* Benchmark */
-    icssgTsDrv_readIepCmp(gTestTs.hTsDrv, &curIep, &curCmp3, NULL, NULL, NULL);
+    icssgTsDrv_readIepCmp(gTestTs.hTsDrv, &curIep, &curCmp7, NULL, NULL, NULL);
     
     /* Clear interrupt on Host */
     Osal_ClearInterrupt(TS_CMPEVT_INTRTR_R5, TS_CMPEVT_INTRTR_R5);
@@ -264,7 +260,7 @@ void pruTsIrqHandler(uintptr_t foobar)
     } else {
         thisDelay = curIep - lastCmp;
         if (thisDelay > 0x80000000u) {
-            errorDelay++; /* Error computing delay, we read curCmp3 before it was updated by fw */
+            errorDelay++; /* Error computing delay, we read curCmp7 before it was updated by fw */
         } else {
             if (numDelay == 0) {
                 minDelay = maxDelay = totDelay = thisDelay;
@@ -280,7 +276,7 @@ void pruTsIrqHandler(uintptr_t foobar)
             numDelay++;
         }
     }
-    lastCmp = curCmp3;
+    lastCmp = curCmp7;
     interrupts++;
 }
 

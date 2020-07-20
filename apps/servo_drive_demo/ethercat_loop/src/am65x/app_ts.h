@@ -49,18 +49,17 @@
 #define APP_TS_SERR_INIT                ( -6 )  /* initialize TS error */ 
 
 /* Bits for TS CMP configuration mask */
-#define TS_CFG_CMP3                     ( 1<<0 )
-#define TS_CFG_CMP4                     ( 1<<1 )
-#define TS_CFG_CMP5                     ( 1<<2 )
-#define TS_CFG_CMP6                     ( 1<<3 )
+#define TS_CFG_CMP7                     ( 1<<0 )
+#define TS_CFG_CMP8                     ( 1<<1 )
+#define TS_CFG_CMP9                     ( 1<<2 )
+#define TS_CFG_CMP10                    ( 1<<3 )
 #define TS_CFG_CMP_ALL  \
-    ( TS_CFG_CMP3 | TS_CFG_CMP4 | TS_CFG_CMP5 | TS_CFG_CMP6 )
+    ( TS_CFG_CMP7 | TS_CFG_CMP8 | TS_CFG_CMP9 | TS_CFG_CMP10 )
 
 /* Time Sync configuration parameters */
 typedef struct TsPrmsObj_s {
     PRUICSS_MaxInstances icssInstId;    /* ICSSG hardware instance ID */
     PRUSS_PruCores pruInstId;           /* PRU hardware instance ID */
-    uint32_t iepPrdNsec;                /* IEP Period (nsec) */
 
     /* Period Count */
     uint32_t prdCount[ICSSG_TS_DRV__NUM_IEP_CMP];

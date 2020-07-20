@@ -180,12 +180,11 @@ uint8_t task1_init()
     memset(&tsPrms, 0, sizeof(tsPrms));
     tsPrms.icssInstId = TS_ICSSG_INST_ID;
     tsPrms.pruInstId = TS_PRU_INST_ID;
-    tsPrms.iepPrdNsec = TS_IEP_PRD_NSEC;
     tsPrms.prdCount[0] = TS_PRD_COUNT1;
     tsPrms.prdOffset[0] = TS_PRD_OFFSET1;
     tsPrms.cmpEvtRtrInIntNum[0] = TS_CMPEVT_INTRTR_IN0;
     tsPrms.cmpEvtRtrOutIntNum[0] = TS_CMPEVT_INTRTR_OUT0;
-    tsPrms.prdCfgMask = TS_CFG_CMP3;
+    tsPrms.prdCfgMask = TS_CFG_CMP7;
     u8Err |= appTs_initTs(pruIcss1Handle, &tsPrms, &gTs);
     /* Start Time Sync */
     u8Err |= appTs_startTs(&gTs);
@@ -270,6 +269,10 @@ void task1(uint32_t arg0, uint32_t arg1)
         /* If task1_init() fails, better loop here as system will not work */
         while (u8Err);
     }
+
+    /* Start Time Sync */
+    //u8Err |= appTs_startTs(&gTs);
+    //while (u8Err);
     
     bRunApplication = TRUE;
 #ifndef BARE_METAL

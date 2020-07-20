@@ -45,16 +45,15 @@
 /* TS control defaults */
 #define DEF_TS_CTRL             ( 0x00000000 )  /* TS disabled */
 #define DEF_TS_STAT             ( 0x00000000 )  /* FW uninitialized */
-#define DEF_TS_IEP_PRD_NSEC     ( 0x00000005 )  /* TS IEP period in nanoseconds */
 
 /* IEP clock @ 200 MHz */
 #define DEF_TS_CMP_COUNT        ( 0 )   /* disabled */
 
 /* IEP clock @ 200 MHz */
-#define DEF_TS_CMP3_OFFSET      ( 0 )   /* 0 usec before Sync0 */
-#define DEF_TS_CMP4_OFFSET      ( 0 )       /* 0 usec before Sync0 */
-#define DEF_TS_CMP5_OFFSET      ( 0 )       /* 0 usec before Sync0 */
-#define DEF_TS_CMP6_OFFSET      ( 0 )       /* 0 usec before Sync0 */
+#define DEF_TS_CMP7_OFFSET      ( 0 )   /* 0 usec before Sync0 */
+#define DEF_TS_CMP8_OFFSET      ( 0 )   /* 0 usec before Sync0 */
+#define DEF_TS_CMP9_OFFSET      ( 0 )   /* 0 usec before Sync0 */
+#define DEF_TS_CMP10_OFFSET     ( 0 )   /* 0 usec before Sync0 */
 
 /* TS FW register defaults */
 #pragma RETAIN(gTsFwRegs)
@@ -71,17 +70,16 @@ TsFwRegs gTsFwRegs =
     {
         DEF_TS_CTRL,            /* TS_CTRL */
         DEF_TS_STAT,            /* TS_STAT */
-        DEF_TS_IEP_PRD_NSEC     /* TS_IEP_NSEC */
     },
     {
         DEF_TS_CMP_COUNT,       /* TS_CMP1_COUNT */
-        DEF_TS_CMP_COUNT,       /* TS_CMP3_COUNT */
-        DEF_TS_CMP_COUNT,       /* TS_CMP4_COUNT */
-        DEF_TS_CMP_COUNT,       /* TS_CMP5_COUNT */
-        DEF_TS_CMP_COUNT,       /* TS_CMP6_COUNT */
-        DEF_TS_CMP3_OFFSET,     /* TS_CMP3_OFFSET */
-        DEF_TS_CMP4_OFFSET,     /* TS_CMP4_OFFSET */
-        DEF_TS_CMP5_OFFSET,     /* TS_CMP5_OFFSET */
-        DEF_TS_CMP6_OFFSET      /* TS_CMP6_OFFSET */
+        DEF_TS_CMP_COUNT,       /* TS_CMP7_COUNT */
+        DEF_TS_CMP_COUNT,       /* TS_CMP8_COUNT */
+        DEF_TS_CMP_COUNT,       /* TS_CMP9_COUNT */
+        DEF_TS_CMP_COUNT,       /* TS_CMP10_COUNT */
+        DEF_TS_CMP7_OFFSET,     /* TS_CMP7_OFFSET */
+        DEF_TS_CMP8_OFFSET,     /* TS_CMP8_OFFSET */
+        DEF_TS_CMP9_OFFSET,     /* TS_CMP9_OFFSET */
+        DEF_TS_CMP10_OFFSET     /* TS_CMP10_OFFSET */
     }
 };

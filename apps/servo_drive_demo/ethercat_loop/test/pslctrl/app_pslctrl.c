@@ -200,12 +200,11 @@ void taskPslCtrl(uint32_t arg0, uint32_t arg1)
     memset(&tsPrms, 0, sizeof(tsPrms));
     tsPrms.icssInstId = TS_ICSSG_INST_ID;
     tsPrms.pruInstId = TS_PRU_INST_ID;
-    tsPrms.iepPrdNsec = TS_IEP_PRD_NSEC;
     tsPrms.prdCount[0] = TS_PRD_COUNT1;
     tsPrms.prdOffset[0] = TS_PRD_OFFSET1;
     tsPrms.cmpEvtRtrInIntNum[0] = TS_CMPEVT_INTRTR_IN0;
     tsPrms.cmpEvtRtrOutIntNum[0] = TS_CMPEVT_INTRTR_OUT0;
-    tsPrms.prdCfgMask = TS_CFG_CMP3;
+    tsPrms.prdCfgMask = TS_CFG_CMP7;
     tsPrms.simSync0PrdCount = SIM_SYNC0_TS_PRD_COUNT0;
     tsPrms.simSync0CmpEvtRtrInIntNum = SIM_SYNC0_CMPEVT_INTRTR_IN;
     tsPrms.simSync0CmpEvtRtrOutIntNum = SIM_SYNC0_CMPEVT_INTRTR_OUT;

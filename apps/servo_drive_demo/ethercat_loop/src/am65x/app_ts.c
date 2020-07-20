@@ -236,12 +236,6 @@ int32_t appTs_initIcssgTsDrv(
         return APP_TS_SERR_INIT_TS_DRV;
     }
 
-    /* Set TS IEP0 Period (nsec) */
-    status = icssgTsDrv_cfgTsIepPrdNsec(hTsDrv, pTsPrms->iepPrdNsec);
-    if (status != ICSSG_TS_DRV__STS_NERR) {
-        return APP_TS_SERR_INIT_TS_DRV;
-    }
-
     /* Set non-default configuration */
 
     /* Configure IEP0 Period Counts & Offsets */

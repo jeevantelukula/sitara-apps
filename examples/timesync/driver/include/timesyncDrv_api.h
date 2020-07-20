@@ -138,21 +138,6 @@ int32_t icssgTsDrv_waitFwInit(
 );
 
 /**
- *  @name   icssgTsDrv_cfgTsIepPrdNsec
- *  @brief  Configure TS IEP0 Period (nsec)
- *
- *  @param[in]  handle          TS DRV instance handle
- *  @param[in]  tsIepPrdNsec    TS IEP0 period (nsec)
- *
- *  @retval Status code
- *
- */
-int32_t icssgTsDrv_cfgTsIepPrdNsec(
-    IcssgTsDrv_Handle handle,
-    uint32_t tsIepPrdNsec
-);
-
-/**
  *  @name   icssgTsDrv_cfgTsPrdCount
  *  @brief  Configure TS IEP0 Period Counts & Offsets
  *

@@ -41,12 +41,13 @@
 /* Time Sync IEP0 Period (nsec.) */
 #define TS_IEP_PRD_NSEC         ( 5 )           /* 5 nsec = 1/200MHz */
 /* Time Sync CMP Periods & Offsets */
-#define TS_PRD_COUNT1           ( TS_IEP_PRD_NSEC*200000000u/8000u )    /* 125us   (8Khz)   (CMP3)              */
+#define TS_PRD_COUNT1           ( TS_IEP_PRD_NSEC*200000000u/8000u )    /* 125us   (8Khz)   (CMP7)              */
 /* Time Sync CMP Offsets */
-#define TS_PRD_OFFSET1          ( -TS_IEP_PRD_NSEC*2000 )               /* 10 usec. pre-trigger */
+#define TS_PRD_OFFSET1          ( 0 )
+/* #define TS_PRD_OFFSET1          ( -TS_IEP_PRD_NSEC*2000 ) */              /* 10 usec. pre-trigger */
 
 /* Time Sync Compare Event Router input & output */
-#define TS_CMPEVT_INTRTR_IN0    ( 35 )  /* ICSSG_0_IEP0_CMP_TIMER3_INT */
+#define TS_CMPEVT_INTRTR_IN0    ( 39 )  /* ICSSG_0_IEP0_CMP_TIMER7_INT */
 #define TS_CMPEVT_INTRTR_OUT0   ( 17 )  /* COMPEVT_RTR_COMP_17_EVT */
 
 #endif /* _TIESC_TS_CFG_H_ */

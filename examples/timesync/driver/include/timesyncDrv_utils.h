@@ -56,10 +56,10 @@ void icssgTsDrv_startIepCount(
  *
  *  @param[in]  handle          TS DRV instance handle
  *  @param[in]  curIep          Address of returned IEP value (call by reference)
- *  @param[in]  curCmp3         Address of returned CMP3 value (call by reference)
- *  @param[in]  curCmp4         Address of returned CMP4 value (call by reference)
- *  @param[in]  curCmp5         Address of returned CMP5 value (call by reference)
- *  @param[in]  curCmp6         Address of returned CMP6 value (call by reference)
+ *  @param[in]  curCmp7         Address of returned CMP7 value (call by reference)
+ *  @param[in]  curCmp8         Address of returned CMP8 value (call by reference)
+ *  @param[in]  curCmp9         Address of returned CMP9 value (call by reference)
+ *  @param[in]  curCmp10        Address of returned CMP10 value (call by reference)
  *
  *  @retval none
  *
@@ -67,10 +67,10 @@ void icssgTsDrv_startIepCount(
 void icssgTsDrv_readIepCmp(
     IcssgTsDrv_Handle handle,
     uint32_t   *curIep,
-    uint32_t   *curCmp3,
-    uint32_t   *curCmp4,
-    uint32_t   *curCmp5,
-    uint32_t   *curCmp6
+    uint32_t   *curCmp7,
+    uint32_t   *curCmp8,
+    uint32_t   *curCmp9,
+    uint32_t   *curCmp10
 );
 
 #endif /* _TIMESYNC_DRV_UTILS_H_ */

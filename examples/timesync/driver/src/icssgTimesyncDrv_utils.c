@@ -56,10 +56,10 @@ void icssgTsDrv_startIepCount(
 void icssgTsDrv_readIepCmp(
     IcssgTsDrv_Handle handle,
     uint32_t   *curIep,
-    uint32_t   *curCmp3,
-    uint32_t   *curCmp4,
-    uint32_t   *curCmp5,
-    uint32_t   *curCmp6
+    uint32_t   *curCmp7,
+    uint32_t   *curCmp8,
+    uint32_t   *curCmp9,
+    uint32_t   *curCmp10
 )
 {
     IcssgTsDrv_TsDrvObj *pTsDrv;
@@ -73,17 +73,17 @@ void icssgTsDrv_readIepCmp(
     if (curIep) {
         *curIep = pIepHwRegs->COUNT_REG0;
     }
-    if (curCmp3) {
-        *curCmp3 = pIepHwRegs->CMP3_REG0;
+    if (curCmp7) {
+        *curCmp7 = pIepHwRegs->CMP7_REG0;
     }
-    if (curCmp4) {
-        *curCmp4 = pIepHwRegs->CMP4_REG0;
+    if (curCmp8) {
+        *curCmp8 = pIepHwRegs->CMP8_REG0;
     }
-    if (curCmp5) {
-        *curCmp5 = pIepHwRegs->CMP5_REG0;
+    if (curCmp9) {
+        *curCmp9 = pIepHwRegs->CMP9_REG0;
     }
-    if (curCmp6) {
-        *curCmp6 = pIepHwRegs->CMP6_REG0;
+    if (curCmp10) {
+        *curCmp10 = pIepHwRegs->CMP10_REG0;
     }
 }
 
