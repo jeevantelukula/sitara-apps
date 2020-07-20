@@ -97,7 +97,7 @@ int32_t configureInterrupts()
     int32_t status = 0;
 
     /* Configure CompareEvent Interrupt Router */
-    status = configureCmpEventInterruptRouter(CMPEVT3_INTRTR_IN, CMPEVT3_INTRTR_OUT);
+    status = configureCmpEventInterruptRouter(CMPEVT7_INTRTR_IN, CMPEVT7_INTRTR_OUT);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
@@ -106,7 +106,7 @@ int32_t configureInterrupts()
     }
 
     /* CompareEvent Interrupt Router CMP4 */
-    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_4,
+    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_8,
                                               0);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
@@ -116,7 +116,7 @@ int32_t configureInterrupts()
     }
 
     /* CompareEvent Interrupt Router CMP5 -> M4 */
-    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_5,
+    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_9,
                                               32);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
