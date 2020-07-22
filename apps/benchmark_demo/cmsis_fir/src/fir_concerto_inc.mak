@@ -18,11 +18,11 @@ DEFS+=BUILD_MCU$(MCUNUM)
 DEFS+=BAREMETAL
 
 # Define application's root directory
-APPDIR := $(abspath $(SDIR)/../../..)
+APPDIR := $(abspath $(SDIR)/..)
 
 # Provide list of C files by using built-in macro
-CSOURCES    := ../../main.c ../../arm_fir_data.c ../../arm_fir_example_f32.c
-CSOURCES    += ../../../../common/src/r5f_mpu_default.c
+CSOURCES    := ./main.c ./arm_fir_data.c ./arm_fir_example_f32.c
+CSOURCES    += ../../common/src/r5f_mpu_default.c
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
@@ -70,7 +70,7 @@ SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
 LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(SDIR)/linker.cmd
+LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/$(PDK_CORE_ID)/linker.cmd
 
 
 endif
