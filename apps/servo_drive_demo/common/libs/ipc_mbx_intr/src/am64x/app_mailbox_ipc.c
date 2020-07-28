@@ -156,10 +156,10 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
 
     /* Setup the default Mailbox open Parameters */
     Mailbox_openParams_init(&openParam);
-
     openParam.cfg.writeMode = MAILBOX_MODE_FAST;
     openParam.cfg.readMode = MAILBOX_MODE_FAST;
     openParam.cfg.readCallback = NULL;
+    openParam.cfg.enableVIMDirectInterrupt = true;
 
     /* Enable without Interrupt call-back to perform Sync between all cores */
     for (remoteId = 0; remoteId < MAILBOX_IPC_MAX_PROCS; remoteId++)
@@ -217,6 +217,7 @@ int32_t appMbxIpcInit(app_mbxipc_init_prm_t *prm)
     openParam.cfg.writeMode = MAILBOX_MODE_FAST;
     openParam.cfg.readMode = MAILBOX_MODE_FAST;
     openParam.cfg.readCallback = appMailboxIsr;
+    openParam.cfg.enableVIMDirectInterrupt = true;
 
     /* Enable with Interrupt call-back on all cores */
     for (remoteId = 0; remoteId < MAILBOX_IPC_MAX_PROCS; remoteId++)

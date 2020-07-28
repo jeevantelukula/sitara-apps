@@ -80,7 +80,7 @@ ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
 endif
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
 ifeq ($(TARGET_PLATFORM),AM64X)
-ADDITIONAL_STATIC_LIBS += mailbox_baremetal.aer5f
+ADDITIONAL_STATIC_LIBS += mailbox.aer5f
 endif
 
 # Add run-time libraries from toolchain
