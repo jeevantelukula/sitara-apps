@@ -68,7 +68,7 @@ SECTIONS
 {
 /* 'intvecs' and 'intc_text' sections shall be placed within                  */
 /* a range of +\- 16 MB                                                       */
-    .rstvectors : {} palign(8) 		> R5F_ATCM_SBL_RSVD
+    .rstvectors : {} palign(256) 	> R5F_ATCM_SBL_RSVD
     .bootCode      : {} palign(8)      > OCSRAM1
     .startupCode   : {} palign(8)      > OCSRAM1
     .startupData   : {} palign(8)      > OCSRAM1, type = NOINIT
