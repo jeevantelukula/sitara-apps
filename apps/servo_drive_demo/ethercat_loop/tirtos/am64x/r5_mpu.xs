@@ -110,9 +110,20 @@ attrs.noExecute = false;
 attrs.accPerm = 1;          /* RW at PL1 */
 attrs.tex = 1;
 attrs.subregionDisableMask = 0x0;
+MPU.setRegionMeta(index++, 0x41010000, MPU.RegionSize_32K, attrs);
+
+/* make BTCM as cacheable */
+attrs.enable = true;
+attrs.bufferable = true;
+attrs.cacheable = true;
+attrs.shareable = false;
+attrs.noExecute = false;
+attrs.accPerm = 1;          /* RW at PL1 */
+attrs.tex = 1;
+attrs.subregionDisableMask = 0x0;
 MPU.setRegionMeta(index++, 0x78100000, MPU.RegionSize_32K, attrs);
 
-/* MCU OCSRAM4 as cacheable */
+/* MCU OCSRAM as cacheable */
 attrs.enable = true;
 attrs.bufferable = true;
 attrs.cacheable = true;
@@ -121,18 +132,7 @@ attrs.noExecute = false;
 attrs.accPerm = 1;          /* RW at PL1 */
 attrs.tex = 1;
 attrs.subregionDisableMask = 0;
-MPU.setRegionMeta(index++, 0x70100000, MPU.RegionSize_256K, attrs);
-
-/* MCU OCSRAM5 as cacheable */
-attrs.enable = true;
-attrs.bufferable = true;
-attrs.cacheable = true;
-attrs.shareable = false;
-attrs.noExecute = false;
-attrs.accPerm = 1;          /* RW at PL1 */
-attrs.tex = 1;
-attrs.subregionDisableMask = 0;
-MPU.setRegionMeta(index++, 0x70140000, MPU.RegionSize_256K, attrs);
+MPU.setRegionMeta(index++, 0x70000000, MPU.RegionSize_2M, attrs);
 
 /* make all 2G DDR as cacheable */
 attrs.enable = true;

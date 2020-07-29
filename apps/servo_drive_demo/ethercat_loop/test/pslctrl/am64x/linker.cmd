@@ -36,6 +36,7 @@
 --stack_size=0x2000
 --heap_size=0x1000
 --retain="*(.utilsCopyVecsToAtcm)"
+--entry_point=ti_sysbios_family_arm_v7r_keystone3_Hwi_vectors
 
 /*----------------------------------------------------------------------------*/
 /* Section Configuration                                                      */
@@ -45,14 +46,14 @@ SECTIONS
 {
     .vecs       : {
          *(.vecs)
-    } palign(8) > MCU0_R5F0_BTCM
+    } palign(256) > R5F_ATCM_SBL_RSVD
     .text_boot {
         *boot.aer5f<*boot.o*>(.text)
-     }  palign(8)   > MCU0_R5F0_BTCM
-    .text:xdc_runtime_Startup_reset__I     : {} palign(8) > MCU0_R5F0_BTCM
-    .text:ti_sysbios_family_arm_v7r_Cache* : {} palign(8) > MCU0_R5F0_BTCM
-    .text:ti_sysbios_family_arm_MPU*       : {} palign(8) > MCU0_R5F0_BTCM
-    .utilsCopyVecsToAtcm                   : {} palign(8) > MCU0_R5F0_BTCM
+     }  palign(8)   > R5F_BTCM
+    .text:xdc_runtime_Startup_reset__I     : {} palign(8) > R5F_BTCM
+    .text:ti_sysbios_family_arm_v7r_Cache* : {} palign(8) > R5F_BTCM
+    .text:ti_sysbios_family_arm_MPU*       : {} palign(8) > R5F_BTCM
+    .utilsCopyVecsToAtcm                   : {} palign(8) > R5F_BTCM
 
 	.text       : {} palign(8)   > OCSRAM4
     .cinit      : {} palign(8)   > OCSRAM4
