@@ -56,7 +56,7 @@ SECTIONS
 
 	.text       : {} palign(8)   > OCSRAM4
     .cinit      : {} palign(8)   > OCSRAM4
-    .bss        : {} align(8)    > DDR_MCU1_0
+    .bss        : {} align(8)    > OCSRAM5
     .far        : {} align(8)    > OCSRAM4
     .const      : {} palign(8)   > OCSRAM4
     .data       : {} palign(128) > OCSRAM4
