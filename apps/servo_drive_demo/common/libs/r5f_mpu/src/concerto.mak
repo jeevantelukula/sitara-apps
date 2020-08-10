@@ -1,5 +1,6 @@
 
 ifeq ($(TARGET_OS), $(filter $(TARGET_OS), NO_OS))
+ifeq ($(TARGET_CPU),R5F)
 
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
@@ -16,4 +17,5 @@ CSOURCES    := $(call all-c-files)
 # End concerto module declarations
 include $(FINALE)
 
+endif
 endif

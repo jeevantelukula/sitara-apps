@@ -5,6 +5,7 @@
 # Filter based on OS so that concerto does not attempt any other
 # combinations.
 ifeq ($(TARGET_OS), $(filter $(TARGET_OS), SYSBIOS NO_OS))
+ifeq ($(TARGET_CPU),R5F)
 
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
@@ -28,16 +29,14 @@ ifeq ($(TARGET_OS),SYSBIOS)
 CSOURCES    := app_cpu_hz.c
 endif
 
-ifeq ($(TARGET_CPU),R5F)
 CSOURCES += app_r5f_init.c
 
 CSOURCES += $(SITARA_DEMO_SOC)/app_pinmux.c
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 
-endif
-    
 # End concerto module declarations
 include $(FINALE)
 
+endif
 endif
