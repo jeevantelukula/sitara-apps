@@ -373,14 +373,26 @@ void task1(uint32_t arg0, uint32_t arg1)
 void HW_EcatIsr(void)
 {
 #ifdef PROFILE_ECAT_STACK
+    uintptr_t key1;
     uint32_t pdi_start, pdi_stop;
     /* get the AL event register */
+
+    key1 = HwiP_disable();
     bsp_get_local_sys_time(&pdi_start,  0);
 #endif
     PDI_Isr();
 #ifdef PROFILE_ECAT_STACK
     bsp_get_local_sys_time(&pdi_stop,   0);
-    pdi_delta = pdi_stop - pdi_start;
+    HwiP_restore(key1);
+
+    if(pdi_stop >= pdi_start)
+    {
+        pdi_delta = pdi_stop - pdi_start;
+    }
+    else
+    {
+        pdi_delta = 0xFFFFFFFFF - pdi_start + pdi_stop;
+    }
 
     if(pdi_delta > pdi_max)
     {
@@ -521,7 +533,10 @@ void LEDtask(uint32_t arg0, uint32_t arg1)
         if((reset_reg_val == TI_ESC_RST_CMD_U) ||
                 (reset_reg_val == TI_ESC_RST_CMD_L))
         {
-            //EtherCAT master has requested S/W RESET
+            bsp_write_dword(pruIcss1Handle, (uint32_t)0x0, ESC_ADDR_TI_ESC_RESET);
+			ASSERT_DMB();
+			ASSERT_DSB();			
+			//EtherCAT master has requested S/W RESET
             HW_RestartTarget();
         }
     }
@@ -553,6 +568,8 @@ void Sync0task(uint32_t arg1, uint32_t arg2)
         //Do sync0 event handling
         DISABLE_ESC_INT();
 #ifdef PROFILE_ECAT_STACK
+        uintptr_t key1;
+        key1 = HwiP_disable();
         bsp_get_local_sys_time(&sync_start, 0);
 #endif
         Sync0_Isr();
@@ -564,7 +581,16 @@ void Sync0task(uint32_t arg1, uint32_t arg2)
 
 #ifdef PROFILE_ECAT_STACK
         bsp_get_local_sys_time(&sync_stop,  0);
-        sync_delta = sync_stop - sync_start;
+        HwiP_restore(key1);
+
+        if(sync_stop >= sync_start)
+        {
+            sync_delta = sync_stop - sync_start;
+        }
+        else
+        {
+            sync_delta = 0xFFFFFFFFF - sync_start + sync_stop;
+        }
 
         if(sync_delta > sync_max)
         {
@@ -640,9 +666,14 @@ void common_main()
         icssgResetIsolated = TRUE;
     }
 
-    /*Enable ICSSG0 Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL30 register. */
-	/*This needs to be moved to ICSSG1(PSC0_MDCTL31 0xA7C) when EtherCAT support is moved to ICSSG1 by PSW team. */
+#ifdef SOC_AM65XX
+	/*Enable ICSSG Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL29 register. */
+    (*((volatile uint32_t *)(CSL_PSC0_BASE+0xA74))) |= 0x1800;
+#endif
+#ifdef SOC_AM64X
+	/*Enable ICSSG0 Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL31 register. */
     (*((volatile uint32_t *)(CSL_PSC0_BASE+0xA7C))) |= 0x1800;
+#endif
 	
     /* This is for debug purpose - see the description of function header */
     StartupEmulatorWaitFxn();

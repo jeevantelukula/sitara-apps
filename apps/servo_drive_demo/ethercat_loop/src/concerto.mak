@@ -23,7 +23,7 @@ endif
 
 # Provide list of C files by using built-in macro
 ifeq ($(TARGET_PLATFORM),AM65X)
-CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c $(SITARA_DEMO_SOC)/app_ts.c $(SITARA_DEMO_SOC)/app_ts_cfg_mcu_intr.c
+CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c $(SITARA_DEMO_SOC)/app_ts.c $(SITARA_DEMO_SOC)/app_ts_cfg_mcu_intr.c $(SITARA_DEMO_SOC)/interruptroute.c
 endif
 ifeq ($(TARGET_PLATFORM),AM64X)
 CSOURCES    := tiescutils.c $(SITARA_DEMO_SOC)/tiesc_soc.c

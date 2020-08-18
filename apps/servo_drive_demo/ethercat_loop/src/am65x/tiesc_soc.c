@@ -69,6 +69,7 @@
 #include <ti/csl/soc/am65xx/src/cslr_intr_mcu0.h>
 #include <ti/csl/soc/am65xx/src/cslr_soc_baseaddress.h>
 #include <ti/board/src/am65xx_idk/include/board_cfg.h>
+#include <interruptroute.h>
 #endif
 
 #if defined (__aarch64__)
@@ -76,11 +77,6 @@
 #define ARM_INTERRUPT_OFFSET_ICSS0 (286-20)
 #define ARM_INTERRUPT_OFFSET_ICSS1 (294-20)
 #define ARM_INTERRUPT_OFFSET_ICSS2 (302-20)
-#else
-/* R5F */
-#define ARM_INTERRUPT_OFFSET_ICSS0 (160-20)
-#define ARM_INTERRUPT_OFFSET_ICSS1 (168-20)
-#define ARM_INTERRUPT_OFFSET_ICSS2 (176-20)
 #endif
 
 #define CSL_SEMAPHORE_REG_OFFSET(n)        (0x100 + ((n) * 0x04))
@@ -93,11 +89,14 @@ extern PRUICSS_Config pruss_config[2 + 1];
 /* Board specific definitions */
 #define MCSPI_INSTANCE         (0U)
 
-#define BOARD_IDKAM571x     1
-#define BOARD_IDKAM572x     2
-
 void tiesc_mii_pinmuxConfig (void);
 
+
+extern bool icssgResetIsolated;
+
+
+int16_t icssInterruptOffset = 0;
+uint32_t i2cInterruptOffset = 0;
 
 uint8_t isEtherCATDevice(void)
 {
@@ -122,6 +121,7 @@ uint8_t isEtherCATDevice(void)
 
 int16_t getARMInterruptOffset()
 {
+#if defined (__aarch64__)
 #if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
     return ARM_INTERRUPT_OFFSET_ICSS0;
 #elif (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
@@ -129,6 +129,10 @@ int16_t getARMInterruptOffset()
 #else
     return ARM_INTERRUPT_OFFSET_ICSS2;
 #endif
+#else
+    return (icssInterruptOffset - 20);
+#endif
+
 }
 
 void initSpinlock()
@@ -153,8 +157,8 @@ uint32_t getSpinlockLockReg0Offset()
 }
 
 void bsp_soft_reset()
-{
-    //Device Reset not supported on AM654x
+{   
+	Sciclient_pmDeviceReset(0xFFFFFFFFU);
     return;
 }
 
@@ -166,10 +170,14 @@ void bsp_soc_evm_init()
     I2C_HwAttrs   i2c_cfg;
 #endif
 
+    if(icssgResetIsolated==FALSE)
+    {
+		tiesc_mii_pinmuxConfig();
+
+		Board_init(BOARD_INIT_ICSS_ETH_PHY);
+    }
+
     GPIO_init();
-
-    Board_init(BOARD_INIT_ICSS_ETH_PHY);
-
     delay_us(100);
 
     //Making the clock for ICSSG core and IEP same
@@ -179,9 +187,11 @@ void bsp_soc_evm_init()
 
     pruIcss1Handle = PRUICSS_create(pruss_config, PRUICSS_INSTANCE);
 
-    /* Selecting MII-RT mode in GPCFG mux */
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG0))) = 0x8000003;
-    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG1))) = 0x8000003;
+    if(icssgResetIsolated==FALSE)
+    {
+		/* Selecting MII-RT mode in GPCFG mux */
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG0))) = 0x8000003;
+		(*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_GPCFG1))) = 0x8000003;
 
 #ifdef ECAT_RGMII
     (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiRtCfgRegBase) + 0x1000 + CSL_ICSS_G_PR1_MII_RT_PR1_MII_RT_G_CFG_REGS_G_ICSS_G_CFG))) |= (0x28); // ICSS_G_CFG make it RGMII
@@ -213,61 +223,35 @@ void bsp_soc_evm_init()
     //Disable PRUs - This is to ensure PRUs are not running when application is not initialized
     PRUICSS_pruDisable(pruIcss1Handle, 0);
     PRUICSS_pruDisable(pruIcss1Handle, 1);
+    }
 
 #if !defined (__aarch64__)
-    /* Route I2C0 interrupts to R5F */
-    /* Main Domain I2C0 events are mapped to MAIN2MCU_INTRTR_LVL_IN_100 */
-    /* Since 176 is used as I2C interrupt number, MAIN2MCU_INTRTR_LVL_IN_100 should be written to 0xA10044. */
-    /* If 177 is used as I2C interrupt number, MAIN2MCU_INTRTR_LVL_IN_100 should be written to 0xA10048. */
-    HW_WR_REG8_RAW(0xA10044, 100);
 
-    /* Route ICSS Interrupts to R5F. */
-    /* ICSSG0 events are mapped to MAIN2MCU_INTRTR_LVL_IN[32:39]*/
-    /* ICSSG1 events are mapped to MAIN2MCU_INTRTR_LVL_IN[40:47]*/
-    /* ICSSG2 events are mapped to MAIN2MCU_INTRTR_LVL_IN[48:55]*/
-    /* MAIN2MCU_RTR_LVL_MX_INTR[63:0] is mapped to MCU_R5_CORE0_INT_IN[223:160] */
-    HW_WR_REG8_RAW(0xA10004,
-                   32);  //MAIN2MCU_RTR_LVL_MX_INTR0 mapped to MAIN2MCU_RTR_LVL_MX_INTR32
-    HW_WR_REG8_RAW(0xA10008,
-                   33);  //MAIN2MCU_RTR_LVL_MX_INTR1 mapped to MAIN2MCU_RTR_LVL_MX_INTR33
-    HW_WR_REG8_RAW(0xA1000C,
-                   34);  //MAIN2MCU_RTR_LVL_MX_INTR2 mapped to MAIN2MCU_RTR_LVL_MX_INTR34
-    HW_WR_REG8_RAW(0xA10010,
-                   35);  //MAIN2MCU_RTR_LVL_MX_INTR3 mapped to MAIN2MCU_RTR_LVL_MX_INTR35
-    HW_WR_REG8_RAW(0xA10014,
-                   36);  //MAIN2MCU_RTR_LVL_MX_INTR4 mapped to MAIN2MCU_RTR_LVL_MX_INTR36
-    HW_WR_REG8_RAW(0xA10018,
-                   37);  //MAIN2MCU_RTR_LVL_MX_INTR5 mapped to MAIN2MCU_RTR_LVL_MX_INTR37
-    HW_WR_REG8_RAW(0xA1001C,
-                   38);  //MAIN2MCU_RTR_LVL_MX_INTR6 mapped to MAIN2MCU_RTR_LVL_MX_INTR38
-    HW_WR_REG8_RAW(0xA10020,
-                   39);  //MAIN2MCU_RTR_LVL_MX_INTR7 mapped to MAIN2MCU_RTR_LVL_MX_INTR39
+    /* Route Interrupts to R5F. */
+	icssInterruptOffset = route_icss_interrupts_to_r5f(PRUICSS_INSTANCE);
+	if(INTERRUPT_ROUTE_ERROR != icssInterruptOffset)
+	{
+	    icssInterruptOffset = (int16_t)icssInterruptOffset;
+	}
+	else
+	{
+		/*Wait here in an endless loop as there is an error. */
+		while(1);
+	}
 
-    HW_WR_REG8_RAW(0xA10024,
-                   40);  //MAIN2MCU_RTR_LVL_MX_INTR8 mapped to MAIN2MCU_RTR_LVL_MX_INTR40
-    HW_WR_REG8_RAW(0xA10028,
-                   43);  //MAIN2MCU_RTR_LVL_MX_INTR9 mapped to MAIN2MCU_RTR_LVL_MX_INTR41
-    HW_WR_REG8_RAW(0xA1002C,
-                   44);  //MAIN2MCU_RTR_LVL_MX_INTR10 mapped to MAIN2MCU_RTR_LVL_MX_INTR42
-    HW_WR_REG8_RAW(0xA10030,
-                   45);  //MAIN2MCU_RTR_LVL_MX_INTR11 mapped to MAIN2MCU_RTR_LVL_MX_INTR43
-    HW_WR_REG8_RAW(0xA10034,
-                   46);  //MAIN2MCU_RTR_LVL_MX_INTR12 mapped to MAIN2MCU_RTR_LVL_MX_INTR44
-    HW_WR_REG8_RAW(0xA10038,
-                   47);  //MAIN2MCU_RTR_LVL_MX_INTR13 mapped to MAIN2MCU_RTR_LVL_MX_INTR45
-    HW_WR_REG8_RAW(0xA1003C,
-                   48);  //MAIN2MCU_RTR_LVL_MX_INTR14 mapped to MAIN2MCU_RTR_LVL_MX_INTR46
-    HW_WR_REG8_RAW(0xA10040,
-                   49);  //MAIN2MCU_RTR_LVL_MX_INTR15 mapped to MAIN2MCU_RTR_LVL_MX_INTR47
-
+	i2cInterruptOffset = route_i2c_interrupts_to_r5f();
+	if(INTERRUPT_ROUTE_ERROR == i2cInterruptOffset)
+	{
+		/*Wait here in an endless loop as there is an error. */
+		while(1);
+	}
 
     /* LED's and Rotary Switch are connected to Main Domain I2C0. Reconfigure I2C to use I2C0 of main domain. */
     /* Get the default I2C init configurations */
     I2C_socGetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
 
     i2c_cfg.baseAddr = CSL_I2C0_CFG_BASE;
-    /*Use MCU_R5_CORE0_INT_IN_176, MAIN2MCU_LVL_INTRTR0 host interrupt 16.*/
-    i2c_cfg.intNum = CSL_MCU0_INTR_MAIN2MCU_LVL_INTR0_OUTL_16;
+    i2c_cfg.intNum = i2cInterruptOffset;
 
     I2C_socSetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
 #endif
