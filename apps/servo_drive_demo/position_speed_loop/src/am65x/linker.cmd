@@ -70,7 +70,7 @@ SECTIONS
 /* a range of +\- 16 MB                                                       */
     .intvecs 	: {} palign(8) 		> MCU1_1_VECTORS
     .intc_text 	: {} palign(8) 		> MCU1_1_VECTORS
-    .rstvectors : {} palign(8) 		> R5F_ATCM_SBL_RSVD
+    .rstvectors : {} palign(256) 		> R5F_ATCM_SBL_RSVD
     .bootCode      : {} palign(8)      > MSMC_MCU1_1
     .startupCode   : {} palign(8)      > MSMC_MCU1_1
     .startupData   : {} palign(8)      > MSMC_MCU1_1, type = NOINIT

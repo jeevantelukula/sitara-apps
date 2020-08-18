@@ -37,6 +37,11 @@
 --heap_size=0x1000
 --retain="*(.utilsCopyVecsToAtcm)"
 
+--entry_point=ti_sysbios_family_arm_v7r_keystone3_Hwi_vectors
+--retain="*(.intvecs)"
+--retain="*(.intc_text)"
+--retain="*(.rstvectors)"
+
 /*----------------------------------------------------------------------------*/
 /* Section Configuration                                                      */
 /* memory sections inherited from appropriate linker_mem_map.cmd              */
@@ -45,7 +50,8 @@ SECTIONS
 {
     .vecs       : {
          *(.vecs)
-    } palign(8) > R5F0_BTCM
+    } palign(256) > R5F_ATCM_SBL_RSVD
+	
     .text_boot {
         *boot.aer5f<*boot.o*>(.text)
      }  palign(8)   > R5F0_BTCM
