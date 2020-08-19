@@ -36,6 +36,7 @@
 #include <ti/drv/pruss/pruicss.h>
 #include <ti/drv/pruss/soc/pruicss_v1.h>
 #include <app_log.h>
+#include <ti/drv/sciclient/sciclient.h>
 #include "timesync_array.h"     /* TS PRU FW image data */
 #include "timesyncDrv_utils.h"  /* TS driver utilities */
 #include "timesyncDrv_api.h"    /* TS driver utilities */
@@ -392,8 +393,8 @@ int32_t appPslCtrlTsInit(
     {
         if ((pTsPrms->prdCfgMask >> i) & 0x1) {
             /* Configure Compare Event Interrupt Router */
-            status = configureCmpEventInterruptRouter(pTsPrms->cmpEvtRtrInIntNum[i], 
-                pTsPrms->cmpEvtRtrOutIntNum[i]);
+            status = configureCmpEventInterruptRouter(pTsPrms->cmpEvtRtrInIntNum[i],
+                pTsPrms->cmpEvtRtrOutIntNum[i], pTsPrms->cmpEvtRtrHostId[i]);
             if (status != APP_PSLCTRL_TS_SOK) {
                 appLogPrintf("appPslCtrlTsInit: configureCmpEventInterruptRouter() failed.\n");
                 return APP_PSLCTRL_TS_SERR_INIT;
@@ -404,8 +405,8 @@ int32_t appPslCtrlTsInit(
     if (pTsPrms->simSync0PrdCount != 0) {
         /* Configure Compare Event Interrupt Router, 
            Simulated SYNC0 pulse, Time Sync CMP1 Event */
-        status = configureCmpEventInterruptRouter(pTsPrms->simSync0CmpEvtRtrInIntNum, 
-            pTsPrms->simSync0CmpEvtRtrOutIntNum);
+        status = configureCmpEventInterruptRouter(pTsPrms->simSync0CmpEvtRtrInIntNum,
+                pTsPrms->simSync0CmpEvtRtrOutIntNum, pTsPrms->simSync0CmpEvtRtrHostId);
         if (status != APP_PSLCTRL_TS_SOK) {
             appLogPrintf("appPslCtrlTsInit: configureCmpEventInterruptRouter() failed.\n");
             return APP_PSLCTRL_TS_SERR_INIT;

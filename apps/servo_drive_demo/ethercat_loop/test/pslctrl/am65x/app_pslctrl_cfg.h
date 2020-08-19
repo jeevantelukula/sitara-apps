@@ -36,46 +36,47 @@
 
 #include <ti/csl/tistdtypes.h>
 #include <ti/drv/pruss/pruicss.h>
+#include <ti/drv/sciclient/sciclient.h>
 #include <ti/board/src/am65xx_evm/am65xx_evm_pinmux.h>
 
 #define ENABLE_BOARD
 
-#define TASK_PSL_CTRL_PRI       ( 1 )           /* Task PSL Control priority */
-#define TASK_PSL_CTRL_SZ        ( 2048 )        /* Task PSL Control stack size */
+#define TASK_PSL_CTRL_PRI                      ( 1 )       /* Task PSL Control priority */
+#define TASK_PSL_CTRL_SZ                       ( 2048 )    /* Task PSL Control stack size */
 
 /* Time Sync PRU firmware, ICSSG instance ID */
-#define TS_ICSSG_INST_ID        ( PRUICCSS_INSTANCE_ONE )
+#define TS_ICSSG_INST_ID                       ( PRUICCSS_INSTANCE_ONE )
 /* Time Sync PRU firmware, PRU instance ID */
-#define TS_PRU_INST_ID          ( PRUICCSS_RTU0 )
+#define TS_PRU_INST_ID                         ( PRUICCSS_RTU0 )
 
 /* Time Sync IEP0 Period (nsec.) */
-#define TS_IEP_PRD_NSEC         ( 5 )           /* 5 nsec = 1/200MHz */
+#define TS_IEP_PRD_NSEC                        ( 5 )                                   /* 5 nsec = 1/200MHz */
 /* Time Sync CMP Periods & Offsets */
-#define TS_PRD_COUNT1           ( TS_IEP_PRD_NSEC*200000000u/8000u )    /* 125us   (8Khz)   (CMP7)              */
+#define TS_PRD_COUNT1                          ( TS_IEP_PRD_NSEC*200000000u/8000u )    /* 125us   (8Khz)   (CMP7) */
 /* Time Sync CMP Offsets */
-#define TS_PRD_OFFSET1          ( -TS_IEP_PRD_NSEC*2000 )               /* 10 usec. pre-trigger */
+#define TS_PRD_OFFSET1                         ( -TS_IEP_PRD_NSEC*2000 )               /* 10 usec. pre-trigger */
+
+/* Interrupt Router to Configure */
+#define DEV_CMPEVT_INTRTR                      ( TISCI_DEV_CMPEVENT_INTRTR0 )
 
 /* Time Sync Compare Event Router input & output */
-#define TS_CMPEVT_INTRTR_IN0    ( 39 )  /* ICSSG_0_IEP0_CMP_TIMER7_INT */
-#define TS_CMPEVT_INTRTR_OUT0   ( 17 )  /* COMPEVT_RTR_COMP_17_EVT */
+#define TS_CMPEVT_INTRTR_IN0                   ( 39 )                    /* ICSSG_0_IEP0_CMP_TIMER7_INT */
+#define TS_CMPEVT_INTRTR_OUT0                  ( 17 )                    /* COMPEVT_RTR_COMP_17_EVT */
+#define TS_CMPEVT_INTRTR_HOST_ID0              ( TISCI_HOST_ID_R5_2 )    /* Non-secure context Host ID */
 
 /* Simulated SYNC0 pulse, Time Sync CMP1 Period */
-#define SIM_SYNC0_TS_PRD_COUNT0 ( TS_IEP_PRD_NSEC*200000000u/1000u )    /* 1ms     (1KHz)   (CMP1)    sim Sync0 */
-
+#define SIM_SYNC0_TS_PRD_COUNT0                ( TS_IEP_PRD_NSEC*200000000u/1000u )    /* 1ms     (1KHz)   (CMP1)    sim Sync0 */
 /* Simulated SYNC0 pulse, Compare Event Router input & output */
-#define SIM_SYNC0_CMPEVT_INTRTR_IN  \
-    ( 33 )  /* ICSSG_0_IEP0_CMP_TIMER1_INT */
-#define SIM_SYNC0_CMPEVT_INTRTR_OUT \
-    ( 16 )  /* COMPEVT_RTR_COMP_16_EVT */
+#define SIM_SYNC0_CMPEVT_INTRTR_IN             ( 33 )                                  /* ICSSG_0_IEP0_CMP_TIMER1_INT */
+#define SIM_SYNC0_CMPEVT_INTRTR_OUT            ( 16 )                                  /* COMPEVT_RTR_COMP_16_EVT */
+#define SIM_SYNC0_CMPEVT_INTRTR_HOST_ID        ( TISCI_HOST_ID_R5_0 )                  /* Non-secure context Host ID */
 /* Simulated SYNC0 pulse, MCU interrupt number */
-#define SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR \
-    ( 32 )  /* MAIN2MCU_RTR_PLS_MUX_INTR16 */
+#define SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR    ( 32 )                                  /* MAIN2MCU_RTR_PLS_MUX_INTR16 */
 /* Simulated SYNC0 pulse MCU interrupt number + MAIN2MCU_PULSE_INTR0_OUTP_0 offset */
-#define SIM_SYNC0_INTR_NUM \
-    ( SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR + CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 )
+#define SIM_SYNC0_INTR_NUM                     ( SIM_SYNC0_MAIN2MCU_RTR_PLS_MUX_INTR + CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 )
 
 /* Compare Event Router configuration base address */
-#define CMPEVTRTR_INTRTR0_CFG_BASE_ADDRESS  ( CSL_CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE )
+#define CMPEVTRTR_INTRTR0_CFG_BASE_ADDRESS     ( CSL_CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE )
 
 extern pinmuxPerCfg_t gFsiPinCfg;
 

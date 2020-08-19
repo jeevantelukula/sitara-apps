@@ -41,10 +41,12 @@
 #define APP_CSLCTRL_CFG_MCU_INTR_SERR_CFG_INTR_RTR  ( -1 )  /* interrupt router configuration error */
 #define APP_CSLCTRL_CFG_MCU_INTR_SERR_REG_INTR      ( -2 )  /* interrupt registration error */
 
+
 /* Configures Compare Event router */
 int32_t configureCmpEventInterruptRouter(
     int32_t intrRtrInIntNum, 
-    int32_t intrRtrOutIntNum
+    int32_t intrRtrOutIntNum,
+    int32_t intrRtrHostId
 );
 
 /* Registers an interrupt for event from compare event router */

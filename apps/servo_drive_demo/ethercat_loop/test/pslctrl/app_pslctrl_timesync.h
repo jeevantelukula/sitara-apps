@@ -74,18 +74,20 @@ typedef struct TsPrmsObj_s {
     uint32_t prdCount[ICSSG_TS_DRV__NUM_IEP_CMP];
     /* Positive/Negative Offset */
     int32_t prdOffset[ICSSG_TS_DRV__NUM_IEP_CMP];
-    /* Compare Event Router input & output IDs */
+    /* Compare Event Router input, output, and host ID */
     int32_t cmpEvtRtrInIntNum[ICSSG_TS_DRV__NUM_IEP_CMP];
     int32_t cmpEvtRtrOutIntNum[ICSSG_TS_DRV__NUM_IEP_CMP];
+    int32_t cmpEvtRtrHostId[ICSSG_TS_DRV__NUM_IEP_CMP];
     /* Period/Offset configuration mask */
     uint8_t prdCfgMask;
 
     /* Simulated SYNC0 parameters */
     /* Period */
     uint32_t simSync0PrdCount;
-    /* Compare Event Router input & output IDs */
+    /* Compare Event Router input, output, and host ID */
     int32_t simSync0CmpEvtRtrInIntNum;
     int32_t simSync0CmpEvtRtrOutIntNum;
+    int32_t simSync0CmpEvtRtrHostId;
     /* MCU interrupt number */
     int32_t simSync0IntrNum;
     /* Interrupt Handler */

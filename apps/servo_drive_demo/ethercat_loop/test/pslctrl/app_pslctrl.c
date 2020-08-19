@@ -204,10 +204,12 @@ void taskPslCtrl(uint32_t arg0, uint32_t arg1)
     tsPrms.prdOffset[0] = TS_PRD_OFFSET1;
     tsPrms.cmpEvtRtrInIntNum[0] = TS_CMPEVT_INTRTR_IN0;
     tsPrms.cmpEvtRtrOutIntNum[0] = TS_CMPEVT_INTRTR_OUT0;
+    tsPrms.cmpEvtRtrHostId[0] = TS_CMPEVT_INTRTR_HOST_ID0;
     tsPrms.prdCfgMask = TS_CFG_CMP7;
     tsPrms.simSync0PrdCount = SIM_SYNC0_TS_PRD_COUNT0;
     tsPrms.simSync0CmpEvtRtrInIntNum = SIM_SYNC0_CMPEVT_INTRTR_IN;
     tsPrms.simSync0CmpEvtRtrOutIntNum = SIM_SYNC0_CMPEVT_INTRTR_OUT;
+    tsPrms.simSync0CmpEvtRtrHostId = SIM_SYNC0_CMPEVT_INTRTR_HOST_ID;
     tsPrms.simSync0IntrNum = SIM_SYNC0_INTR_NUM;
     tsPrms.simSync0IsrRoutine = simSync0IrqHandler;
     status = appPslCtrlTsInit(&tsPrms, &gTs);
