@@ -17,15 +17,15 @@ SKIPBUILD=1
 endif
 
 # Define object name (TARGET) and type (TARGET_TYPE)
-TARGET      := app_tirtos_mcu1_0_pslctrl
+TARGET      := app_tirtos_mcu1_0_ethercat_emulation
 TARGETTYPE  := exe
 
 # Provide list of C files by using built-in macro
 CSOURCES    := app_pslctrl.c $(SITARA_DEMO_SOC)/app_pslctrl_cfg.c app_pslctrl_mbxipc.c app_pslctrl_timesync.c app_pslctrl_cfg_mcu_intr.c app_pslctrl_esc_sim.c app_pslctrl_save_data.c
 
 # Define application's root directory
-APPDIR := $(abspath $(SDIR)/../..)
-EXAMPLEDIR := $(abspath $(SDIR)/../../../../../examples)
+APPDIR := $(abspath $(SDIR)/..)
+EXAMPLEDIR := $(abspath $(SDIR)/../../../../examples)
 
 # Add directory to include search path
 IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)

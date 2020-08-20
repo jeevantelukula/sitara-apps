@@ -27,17 +27,17 @@ PDK_CORE_ID = mcu2_0
 endif
 
 # Define object name (TARGET) and type (TARGET_TYPE)
-TARGET      := app_no_os_$(PDK_CORE_ID)_servo_drive_ipc_loopback
+TARGET      := app_no_os_$(PDK_CORE_ID)_pslctrl_emulation
 TARGETTYPE  := exe
+
+# Define application's root directory
+APPDIR := $(abspath $(SDIR)/..)
 
 # common "config" dependencies
 COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 
 # Provide list of C files by using built-in macro
 CSOURCES    := $(call all-c-files)
-
-# Define application's root directory
-APPDIR := $(abspath $(SDIR)/..)
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
