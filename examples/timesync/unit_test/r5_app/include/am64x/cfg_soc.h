@@ -34,11 +34,16 @@
 #ifndef _CFG_SOC_H_
 #define _CFG_SOC_H_
 
+#include <ti/drv/sciclient/sciclient.h>
+
 /* Test ICSSG instance ID */
 #define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_TWO )
 
 /* Test PRU instance ID */
 #define TEST_PRU_INST_ID                ( PRUICCSS_PRU0 )
+
+/* Interrupt Router to Configure */
+#define DEV_CMPEVT_INTRTR                   ( TISCI_DEV_CMP_EVENT_INTROUTER0 )
 
 /* Compare event router i*/
 //#define CMPEVT7_INTRTR_IN    ( CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG0_PR1_IEP0_CMP_INTR_REQ_7 )  /* ICSSG_0_IEP0_CMP_TIMER7_INT */
@@ -46,6 +51,9 @@
 
 /* Compare event router output */
 #define CMPEVT7_INTRTR_OUT   ( 16 )  /* COMPEVT3_RTR_COMP_16_EVT */
+
+/* Compare event router Host ID */
+#define CMPEVT7_INTRTR_HOST_ID   ( TISCI_HOST_ID_MAIN_0_R5_0 )  /* R5F0 Core0 Host ID */
 
 /* Compare event router ouput R5 interrupt */
 #define TS_CMPEVT_INTRTR_R5 ( CSLR_R5FSS0_CORE0_INTR_CMP_EVENT_INTROUTER0_OUTP_16 )

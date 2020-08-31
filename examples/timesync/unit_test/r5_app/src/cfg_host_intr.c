@@ -49,28 +49,40 @@
 
 HwiP_Handle hwiHandle = NULL;
 
-/* Configure CMPEVENT_INTRTR0 interrupt router */
+/* Configures Compare Event router */
 int32_t configureCmpEventInterruptRouter(
-    int32_t intrRtrInIntNum,
-    int32_t intrRtrOutIntNum
+    int32_t intrRtrInIntNum, 
+    int32_t intrRtrOutIntNum,
+    int32_t intrRtrHostId
 )
 {
-    CSL_IntrRouterCfg intrRouterCmpEventCfg;
-    int32_t retVal;
+    struct tisci_msg_rm_irq_set_req  rmIrqReq;
+    struct tisci_msg_rm_irq_set_resp rmIrqResp;
+    int32_t retVal = 0;
 
-    /* Initialize Main to MCU Interrupt Router config structure */
-    intrRouterCmpEventCfg.pIntrRouterRegs = (CSL_intr_router_cfgRegs *)(uintptr_t)(CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE);
-    intrRouterCmpEventCfg.pIntdRegs       = (CSL_intr_router_intd_cfgRegs *)NULL;
-    intrRouterCmpEventCfg.numInputIntrs   = NUM_CMPEVENT_INTRTR0_IN;
-    intrRouterCmpEventCfg.numOutputIntrs  = NUM_CMPEVENT_INTRTR0_OUT;
+    /* Unused params */
+    rmIrqReq.ia_id                  = 0U;
+    rmIrqReq.vint                   = 0U;
+    rmIrqReq.global_event           = 0U;
+    rmIrqReq.vint_status_bit_index  = 0U;
 
-    /* Route PRU INTC output interrupt to MAIN2MCU LEVEL interrupt router output */
-    retVal = CSL_intrRouterCfgMux(&intrRouterCmpEventCfg, intrRtrInIntNum, intrRtrOutIntNum);
-    if (retVal < 0) {
+    rmIrqReq.valid_params   = TISCI_MSG_VALUE_RM_DST_ID_VALID
+                                  | TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID
+                                  | TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID;
+    rmIrqReq.src_id         = DEV_CMPEVT_INTRTR;
+    rmIrqReq.src_index      = intrRtrInIntNum;
+    rmIrqReq.dst_id         = DEV_CMPEVT_INTRTR;
+    rmIrqReq.dst_host_irq   = intrRtrOutIntNum;
+    rmIrqReq.secondary_host = intrRtrHostId;
+
+    /* Config event */
+    retVal = Sciclient_rmIrqSetRaw(
+                 &rmIrqReq, &rmIrqResp, SCICLIENT_SERVICE_WAIT_FOREVER);
+
+    if(retVal != CSL_PASS)
         return CFG_HOST_INTR_ERR_CFG_INTR_RTR;
-    }
-
-    return CFG_HOST_INTR_ERR_NERR;
+    else
+        return CFG_HOST_INTR_ERR_NERR;
 }
 
 /*

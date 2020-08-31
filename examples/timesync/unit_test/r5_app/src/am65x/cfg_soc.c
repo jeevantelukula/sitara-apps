@@ -47,7 +47,7 @@ int32_t configureInterrupts()
     int32_t status = 0;
     
     /* Configure CompareEvent Interrupt Router */
-    status = configureCmpEventInterruptRouter(CMPEVT7_INTRTR_IN, CMPEVT7_INTRTR_OUT);
+    status = configureCmpEventInterruptRouter(CMPEVT7_INTRTR_IN, CMPEVT7_INTRTR_OUT, CMPEVT7_INTRTR_HOST_ID);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
