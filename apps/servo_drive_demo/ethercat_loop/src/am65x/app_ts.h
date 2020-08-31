@@ -68,6 +68,7 @@ typedef struct TsPrmsObj_s {
     /* Compare Event Router input & output IDs */
     int32_t cmpEvtRtrInIntNum[ICSSG_TS_DRV__NUM_IEP_CMP];
     int32_t cmpEvtRtrOutIntNum[ICSSG_TS_DRV__NUM_IEP_CMP];
+    int32_t cmpEvtRtrHostId[ICSSG_TS_DRV__NUM_IEP_CMP];
     /* Period/Offset configuration mask */
     uint8_t prdCfgMask;
 } TsPrmsObj;

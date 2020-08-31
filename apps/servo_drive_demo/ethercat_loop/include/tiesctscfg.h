@@ -33,6 +33,8 @@
 #ifndef _TIESC_TS_CFG_H_ 
 #define _TIESC_TS_CFG_H_
 
+#include <ti/drv/sciclient/sciclient.h>
+
 /* Time Sync PRU firmware, ICSSG instance ID */
 #define TS_ICSSG_INST_ID        ( PRUICCSS_INSTANCE_ONE )
 /* Time Sync PRU firmware, PRU instance ID */
@@ -46,8 +48,12 @@
 #define TS_PRD_OFFSET1          ( 0 )
 /* #define TS_PRD_OFFSET1          ( -TS_IEP_PRD_NSEC*2000 ) */              /* 10 usec. pre-trigger */
 
+/* Interrupt Router to Configure */
+#define DEV_CMPEVT_INTRTR       ( TISCI_DEV_CMPEVENT_INTRTR0 )
+
 /* Time Sync Compare Event Router input & output */
 #define TS_CMPEVT_INTRTR_IN0    ( 39 )  /* ICSSG_0_IEP0_CMP_TIMER7_INT */
 #define TS_CMPEVT_INTRTR_OUT0   ( 17 )  /* COMPEVT_RTR_COMP_17_EVT */
+#define TS_CMPEVT_INTRTR_HOST_ID0 ( TISCI_HOST_ID_R5_2 )    /* Non-secure context Host ID */
 
 #endif /* _TIESC_TS_CFG_H_ */

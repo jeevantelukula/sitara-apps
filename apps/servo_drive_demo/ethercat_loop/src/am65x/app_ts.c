@@ -301,7 +301,7 @@ int32_t appTs_initTs(
         if ((pTsPrms->prdCfgMask >> i) & 0x1) {
             /* Configure Compare Event Interrupt Router */
             status = appTs_configureCmpEventInterruptRouter(pTsPrms->cmpEvtRtrInIntNum[i], 
-                pTsPrms->cmpEvtRtrOutIntNum[i]);
+                pTsPrms->cmpEvtRtrOutIntNum[i], pTsPrms->cmpEvtRtrHostId[i]);
             if (status != APP_TS_SOK) {
                 appLogPrintf("appPslCtrlTsInit: configureCmpEventInterruptRouter() failed.\n");
                 return APP_TS_SERR_INIT;

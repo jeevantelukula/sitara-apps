@@ -44,7 +44,8 @@
 /* Configures Compare Event router */
 int32_t appTs_configureCmpEventInterruptRouter(
     int32_t intrRtrInIntNum, 
-    int32_t intrRtrOutIntNum
+    int32_t intrRtrOutIntNum,
+    int32_t intrRtrHostId
 );
 
 /* Registers an interrupt for event from compare event router */

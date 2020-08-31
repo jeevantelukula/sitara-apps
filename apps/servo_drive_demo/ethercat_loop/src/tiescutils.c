@@ -215,6 +215,7 @@ uint8_t task1_init()
     tsPrms.prdOffset[0] = TS_PRD_OFFSET1;
     tsPrms.cmpEvtRtrInIntNum[0] = TS_CMPEVT_INTRTR_IN0;
     tsPrms.cmpEvtRtrOutIntNum[0] = TS_CMPEVT_INTRTR_OUT0;
+    tsPrms.cmpEvtRtrHostId[0] = TS_CMPEVT_INTRTR_HOST_ID0;
     tsPrms.prdCfgMask = TS_CFG_CMP7;
     u8Err |= appTs_initTs(pruIcss1Handle, &tsPrms, &gTs);
     /* Start Time Sync */
