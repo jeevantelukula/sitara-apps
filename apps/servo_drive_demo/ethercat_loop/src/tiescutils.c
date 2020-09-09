@@ -39,6 +39,7 @@
 #include <ti/osal/HwiP.h>
 #include <ti/osal/CacheP.h>
 #include <OSP.h>
+#include <ti/csl/cslr_psc.h>
 
 #include <app_sciclient.h>
 #include <tiescipc.h>
@@ -668,11 +669,11 @@ void common_main()
 
 #ifdef SOC_AM65XX
 	/*Enable ICSSG Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL29 register. */
-    (*((volatile uint32_t *)(CSL_PSC0_BASE+0xA74))) |= 0x1800;
+	(*((volatile uint32_t *)(CSL_PSC0_BASE+CSL_PSC_MDCTL(29)))) |= (CSL_PSC_MDCTL_BLKCHIP1RST_MASK | CSL_PSC_MDCTL_RSTISO_MASK);
 #endif
 #ifdef SOC_AM64X
 	/*Enable ICSSG0 Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL31 register. */
-    (*((volatile uint32_t *)(CSL_PSC0_BASE+0xA7C))) |= 0x1800;
+	(*((volatile uint32_t *)(CSL_PSC0_BASE+CSL_PSC_MDCTL(31)))) |= (CSL_PSC_MDCTL_BLKCHIP1RST_MASK | CSL_PSC_MDCTL_RSTISO_MASK);
 #endif
 	
     /* This is for debug purpose - see the description of function header */
