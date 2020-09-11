@@ -38,6 +38,8 @@
 #include <ti/drv/sciclient/sciclient.h>
 #include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
 
+#define ENABLE_BOARD
+
 #define TASK_PSL_CTRL_PRI       ( 1 )           /* Task PSL Control priority */
 #define TASK_PSL_CTRL_SZ        ( 2048 )        /* Task PSL Control stack size */
 

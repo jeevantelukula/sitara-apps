@@ -141,8 +141,7 @@ int32_t pslCtrlInit(
 	Board_initCfg boardCfg;
 
 	/* Pad configurations */
-	boardCfg = BOARD_INIT_UNLOCK_MMR | BOARD_INIT_UART_STDIO |
-              BOARD_INIT_MODULE_CLOCK | BOARD_INIT_PINMUX_CONFIG;
+	boardCfg = BOARD_INIT_UNLOCK_MMR | BOARD_INIT_MODULE_CLOCK | BOARD_INIT_PINMUX_CONFIG;
 	Board_init(boardCfg);
 
 	/* PINMUX configurations */
