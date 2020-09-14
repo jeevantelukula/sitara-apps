@@ -38,16 +38,6 @@
 #include "app_ts_cfg_mcu_intr.h"
 #include "tiesctscfg.h"
 
-/* CMPEVENT_INTRTR0 number of input interrupts */
-#define NUM_CMPEVENT_INTRTR0_IN          ( 128 )
-/* CMPEVENT_INTRTR0 number of output interrupts */
-#define NUM_CMPEVENT_INTRTR0_OUT         ( 32 )
-
-/* MAIN2MCU_LVL_INTRTR0 number of input interrupts */
-#define NUM_MAIN2MCU_LVL_INTR0_IN        ( 192 )
-/* MAIN2MCU_LVL_INTRTR0 number of output interrupts */
-#define NUM_MAIN2MCU_LVL_INTR0_OUT       ( 64 )
-
 HwiP_Handle hwiHandle = NULL;
 
 /* Configures Compare Event router */

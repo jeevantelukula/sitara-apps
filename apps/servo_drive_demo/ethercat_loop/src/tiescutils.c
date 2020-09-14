@@ -83,12 +83,9 @@ uint32_t mainloop_delta, mainloop_max, pdi_delta, pdi_max, sync_delta, sync_max;
 #endif
 #endif
 
-/* Usage of #ifdef required here until Time Sync is supported on AM64x.*/
-#ifdef SOC_AM65XX
 /* Time Sync */
 #include "app_ts.h"
 #include "tiesctscfg.h"
-#endif
 
 
 /* ========================================================================== */
@@ -143,11 +140,9 @@ static app_ipc_mc_obj_t gAppIpcMsgObj
 __attribute__ ((section(".bss:ipcMCBuffSection")))
 __attribute__ ((aligned(128)))={0}
     ;
-/* Usage of #ifdef required here until Time Sync is supported on AM64x.*/
-#ifdef SOC_AM65XX
+
 /* Time Sync object */
 TsObj gTs;
-#endif
 
 uint8_t task1_init()
 {
@@ -156,10 +151,7 @@ uint8_t task1_init()
 #ifdef ENABLE_PDI_SWI
     SwiP_Params swiParams;
 #endif
-/* Usage of #ifdef required here until Time Sync is supported on AM64x.*/
-#ifdef SOC_AM65XX
     TsPrmsObj tsPrms;
-#endif	
 
 #ifndef DISABLE_UART_PRINT
     UART_printf("\nVersion - ");
@@ -206,8 +198,6 @@ uint8_t task1_init()
     u8Err = MainInit(); // EtherCAT stack init
 
 #if CiA402_DEVICE
-/* Usage of #ifdef required here until Time Sync is supported on AM64x.*/
-#ifdef SOC_AM65XX
 	/* Initialize Time Sync */
     memset(&tsPrms, 0, sizeof(tsPrms));
     tsPrms.icssInstId = TS_ICSSG_INST_ID;
@@ -221,7 +211,7 @@ uint8_t task1_init()
     u8Err |= appTs_initTs(pruIcss1Handle, &tsPrms, &gTs);
     /* Start Time Sync */
     u8Err |= appTs_startTs(&gTs);
-#endif    
+
     /*Initialize Axes structures*/
     CiA402_Init();
     /*Create basic mapping*/
