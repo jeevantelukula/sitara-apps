@@ -129,8 +129,13 @@
 #include <ti/board/board_cfg.h>
 #endif
 
+#include <ti/csl/arch/csl_arch.h>
+
 #include "benchmark_log.h"
 #include "profile.h"
+#include "benchmark_stat.h"
+#include "ipc_setup.h"
+#include "benchmark_timer_interrupt.h"
 
 #include "arm_math.h"
 #include "math_helper.h"
@@ -155,80 +160,184 @@
  * Global variables for PID Example
  * ------------------------------------------------------------------- */
 arm_pid_instance_f32 myPIDInstance __attribute__((section(".testInData")));
+/* declare the core statistic variables */
+CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
+core_stat gCoreStat __attribute__((section(".testInData"))) ;
+core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
+uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
+uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
+uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
+  RUN_FREQ_1K,
+  RUN_FREQ_2K,
+  RUN_FREQ_4K,
+  RUN_FREQ_8K,
+  RUN_FREQ_16K,
+  RUN_FREQ_32K,
+  RUN_FREQ_50K  
+};
+uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+int32_t gCountPerLoopMax = 0;
+int32_t gCountPerLoopAve = 0;
 
 /* ----------------------------------------------------------------------
- * PID Example
+ * PID loop
  * ------------------------------------------------------------------- */
-
-int32_t main(void)
+/* execute PID loop */
+void pidLoop(uint16_t loopCnt) __attribute__((section(".testInCode")));
+void pidLoop(uint16_t loopCnt)
 {
-    uint32_t i, j;
-    float pidOutput;
+  /* use volatile to prevent optimizer from optimizing out calling to 
+     arm_pid_f32 due to no subsequent dependances on its results 
+  */
+  volatile uint32_t i, j;
+  float pidOutput;
 
-#ifndef IO_CONSOLE
-	Board_initCfg boardCfg;
-
-    boardCfg = BOARD_INIT_PINMUX_CONFIG |
-               BOARD_INIT_MODULE_CLOCK  |
-               BOARD_INIT_UART_STDIO;
-    Board_init(boardCfg);
-#endif
-
-#if PROFILE == COMPONENTS
-    init_profiling();
-    gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
-    gStartTime = readPmu();
-    gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;    
-    MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
-#endif
+  init_profiling();
+  gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
+  gStartTime = readPmu(); 
+  gEndTime = readPmu();
+  gOverheadTime = gEndTime - gStartTime;    
 
   /* Initialize PID instance */
   myPIDInstance.Kp = 350;
   myPIDInstance.Ki = 300;
   myPIDInstance.Kd = 50;
   
-  MCBENCH_log("\n START PID benchmark\n");
-
-  /* ----------------------------------------------------------------------
-  ** Call the PID function for every input sample
-  ** ------------------------------------------------------------------- */
-  for(i=0; i < NUM_ITERATION; i++)
-  {
-
-    /* Call PID init function to initialize the instance structure. */
-    arm_pid_init_f32(&myPIDInstance, 1);
+  /* Call PID init function to initialize the instance structure. */
+  arm_pid_init_f32(&myPIDInstance, 1);
 	
-#if PROFILE == COMPONENTS
-    gStartTime = readPmu();
-#endif        
-    for (j=0; j<NUM_PID_LOOP; j++)
+  gStartTime = readPmu();
+  for (j=0; j<loopCnt; j++)
+    for (i=0; i<NUM_PID_LOOP; i++)
       pidOutput = arm_pid_f32(&myPIDInstance, 0.1);
 
-#if PROFILE == COMPONENTS
   /*********** Compute benchmark in cycles ********/
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n Test used %d cycles\n", (uint32_t)gTotalTime);
-#endif        
+  gEndTime = readPmu();
+  gTotalTime = gEndTime - gStartTime - gOverheadTime;
+  
+  /* Compute the average and max of count per loop */
+  if (gTotalTime>(uint64_t)gCountPerLoopMax)
+  {
+    /* Count per loop max */ 
+    gCountPerLoopMax = gTotalTime;
   }
+  gCountPerLoopAve = ((uint64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
+  /* populate the core stat */
+  gCoreStat.payload_num = 0;
+  gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(uint64_t));
+  gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
+  /* get Group and CPU ID */
+  CSL_armR5GetCpuID(&cpuInfo);
+  /* compute core number */
+  gCoreStat.output.core_num = cpuInfo.grpId*2 + cpuInfo.cpuID;
+  gCoreStat.output.app = gAppSelect;
+  gCoreStat.output.freq = gOptionSelect;
+  gCoreStat.output.ccploop.ave = gCountPerLoopAve;
+  gCoreStat.output.ccploop.max = gCountPerLoopMax;
+  gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
+  gCoreStat.output.cload.ave = (uint64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
+  gCoreStat.output.cload.max = (uint64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
+  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;		
+  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;		
 
-  MCBENCH_log("PID output = %d\n", (int32_t)(pidOutput));
-  MCBENCH_log("\n END PID benchmark\n");
   /* MCBENCH_log is blank, if the DEBUG_PRINT is not defined in benchmark_log.h */ 
   /* supress the unused variable build warning */
   (void) pidOutput;
+}
 
-  /* ----------------------------------------------------------------------
-  ** Compare the generated output against the reference output computed
-  ** in MATLAB.
-  ** ------------------------------------------------------------------- */
+int32_t main(void)
+{
+#ifdef DEBUG_PRINT
+  volatile uint32_t msCounter = 0;
+#endif
 
-  /* ----------------------------------------------------------------------
-  ** Loop here if the signal does not match the reference output.
-  ** ------------------------------------------------------------------- */
+#ifndef IO_CONSOLE
+  Board_initCfg boardCfg;
 
-  while (1);                             /* main function does not return */
+  boardCfg = BOARD_INIT_PINMUX_CONFIG |
+             BOARD_INIT_MODULE_CLOCK  |
+             BOARD_INIT_UART_STDIO;
+  Board_init(boardCfg);
+#endif
+
+/* define ENABLE_IPC_RPMSG_CHAR to enable    */
+/* the IPC RPMSG_char between A53 and R5     */
+/* In the case of R5 only test,              */
+/* ENABLE_IPC_RPMSG_CHAR should be undefined */
+
+#ifdef ENABLE_IPC_RPMSG_CHAR
+   /* Initializes the SCI Client driver */
+   MCBENCH_log("\n Initializes the SCI Client driver\n");
+   ipc_initSciclient();
+   MCBENCH_log("\n Set up the IPC RPMsg\n");
+   ipc_rpmsg_init();
+#endif
+
+   /* Set up the timer interrupt */
+   benchmarkTimerInit();
+
+   /* set to RUN_FREQ_1K */
+   benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
+   gAppRunFreq = RUN_FREQ_1K;
+
+   MCBENCH_log("\n START PID benchmark\n");
+   while (1)
+   {
+      /* Check for new timer interrupt */
+      if (gTimerIntStat.isrCnt>gTimerIntStat.isrCntPrev)
+      {
+        /* Execute FOC loop 1 time */
+        pidLoop(1);
+        gTimerIntStat.isrCntPrev++;
+#ifdef DEBUG_PRINT
+		msCounter++;
+		if (msCounter>=DEBUG_PRINT_INTERVAL)
+		{
+			msCounter = 0;
+            MCBENCH_log(" gCountPerLoopAve = %d\n", gCountPerLoopAve);
+            MCBENCH_log(" gCountPerLoopMax = %d\n", gCountPerLoopMax);
+		}
+#endif
+      }
+
+#ifdef ENABLE_IPC_RPMSG_CHAR
+     /* Check for new RPMsg arriving */
+     gCoreStatRcvSize = 0;
+     ipc_rpmsg_receive((char *)&gCoreStatRcv.payload_num, &gCoreStatRcvSize);
+     if (gCoreStatRcvSize>0)
+     {
+       /* has to match the PID */
+       if (gCoreStatRcv.input.app==APP_SEL_PID)
+       {
+         gOptionSelect = gCoreStatRcv.input.freq;
+         /* add ferquency selection offset */
+         gOptionSelect += RUN_FREQS_OFFSET;
+         /* set the running frequency to the selected one */
+         if ((gOptionSelect>0)&&(gOptionSelect<=NUM_RUN_FREQS))
+         {
+           if (gAppRunFreq!=gOption[gOptionSelect-1])
+           {
+             /* set to selected frequency */
+             benchmarkTimerSetFreq((Run_Freq_Sel)gOptionSelect);
+             gAppRunFreq = gOption[gOptionSelect-1];
+             gTimerIntStat.isrCnt = 0;
+             gTimerIntStat.isrCntPrev = 0;
+             gTimerIntStat.intLatencyMax = 0;
+             gTimerIntStat.intLatencyAve = 0;
+             gCountPerLoopAve = 0;
+             gCountPerLoopMax = 0;
+           }
+         }
+      }
+      /* Send the gCoreStat to the A53 */
+      ipc_rpmsg_send((char *)&gCoreStat, (uint16_t)sizeof(gCoreStat));
+    }
+#endif
+
+    /* Execute a WFI */
+    asm volatile (" wfi");
+  }
 }
 
 /** \endlink */
