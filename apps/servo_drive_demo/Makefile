@@ -35,7 +35,7 @@ include $(CONCERTO_ROOT)/rules.mak
 
 # By default, only build linux userspace apps if we are not on Windows, but also
 # allow users to choose on commandline.
-BUILD_LINUX_APPS = 1
+BUILD_LINUX_APPS ?= 1
 ifeq ($(HOST_OS),Windows_NT)
 BUILD_LINUX_APPS = 0
 endif
