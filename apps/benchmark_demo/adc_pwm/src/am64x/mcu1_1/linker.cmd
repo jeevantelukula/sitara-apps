@@ -68,56 +68,56 @@ SECTIONS
 {
 /* 'intvecs' and 'intc_text' sections shall be placed within                  */
 /* a range of +\- 16 MB                                                       */
-    .intvecs 	: {} palign(8) 		> MCU1_1_VECTORS
-    .intc_text 	: {} palign(8) 		> MCU1_1_VECTORS
-    .rstvectors 	: {} palign(8) 		> R5F_ATCM_SBL_RSVD
-    .bootCode      : {} palign(8)      > OCMRAM_MCU1_1
-    .startupCode   : {} palign(8)      > OCMRAM_MCU1_1
-    .startupData   : {} palign(8)      > OCMRAM_MCU1_1, type = NOINIT
-    .text    	: {} palign(8) 		> OCMRAM_MCU1_1
-    .const   	: {} palign(8) 		> OCMRAM_MCU1_1
-    .cinit   	: {} palign(8) 		> OCMRAM_MCU1_1
-    .pinit   	: {} palign(8) 		> OCMRAM_MCU1_1
-    .bss     	: {} align(4)  		> OCMRAM_MCU1_1
-    .far     	: {} align(4)  		> OCMRAM_MCU1_1
-    .data    	: {} palign(128) 	> OCMRAM_MCU1_1
-    .boardcfg_data        : {} palign(128)           > OCMRAM_MCU1_1
-    .sysmem  	: {} 				> OCMRAM_MCU1_1
+    .intvecs 	: {} palign(8) 		> OCSRAM1
+    .intc_text 	: {} palign(8) 		> OCSRAM1
+    .rstvectors 	: {} palign(256) 		> R5F_ATCM_SBL_RSVD
+    .bootCode      : {} palign(8)      > OCSRAM1
+    .startupCode   : {} palign(8)      > OCSRAM1
+    .startupData   : {} palign(8)      > OCSRAM1, type = NOINIT
+    .text    	: {} palign(8) 		> OCSRAM1
+    .const   	: {} palign(8) 		> OCSRAM1
+    .cinit   	: {} palign(8) 		> OCSRAM1
+    .pinit   	: {} palign(8) 		> OCSRAM1
+    .bss     	: {} align(4)  		> OCSRAM1
+    .far     	: {} align(4)  		> OCSRAM1
+    .data    	: {} palign(128) 	> OCSRAM1
+    .boardcfg_data        : {} palign(128)           > OCSRAM1
+    .sysmem  	: {} 				> OCSRAM1
 
     /* USB ram disk dev-msc example */
-    .bss:extMemCache:ramdisk : {} align (32)     > OCMRAM_MCU1_1
+    .bss:extMemCache:ramdisk : {} align (32)     > OCSRAM1
 
     /* USB or any other LLD buffer for benchmarking */
-    .benchmark_buffer (NOLOAD) {} ALIGN (8) > OCMRAM_MCU1_1
+    .benchmark_buffer (NOLOAD) {} ALIGN (8) > OCSRAM1
 
-    .stack  	: {} align(4)		> OCMRAM_MCU1_1  (HIGH)
-    .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> OCMRAM_MCU1_1  (HIGH)
+    .stack  	: {} align(4)		> OCSRAM1  (HIGH)
+    .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> OCSRAM1  (HIGH)
     RUN_START(__IRQ_STACK_START)
     RUN_END(__IRQ_STACK_END)
-    .fiqStack  	: {. = . + __FIQ_STACK_SIZE;} align(4)		> OCMRAM_MCU1_1  (HIGH)
+    .fiqStack  	: {. = . + __FIQ_STACK_SIZE;} align(4)		> OCSRAM1  (HIGH)
     RUN_START(__FIQ_STACK_START)
     RUN_END(__FIQ_STACK_END)
-    .abortStack  	: {. = . + __ABORT_STACK_SIZE;} align(4)		> OCMRAM_MCU1_1  (HIGH)
+    .abortStack  	: {. = . + __ABORT_STACK_SIZE;} align(4)		> OCSRAM1  (HIGH)
     RUN_START(__ABORT_STACK_START)
     RUN_END(__ABORT_STACK_END)
-    .undStack  	: {. = . + __UND_STACK_SIZE;} align(4)		> OCMRAM_MCU1_1  (HIGH)
+    .undStack  	: {. = . + __UND_STACK_SIZE;} align(4)		> OCSRAM1  (HIGH)
     RUN_START(__UND_STACK_START)
     RUN_END(__UND_STACK_END)
-    .svcStack  	: {. = . + __SVC_STACK_SIZE;} align(4)		> OCMRAM_MCU1_1  (HIGH)
+    .svcStack  	: {. = . + __SVC_STACK_SIZE;} align(4)		> OCSRAM1  (HIGH)
     RUN_START(__SVC_STACK_START)
     RUN_END(__SVC_STACK_END)
 
 /* Additional sections settings 	*/
 
-    .bss:l3mem              (NOLOAD)(NOINIT) : {} > OCMRAM_MCU1_1
-    .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_1_SHARED_MEM
-    .testInCode    	: {} palign(8) 		> OCMRAM_MCU1_1 ///R5F1_BTCM
-    .testInData    	: {} palign(8) 		> OCMRAM_MCU1_1 ///R5F1_BTCM
+    .bss:l3mem              (NOLOAD)(NOINIT) : {} > OCSRAM1
+    .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_1_IPC
+    .testInCode    	: {} palign(8) 		> R5F_ATCM
+    .testInData    	: {} palign(8) 		> R5F_ATCM
     .resource_table : {
         __RESOURCE_TABLE = .;
     } > DDR_MCU1_1_RESOURCE_TABLE
-	.tracebuf    	: {} palign(1024) 		> DDR_MCU1_1
-	ipc_data_buffer : {} palign(128) 		> DDR_MCU1_1
+	.tracebuf    	: {} palign(1024) 		> DDR_MCU1_1_IPC
+	ipc_data_buffer : {} palign(128) 		> DDR_MCU1_1_IPC
 }  /* end of SECTIONS */
 
 /*----------------------------------------------------------------------------*/

@@ -121,9 +121,9 @@ typedef struct CSL_AppEpwmObj
  * ------------------------------------------------------------------- */
 typedef struct
 {
-    int64_t adcIsrCnt;               /* ADC interrupt counter */
+    volatile int64_t adcIsrCnt;      /* ADC interrupt counter */
     int64_t adcIsrCntPrev;           /* previous ADC interrupt counter */
-    int64_t pwmIsrCnt;               /* PWM interrupt counter */
+    volatile int64_t pwmIsrCnt;      /* PWM interrupt counter */
     int64_t pwmIsrCntPrev;           /* previous PWM interrupt counter */
     int32_t pwmIsrErrCnt;            /* PWM interrupt error count */
 } adcpwm_int_stat;

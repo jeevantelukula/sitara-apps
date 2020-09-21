@@ -26,4 +26,27 @@ include ${SDIR}/adc_concerto_inc.mak
 # End concerto module declarations
 include $(FINALE)
 
+ifeq ($(TARGET_PLATFORM),AM64X)
+# Begin the concerto module declarations by includng the "PRELUDE"
+MCUNUM := 2_0
+_MODULE = MCU$(MCUNUM)
 
+include $(PRELUDE)
+
+include ${SDIR}/adc_concerto_inc.mak
+
+# End concerto module declarations
+include $(FINALE)
+
+
+# Begin the concerto module declarations by includng the "PRELUDE"
+MCUNUM := 2_1
+_MODULE = MCU$(MCUNUM)
+
+include $(PRELUDE)
+
+include ${SDIR}/adc_concerto_inc.mak
+
+# End concerto module declarations
+include $(FINALE)
+endif

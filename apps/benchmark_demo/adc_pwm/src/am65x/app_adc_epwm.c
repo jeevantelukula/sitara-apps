@@ -472,7 +472,7 @@ void appADCPWMBenchInit(int32_t freq)
       break;
     case RUN_FREQ_50K:
       /* 25Mhz/25/5/4 = 50000hz */
-      adcConfig.sampleDelay      = 22U; /* 39-15-2 = 22 */
+      adcConfig.sampleDelay      = 8U; /* 25-15-2 = 8 */
       adcConfig.averaging        = ADC_AVERAGING_16_SAMPLES;
       break;
     default:
@@ -1042,23 +1042,7 @@ int32_t appEpwmSetOutFreq(int32_t freq)
     uint32_t prdVal;
 
     /* set EPWM_TBPRD */
-    switch (freq)
-    {
-    case RUN_FREQ_8K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_8K;
-      break;
-    case RUN_FREQ_16K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_16K;
-      break;
-    case RUN_FREQ_32K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_32K;
-      break;
-    case RUN_FREQ_50K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_50K;
-      break;
-    default:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_8K;
-    }
+    pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= freq;
 
     /* Update object based on ePWM module frequency */
     pObj->pwmCfg.tbCfg.tbClk = pObj->funcClk / 4;

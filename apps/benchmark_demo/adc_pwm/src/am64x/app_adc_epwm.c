@@ -48,6 +48,9 @@
  * Declare Macros
  * ------------------------------------------------------------------- */
 /* ADC related Macros */
+#define APP_ADC_MODULE          (CSL_ADC0_BASE)
+#define APP_ADC_RANGE_MAX       (4096U)
+
 #define APP_ADC_DIV             (1U)
 /* Reference voltage for ADC - should be given in mV*/
 #define APP_ADC_REF_VOLTAGE     (1800U)
@@ -121,7 +124,7 @@ static void appEpwmTbClockEnable(uint32_t pwmId);
  *  \brief Functional clock to the PWMSS.
  *  Fixed for the platform - can't be changed.
  */
-#define SOC_EHRPWM_MODULE_FREQ          (125U * 1000U * 1000U)
+#define SOC_EHRPWM_MODULE_FREQ          (250U * 1000U * 1000U)
 
 /** \brief TB frequency in Hz - so that /4 divider is used */
 #define APP_EHRPWM_TB_FREQ              (SOC_EHRPWM_MODULE_FREQ / 4U)
@@ -372,7 +375,7 @@ static void appADCConfigureInterrupt(void)
     intrPrms.corepacConfig.arg          = (uintptr_t)0;
     intrPrms.corepacConfig.priority     = 1U;
     intrPrms.corepacConfig.corepacEventNum = 0U; /* NOT USED ? */
-    intrPrms.corepacConfig.intVecNum = CSLR_MCU_R5FSS0_CORE0_INTR_MCU_ADC0_GEN_LEVEL_0;
+    intrPrms.corepacConfig.intVecNum = CSLR_R5FSS0_CORE0_INTR_ADC0_GEN_LEVEL_0;
     intrPrms.corepacConfig.isrRoutine   = (void (*)(uintptr_t)) (&appADCIntrISR) ;
     osalRetVal = Osal_RegisterInterrupt(&intrPrms, &hwiHandle);
     if(OSAL_INT_SUCCESS != osalRetVal)
@@ -384,7 +387,7 @@ static void appADCConfigureInterrupt(void)
 static void appADCModuleEnable(void)
 {
     /* Enable ADC module */
-    Sciclient_pmSetModuleState(TISCI_DEV_MCU_ADC0,
+    Sciclient_pmSetModuleState(TISCI_DEV_ADC0,
         TISCI_MSG_VALUE_DEVICE_SW_STATE_ON,
         TISCI_MSG_FLAG_AOP |
         TISCI_MSG_FLAG_DEVICE_EXCLUSIVE |
@@ -395,7 +398,7 @@ static void appADCModuleEnable(void)
 static void appADCModuleDisable(void)
 {
     /* Disable ADC module */
-    Sciclient_pmSetModuleState(TISCI_DEV_MCU_ADC0,
+    Sciclient_pmSetModuleState(TISCI_DEV_ADC0,
         TISCI_MSG_VALUE_DEVICE_SW_STATE_AUTO_OFF,
         TISCI_MSG_FLAG_AOP |
         TISCI_MSG_FLAG_DEVICE_EXCLUSIVE |
@@ -796,7 +799,7 @@ static int32_t padConfig_prcmEnable(void)
     Intc_IntSetSrcType(CSLR_R5FSS0_CORE0_INTR_EPWM0_EPWM_ETINT_0, 1);
     Intc_IntPrioritySet(CSLR_R5FSS0_CORE0_INTR_EPWM0_EPWM_ETINT_0, 1U, 0U);
     Intc_IntRegister(CSLR_R5FSS0_CORE0_INTR_EPWM0_EPWM_ETINT_0,
-                    (IntrFuncPtr) epwmAppIntrISR,
+                    (IntrFuncPtr) appEpwmIntrISR,
                     0U);
     Intc_IntEnable(CSLR_R5FSS0_CORE0_INTR_EPWM0_EPWM_ETINT_0);
     Intc_SystemEnable();
@@ -807,33 +810,16 @@ static int32_t padConfig_prcmEnable(void)
 /* Configure EPWM pads */
 static void appEpwmCfgEPwmPads(void)
 {
-    CSL_main_ctrl_mmr_cfg0Regs *pMainCtrlMmrCfg0Regs;
-    volatile uint32_t *pMainCtrlMmrCfg0Reg;
-    uint32_t regVal;
-    
-    pMainCtrlMmrCfg0Regs = (CSL_main_ctrl_mmr_cfg0Regs *)CSL_CTRL_MMR0_CFG0_BASE;
+	/* Unlock all MMR */
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_LOCK0_KICK0, KICK0_UNLOCK_VAL);
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_LOCK0_KICK1, KICK1_UNLOCK_VAL);
 
-    pMainCtrlMmrCfg0Reg = &pMainCtrlMmrCfg0Regs->LOCK7_KICK0;
-    regVal = HW_RD_REG32(pMainCtrlMmrCfg0Reg);
-    if (!(regVal & 0x1))
-    {
-        /* Unlock CTLR_MMR0 registers */
-        pMainCtrlMmrCfg0Reg = &pMainCtrlMmrCfg0Regs->LOCK7_KICK0;
-        HW_WR_REG32(pMainCtrlMmrCfg0Reg, KICK0_UNLOCK_VAL);
-        pMainCtrlMmrCfg0Reg = &pMainCtrlMmrCfg0Regs->LOCK7_KICK1;
-        HW_WR_REG32(pMainCtrlMmrCfg0Reg, KICK1_UNLOCK_VAL);
-        pMainCtrlMmrCfg0Reg = &pMainCtrlMmrCfg0Regs->LOCK7_KICK0;
-        do {
-            regVal = HW_RD_REG32(pMainCtrlMmrCfg0Reg);
-        } while (!(regVal & 0x1));
-    }
-
-    /* Configure pad for EHRPWM0_A */
-    regVal = HW_RD_REG32(&pMainCtrlMmrCfg0Regs->PADCONFIG33);
-    regVal &= PADCFG_GPO_SELECT_MASK;
-    regVal |= PADCFG_GPO_OUTPUT_ENABLE;
-    regVal |= CTRLMMR_PADCONFIG33_MMODE;
-    HW_WR_REG32(&pMainCtrlMmrCfg0Regs->PADCONFIG33, regVal); 
+    /* Configure PADCONFIG 15-19 to mux mode 3 */
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_PADCONFIG15, 0x250003);
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_PADCONFIG16, 0x10003);
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_PADCONFIG17, 0x250003);
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_PADCONFIG18, 0x50003);
+    HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_PADCONFIG19, 0x50003);
 }
 
 /* Enable ePWM time base clock */
@@ -870,27 +856,6 @@ static void appEpwmTbClockEnable(uint32_t pwmId)
 /* Get ePWM module functional clock */
 static int32_t appEpwmGetPwmFuncClock(CSL_AppEpwmObj_t *pObj)
 {
-    uint64_t respClkRate;
-    uint32_t prdVal;
-    int32_t status;
-
-    /* Get ePWM0 module clock frequency */
-    status = Sciclient_pmGetModuleClkFreq(TISCI_DEV_EHRPWM0,
-        TISCI_DEV_EHRPWM0_BUS_VBUSP_CLK,
-        &respClkRate,
-        SCICLIENT_SERVICE_WAIT_FOREVER);
-    if (status != CSL_PASS)
-    {
-        return APP_ERR_GET_FUNC_CLK;
-    }
-    
-    /* Update object based on ePWM module frequency */
-    pObj->funcClk = (uint32_t)respClkRate;
-    pObj->pwmCfg.tbCfg.tbClk = pObj->funcClk / 4;
-    prdVal = (pObj->pwmCfg.tbCfg.tbClk / pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd) / 2;
-    pObj->pwmCfg.ccCfg.cmpAValue = prdVal - ((APP_EHRPWM_DUTY_CYCLE * prdVal)/ 100U);    
-    pObj->pwmCfg.ccCfg.cmpBValue = pObj->pwmCfg.ccCfg.cmpAValue;
-    
     return APP_ERR_SOK;
 }
 

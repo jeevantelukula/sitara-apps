@@ -16,6 +16,9 @@ TARGETTYPE  := exe
 DEFS+=__COMPILER_BARRIER
 DEFS+=BUILD_MCU$(MCUNUM)
 DEFS+=BAREMETAL
+ifeq ($(TARGET_PLATFORM),AM65X)
+DEFS+=ENABLE_IPC_RPMSG_CHAR
+endif
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
@@ -52,7 +55,9 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 # dependencies
 STATIC_LIBS += profile
 STATIC_LIBS += benchmark_timer_interrupt
+ifeq ($(TARGET_PLATFORM),AM65X)
 STATIC_LIBS += ipc_rpmsg_lib_mcu$(MCUNUM)
+endif
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
@@ -70,7 +75,7 @@ SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi
 # Set the linker.cmd files that specify linker options along with memory
 # placement.
 LINKER_CMD_FILES +=  $(COMMON_CONFIG)/mem_map/linker_mem_map.cmd
-LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/mcu$(MCUNUM)/linker.cmd
+LINKER_CMD_FILES +=  $(SDIR)/$(SITARA_DEMO_SOC)/$(PDK_CORE_ID)/linker.cmd
 
 
 endif

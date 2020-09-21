@@ -71,7 +71,6 @@ void main(void)
 /* the IPC RPMSG_char between A53 and R5     */
 /* In the case of R5 only test,              */
 /* ENABLE_IPC_RPMSG_CHAR should be undefined */
-#define ENABLE_IPC_RPMSG_CHAR
 
 #ifdef ENABLE_IPC_RPMSG_CHAR
    /* Initializes the SCI Client driver */
@@ -85,13 +84,17 @@ void main(void)
 
    /* Call ADC/PWM init function to initialize the instance structure. */
    benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
-   gAppRunFreq = RUN_FREQ_1K;
+   gAppRunFreq = RUN_FREQ_8K;
    /* set the ADC smapling freqency to the selected frequency */
    appADCPWMBenchInit(gAppRunFreq);
    
    MCBENCH_log("\n START ADC/PWM benchmark\n");
    while (1)
    {
+      if (gTimerIntStat.isrCnt>gTimerIntStat.isrCntPrev)
+      {
+        gTimerIntStat.isrCntPrev++;
+      }
       /* Check for new ADC interrupt */
       if (gAdcPwmIntStat.adcIsrCnt>gAdcPwmIntStat.adcIsrCntPrev)
       {

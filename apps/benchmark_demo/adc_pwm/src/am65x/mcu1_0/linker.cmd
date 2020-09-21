@@ -70,7 +70,7 @@ SECTIONS
 /* a range of +\- 16 MB                                                       */
     .intvecs 	: {} palign(8) 		> MCU1_0_VECTORS
     .intc_text 	: {} palign(8) 		> MCU1_0_VECTORS
-    .rstvectors 	: {} palign(8) 		> R5F_ATCM_SBL_RSVD
+    .rstvectors 	: {} palign(256) 		> R5F_ATCM_SBL_RSVD
     .bootCode      : {} palign(8)      > OCMRAM_MCU1_0
     .startupCode   : {} palign(8)      > OCMRAM_MCU1_0
     .startupData   : {} palign(8)      > OCMRAM_MCU1_0, type = NOINIT
@@ -109,10 +109,10 @@ SECTIONS
 
 /* Additional sections settings 	*/
 
-    .bss:l3mem              (NOLOAD)(NOINIT) : {} > MSMC_MCU1_0
+    .bss:l3mem              (NOLOAD)(NOINIT) : {} > OCMRAM_MCU1_0
     .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_0_SHARED_MEM
-    .testInCode    	: {} palign(8) 		> R5F0_BTCM
-    .testInData    	: {} palign(8) 		> R5F0_BTCM
+    .testInCode    	: {} palign(8) 		> R5F_ATCM
+    .testInData    	: {} palign(8) 		> R5F_ATCM
     .resource_table : {
         __RESOURCE_TABLE = .;
     } > DDR_MCU1_0_RESOURCE_TABLE
