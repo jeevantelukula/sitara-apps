@@ -57,6 +57,11 @@ void main(void)
    Board_initCfg boardCfg;
 #endif
     
+/* define ENABLE_IPC_RPMSG_CHAR to enable    */
+/* the IPC RPMSG_char between A53 and R5     */
+/* In the case of R5 only test,              */
+/* ENABLE_IPC_RPMSG_CHAR should be undefined */
+
 #ifndef IO_CONSOLE
    boardCfg = BOARD_INIT_PINMUX_CONFIG |
               BOARD_INIT_MODULE_CLOCK  |
@@ -64,11 +69,13 @@ void main(void)
    Board_init(boardCfg);
 #endif
    
+#ifdef ENABLE_IPC_RPMSG_CHAR
    /* Initializes the SCI Client driver */
    MCBENCH_log("\n Initializes the SCI Client driver\n");
    ipc_initSciclient();
    MCBENCH_log("\n Set up the IPC RPMsg\n");
    ipc_rpmsg_init();
+#endif
 	
    /* Set up the timer interrupt */
    benchmarkTimerInit();
@@ -77,7 +84,7 @@ void main(void)
    benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
    gAppRunFreq = RUN_FREQ_1K;
 
-   MCBENCH_log("\n START CFFT benchmark\n");
+   MCBENCH_log("\n START FIR benchmark\n");
    while (1)
    {
       /* Check for new timer interrupt */
@@ -88,6 +95,7 @@ void main(void)
          gTimerIntStat.isrCntPrev++;
       }
 
+#ifdef ENABLE_IPC_RPMSG_CHAR
       /* Check for new RPMsg arriving */
       gCoreStatRcvSize = 0;
       ipc_rpmsg_receive((char *)&gCoreStatRcv.payload_num, &gCoreStatRcvSize);
@@ -117,6 +125,7 @@ void main(void)
          /* Send the gCoreStat to the A53 */
          ipc_rpmsg_send((char *)&gCoreStat, (uint16_t)sizeof(gCoreStat));
       }
+#endif
 
       /* Execute a WFI */
       asm volatile (" wfi");
