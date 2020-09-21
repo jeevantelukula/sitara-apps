@@ -49,7 +49,7 @@
 
 typedef struct
 {
-    int64_t isrCnt;               /* timer interrupt counter */
+    volatile int64_t isrCnt;               /* timer interrupt counter */
     int64_t isrCntPrev;           /* previous timer interrupt counter */
     uint32_t intLatencyMax;       /* timer interrupt latency max */
     uint32_t intLatencyAve;       /* timer interrupt latency average */

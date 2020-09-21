@@ -43,7 +43,7 @@
 #define BENCHMARK_TIMER_FREQ_HZ      ( 25000000 )    /* Timer frequency, WKUP_HFOSC0_CLKOUT=25 MHz */
 #define BENCHMARK_TIMER_TICK_PRD     ( 40 )          /* Timer tick period in ns. 1/BENCHMARK_TIMER_FREQ_HZ sec */
 #define BENCHMARK_TIMER_PERIOD_USEC  ( 1000 )        /* Timer period (1000usec.) */
-#define BENCHMARK_TIMER_INTNUM       ( CSL_MCU0_INTR_TIMER2_INTR_PEND )          /* Timer interrupt, MCU_TIMER_2_INT */
+#define BENCHMARK_TIMER_INTNUM       ( CSLR_R5FSS0_CORE0_INTR_TIMER2_INTR_PEND_0 )          /* Timer interrupt, MCU_TIMER_2_INT */
 #define CPU_FREQUENCY	              ( 800000000 )   /* CPU frequency */
 
 #endif /* APP_CFG_SOC_H_ */
