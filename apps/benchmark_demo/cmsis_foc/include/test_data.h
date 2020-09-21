@@ -48,19 +48,19 @@
 #define NUM_FOC_LOOP_ITER ( 10 )
 #define NUM_LOOP ( 1000 )
 
-#define ADC_SAMP_OFFSET ( 2048 )    // DC offset of input samples
-#define ADC_SAMP_SCALEF ( 1.0 )     // ADC sample scaling factor
+#define ADC_SAMP_OFFSET ( 2048 )    /* DC offset of input samples */
+#define ADC_SAMP_SCALEF ( 1.0 )     /* ADC sample scaling factor */
 
-// Input Phase Currents
-extern uint16_t gTestInAdcDataA[NUM_FOC_LOOP_ITER];   // Phase A
-extern uint16_t gTestInAdcDataB[NUM_FOC_LOOP_ITER];   // Phase B
+/* Input Phase Currents */
+extern uint16_t gTestInAdcDataA[NUM_FOC_LOOP_ITER];   /* Phase A */
+extern uint16_t gTestInAdcDataB[NUM_FOC_LOOP_ITER];   /* Phase B */
 
-// Space Vector Generation Outputs
-extern _iq gTestOutSvGenTa[NUM_FOC_LOOP_ITER]; // Output A
-extern _iq gTestOutSvGenTb[NUM_FOC_LOOP_ITER]; // Output B
-extern _iq gTestOutSvGenTc[NUM_FOC_LOOP_ITER]; // Output C
+/* Space Vector Generation Outputs */
+extern _iq gTestOutSvGenTa[NUM_FOC_LOOP_ITER]; /* Output A */
+extern _iq gTestOutSvGenTb[NUM_FOC_LOOP_ITER]; /* Output B */
+extern _iq gTestOutSvGenTc[NUM_FOC_LOOP_ITER]; /* Output C */
 
-// Inverse Clarke Outputs
+/* Inverse Clarke Outputs */
 extern float32_t gTestOutInvClarkeIa[NUM_FOC_LOOP_ITER];
 extern float32_t gTestOutInvClarkeIb[NUM_FOC_LOOP_ITER];
 

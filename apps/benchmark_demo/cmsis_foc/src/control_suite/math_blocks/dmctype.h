@@ -44,8 +44,6 @@ File name:        DMCTYPE.H
 
 typedef short             int16;
 typedef int            int32;
-typedef unsigned short  Uint16;
-typedef unsigned long   Uint32;
 typedef float           float32;
 typedef double     float64;
 

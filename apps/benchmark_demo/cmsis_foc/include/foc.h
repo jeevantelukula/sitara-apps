@@ -41,13 +41,13 @@
 #ifndef _FOC_H_
 #define _FOC_H_
 
-//#define PI              ( 3.14159265358979 )    // Pi
+/*#define PI              ( 3.14159265358979 )*/
 
-#define NUM_POLES       ( 8 )                   // number of poles
+#define NUM_POLES       ( 8 )                   /* number of poles */
 
-#define BASE_FREQ       ( 266.66667 )           // Base electrical frequency (Hz)
+#define BASE_FREQ       ( 266.66667 )           /* Base electrical frequency (Hz) */
 
-#define PWM_PERIOD      ( 100000 )              // 100 usec for 10 kHz
+#define PWM_PERIOD      ( 100000 )              /* 100 usec for 10 kHz */
 #define ISR_FREQUENCY   ( 1000000.0 / PWM_PERIOD )
 
 /* Function prototypes */

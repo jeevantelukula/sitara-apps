@@ -44,6 +44,7 @@
 /* CMSIS-DSPLIB */
 #include "arm_math.h"
 
+#include <ti/csl/arch/csl_arch.h>
 /* C2000 Control Suite */
 #include "dmctype.h"
 #include "IQmathLib.h"
@@ -59,9 +60,11 @@
 #include "foc.h"
 
 #include "benchmark_log.h"
+#include "benchmark_stat.h"
 #include "profile.h"
 #include "test_data.h"
 #include "profile_data.h"
+#include "benchmark_timer_interrupt.h"
 
 /*
  * FOC variable and instance definitions
@@ -81,21 +84,21 @@
 #define PI_IQ_UMIN      ( -0.95 )
 #define PI_IQ_UMAX      ( 0.95 )
 
-float T __attribute__((section(".testInData"))) = 0.001 / ISR_FREQUENCY;    // sampling period in sec for 10 kz T=0.0001.          
-uint16_t gSpeedLoopPrescaler __attribute__((section(".testInData"))) = 10;  // speed loop pre-scaler
+float T __attribute__((section(".testInData"))) = 0.001 / ISR_FREQUENCY;    /* sampling period in sec for 10 kz T=0.0001. */
+uint16_t gSpeedLoopPrescaler __attribute__((section(".testInData"))) = 10;  /* speed loop pre-scaler */
 
 /* Input test data */
-_iq gIdRef __attribute__((section(".testInData"))) = _IQ(0.0);              // Id reference (per-unit)
-_iq  gSpeedRef __attribute__((section(".testInData"))) = _IQ(0.15);         // for Open Loop tests
-_iq gInData[4] __attribute__((section(".testInData")));             //  0- Input Current Phase A; 1- Input Current Phase B; 2- Input Current Phase C; 3- Voltage of one of the Phases
-_iq gElecTheta __attribute__((section(".testInData"))) = _IQ(0.0);  // single_turn Theta, Electrical: converted from mechanical
+_iq gIdRef __attribute__((section(".testInData"))) = _IQ(0.0);              /* Id reference (per-unit) */
+_iq  gSpeedRef __attribute__((section(".testInData"))) = _IQ(0.15);         /* for Open Loop tests */
+_iq gInData[4] __attribute__((section(".testInData")));             /* 0- Input Current Phase A; 1- Input Current Phase B; 2- Input Current Phase C; 3- Voltage of one of the Phases */
+_iq gElecTheta __attribute__((section(".testInData"))) = _IQ(0.0);  /* single_turn Theta, Electrical: converted from mechanical */
 
 /* Calculated data */
-_iq gSinElecTheta __attribute__((section(".testInData"))); // sin of electrical angle
-_iq gCosElecTheta __attribute__((section(".testInData"))); // cos of electrical angle
+_iq gSinElecTheta __attribute__((section(".testInData"))); /* sin of electrical angle */
+_iq gCosElecTheta __attribute__((section(".testInData"))); /* cos of electrical angle */
 
-RMPCNTL gRmpCntl __attribute__((section(".testInData"))) = RMPCNTL_DEFAULTS;    // Ramp controller to smoothly ramp the speed
-RAMPGEN gRampGen __attribute__((section(".testInData"))) = RAMPGEN_DEFAULTS;    // Ramp generator to simulate an electrical angle
+RMPCNTL gRmpCntl __attribute__((section(".testInData"))) = RMPCNTL_DEFAULTS;    /* Ramp controller to smoothly ramp the speed */
+RAMPGEN gRampGen __attribute__((section(".testInData"))) = RAMPGEN_DEFAULTS;    /* Ramp generator to simulate an electrical angle */
 SPEED_MEAS_QEP gSpeedMeasQep __attribute__((section(".testInData"))) = SPEED_MEAS_QEP_DEFAULTS;
 CLARKE gClarke __attribute__((section(".testInData"))) = CLARKE_DEFAULTS;
 PARK gPark __attribute__((section(".testInData"))) = PARK_DEFAULTS;
@@ -105,52 +108,74 @@ PI_CONTROLLER gPiId __attribute__((section(".testInData"))) = PI_CONTROLLER_DEFA
 PI_CONTROLLER gPiIq __attribute__((section(".testInData"))) = PI_CONTROLLER_DEFAULTS;
 SVGENDQ gSvgenDq __attribute__((section(".testInData"))) = SVGENDQ_DEFAULTS;
 
-static uint32_t gAdcSampCnt __attribute__((section(".testInData")));        // current ADC sample count
+static uint32_t gAdcSampCnt __attribute__((section(".testInData")));        /* current ADC sample count */
 static void readAdcSamps(_iq inData[4]);
-static uint32_t gSvGenOutCnt __attribute__((section(".testInData")));       // current SVGen output count
+static uint32_t gSvGenOutCnt __attribute__((section(".testInData")));       /* current SVGen output count */
 static void writeSvGenOut(SVGENDQ svGenDq);
-static uint32_t gInvClarkeOutCnt __attribute__((section(".testInData")));   // current Inverse Clarke output count
+static uint32_t gInvClarkeOutCnt __attribute__((section(".testInData")));   /* current Inverse Clarke output count */
 static void writeInvClarkeOut(float32_t Ia, float32_t Ib);
 
-// CMSIS Clarke transform output
+/* CMSIS Clarke transform output */
 float32_t gCmsisClarkeAlphaOut __attribute__((section(".testInData")));
 float32_t gCmsisClarkeBetaOut __attribute__((section(".testInData")));
 
-// CMSIS sin/cos
-float32_t gCmsisElecTheta __attribute__((section(".testInData")));          // electrical theta expressed degrees for CMSIS
-float32_t gCmsisSinElecThetaOut __attribute__((section(".testInData")));    // CMSIS sin output
-float32_t gCmsisCosElecThetaOut __attribute__((section(".testInData")));    // CMSIS cos output
+/* CMSIS sin/cos */
+float32_t gCmsisElecTheta __attribute__((section(".testInData")));          /* electrical theta expressed degrees for CMSIS */
+float32_t gCmsisSinElecThetaOut __attribute__((section(".testInData")));    /* CMSIS sin output */
+float32_t gCmsisCosElecThetaOut __attribute__((section(".testInData")));    /* CMSIS cos output */
 
-// CMSIS Park transform output
+/* CMSIS Park transform output */
 float32_t gCmsisParkDsOut __attribute__((section(".testInData"))); 
 float32_t gCmsisParkQsOut __attribute__((section(".testInData")));
 
-// CMSIS PID (PI) instances
-arm_pid_instance_f32 gCmsisPiSpd __attribute__((section(".testInData")));   // Speed
-arm_pid_instance_f32 gCmsisPiId __attribute__((section(".testInData")));    // ID
-arm_pid_instance_f32 gCmsisPiIq __attribute__((section(".testInData")));    // IQ
-float32_t gCmsisPiSpdOut __attribute__((section(".testInData")));           // Speed output
-float32_t gCmsisPiIdOut __attribute__((section(".testInData")));            // ID output
-float32_t gCmsisPiIqOut __attribute__((section(".testInData")));            // IQ output
+/* CMSIS PID (PI) instances */
+arm_pid_instance_f32 gCmsisPiSpd __attribute__((section(".testInData")));   /* Speed */
+arm_pid_instance_f32 gCmsisPiId __attribute__((section(".testInData")));    /* ID */
+arm_pid_instance_f32 gCmsisPiIq __attribute__((section(".testInData")));    /* IQ */
+float32_t gCmsisPiSpdOut __attribute__((section(".testInData")));           /* Speed output */
+float32_t gCmsisPiIdOut __attribute__((section(".testInData")));            /* ID output */
+float32_t gCmsisPiIqOut __attribute__((section(".testInData")));            /* IQ output */
 
-// CMSIS Inverse Park transform output
+/* CMSIS Inverse Park transform output */
 float32_t gCmsisParkAlphaOut __attribute__((section(".testInData")));
 float32_t gCmsisParkBetaOut __attribute__((section(".testInData")));
 
-// CMSIS Inverse Clarke transform output
+/* CMSIS Inverse Clarke transform output */
 float32_t gCmsisInvClarkeIaOut __attribute__((section(".testInData")));
 float32_t gCmsisInvClarkeIbOut __attribute__((section(".testInData")));
  
+int32_t gCountPerLoopMax = 0;
+int32_t gCountPerLoopAve = 0;
+
+/* declare the core statistic variables */
+CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
+core_stat gCoreStat __attribute__((section(".testInData"))) ;
+core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
+uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
+uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
+uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
+  RUN_FREQ_1K,
+  RUN_FREQ_2K,
+  RUN_FREQ_4K,
+  RUN_FREQ_8K,
+  RUN_FREQ_16K,
+  RUN_FREQ_32K,
+  RUN_FREQ_50K  
+};
+uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
 /* initialize FOC loop */
 void focLoopInit(void)
 {
-    gAdcSampCnt = 0; // initialize ADC sample count
+    gAdcSampCnt = 0;      /* initialize ADC sample count */
+    gSvGenOutCnt = 0;     /* initialize  SVGen output count */ 
+	gInvClarkeOutCnt = 0; /* initialize Inverse Clarke count */
     
     gRampGen.StepAngleMax = _IQ(BASE_FREQ * T);
     
     /* Initialize speed estimator */
     gSpeedMeasQep.K1 = _IQ21(1 / (BASE_FREQ * T));
-    gSpeedMeasQep.K2 = _IQ(1 / (1 + T * 2 * PI * 5));  // low-pass filter cutoff frequency
+    gSpeedMeasQep.K2 = _IQ(1 / (1 + T * 2 * PI * 5));  /* low-pass filter cutoff frequency */
     gSpeedMeasQep.K3 = _IQ(1) - gSpeedMeasQep.K2;
     gSpeedMeasQep.BaseRpm = BASE_FREQ * 60 * (2 / NUM_POLES);
     
@@ -195,127 +220,40 @@ void focLoopInit(void)
 void focLoop(uint16_t loopCnt) __attribute__((section(".testInCode")));
 void focLoop(uint16_t loopCnt)
 {
-#if PROFILE == COMPONENTS
-    int32_t i;
+    /* Initialize FOC loop */
+    focLoopInit();
+	
     init_profiling();
-    gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
+    gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
     gStartTime = readPmu();
     gEndTime = readPmu();
     gOverheadTime = gEndTime - gStartTime;
-    MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
-#endif
 
     /* Get ADC samples */
     readAdcSamps(gInData);
-    
+	
     /* Ramp controller smoothly ramps speed to SpeedRef */
-    gRmpCntl.TargetValue = gSpeedRef;
-#if PROFILE == COMPONENTS
     gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       RC_MACRO(gRmpCntl);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n RC_MACRO %d cycles\n", (uint32_t)gTotalTime);
-#else
+    gRmpCntl.TargetValue = gSpeedRef;
     RC_MACRO(gRmpCntl);
-#endif
        
     /* Calculate electrical angle based on EnDat position feedback */
-    //calcElecTheta(&gElecTheta);
+    /* calcElecTheta(&gElecTheta); */
     /* Ramp generator simulates electrical angle output from encoder */
     gRampGen.Freq = gRmpCntl.SetpointValue;
-#if PROFILE == COMPONENTS
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       RG_MACRO(gRampGen);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n RG_MACRO %d cycles\n", (uint32_t)gTotalTime);
-#else
     RG_MACRO(gRampGen);
-#endif
     gElecTheta = gRampGen.Out;
     
     /* Connect inputs to speed calculation macro, 
        call speed calculation macro */
     gSpeedMeasQep.ElecTheta = gElecTheta;
-#if PROFILE == COMPONENTS
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       SPEED_FR_MACRO(gSpeedMeasQep);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n SPEED_FR_MACRO %d cycles\n", (uint32_t)gTotalTime);
-#else    
     SPEED_FR_MACRO(gSpeedMeasQep);
-#endif
     
     /* Connect inputs to Clarke transform macro, call macro */
     gClarke.As = gInData[0];
-    gClarke.Bs = gInData[1];
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       CLARKE_MACRO(gClarke);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n CLARKE_MACRO %d cycles\n", (uint32_t)gTotalTime);
-    
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       arm_clarke_f32((float32_t)gInData[0], (float32_t)gInData[1], &gCmsisClarkeAlphaOut, &gCmsisClarkeBetaOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n arm_clarke_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_clarke_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    CLARKE_MACRO(gClarke);
-
-    // CMSIS library call
+    gClarke.Bs = gInData[1];    
+    /* CMSIS library call clarke */
     arm_clarke_f32((float32_t)gInData[0], (float32_t)gInData[1], &gCmsisClarkeAlphaOut, &gCmsisClarkeBetaOut);
-#endif
-    
-    /* Compute sin of electrical angle */
-#if PROFILE == COMPONENTS
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       gSinElecTheta = _IQsinPU(gElecTheta);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n _IQsinPU (sinf) %d cycles\n", (uint32_t)gTotalTime);
-#else
-    gSinElecTheta = _IQsinPU(gElecTheta);
-#endif    
-    
-    /* Compute cosine of electrical angle */
-#if PROFILE == COMPONENTS
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       gCosElecTheta = _IQcosPU(gElecTheta);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n _IQcosPU (cosf) %d cycles\n", (uint32_t)gTotalTime);
-#else
-    gCosElecTheta = _IQcosPU(gElecTheta);
-#endif    
     
     /* Compute sin/cos of electrical angle using CMSIS-DSPLIB */
     gCmsisElecTheta = gElecTheta*360;
@@ -323,226 +261,68 @@ void focLoop(uint16_t loopCnt)
     {
         gCmsisElecTheta = gCmsisElecTheta - 360.0;
     }
-#if PROFILE == COMPONENTS
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       arm_sin_cos_f32(gCmsisElecTheta, &gCmsisSinElecThetaOut, &gCmsisCosElecThetaOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n arm_sin_cos_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_sin_cos_cyc[loopCnt] = gTotalTime;
-#else
-    // CMSIS library call
+
+    /* CMSIS library call sin_cos */
     arm_sin_cos_f32(gCmsisElecTheta, &gCmsisSinElecThetaOut, &gCmsisCosElecThetaOut);
-#endif
-    
+
     /* Connect inputs to Park transform macro, call macro */
     gPark.Alpha = gClarke.Alpha;
     gPark.Beta = gClarke.Beta;
-    gPark.Angle = gElecTheta; // unused
+    gPark.Angle = gElecTheta; /* unused */
     gPark.Sine = gSinElecTheta;
     gPark.Cosine = gCosElecTheta;
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       PARK_MACRO(gPark);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n PARK_MACRO %d cycles\n", (uint32_t)gTotalTime);    
-    
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       arm_park_f32(gCmsisClarkeAlphaOut, gCmsisClarkeBetaOut, &gCmsisParkDsOut, &gCmsisParkQsOut, gCmsisSinElecThetaOut, gCmsisCosElecThetaOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
-    MCBENCH_log("\n arm_park_f32 %d cycles\n", (uint32_t)gTotalTime);    
-    gCmsis_park_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    PARK_MACRO(gPark);
 
-    // CMSIS library call
+    /* CMSIS library call park */
     arm_park_f32(gCmsisClarkeAlphaOut, gCmsisClarkeBetaOut, &gCmsisParkDsOut, &gCmsisParkQsOut, gCmsisSinElecThetaOut, gCmsisCosElecThetaOut);
-#endif
-    
-    /* Connect inputs to Speed PI macro, call macro */
-    gPiSpd.Ref = gSpeedRef;
-    gPiSpd.Fbk = gSpeedMeasQep.Speed;
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       PI_MACRO(gPiSpd);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;  
-    MCBENCH_log("\n SPEED PI_MACRO %d cycles\n", (uint32_t)gTotalTime);
-    
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       gCmsisPiSpdOut = arm_pid_f32(&gCmsisPiSpd, gSpeedRef-gSpeedMeasQep.Speed);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;  
-    MCBENCH_log("\n SPEED arm_pid_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_pid_speed_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    PI_MACRO(gPiSpd);
-
-    // CMSIS library call
+        
+    /* CMSIS library call pid */
     gCmsisPiSpdOut = arm_pid_f32(&gCmsisPiSpd, gSpeedRef-gSpeedMeasQep.Speed);
-#endif
     
-    /* Connect inputs to Iq PI macro, call macro */
-    gPiIq.Ref = gPiSpd.Out;
-    gPiIq.Fbk = gPark.Qs;
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       PI_MACRO(gPiIq);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n IQ PI_MACRO %d cycles\n", (uint32_t)gTotalTime);
-
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       gCmsisPiIqOut = arm_pid_f32(&gCmsisPiIq, gCmsisPiSpdOut-gCmsisParkQsOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n IQ arm_pid_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_pid_iq_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    PI_MACRO(gPiIq);
-    
-    // CMSIS library call
+    /* CMSIS library call pid */
     gCmsisPiIqOut = arm_pid_f32(&gCmsisPiIq, gCmsisPiSpdOut-gCmsisParkQsOut);
-#endif
-    
-    /* Connect inputs to Id PI macro, call macro */
-    gPiId.Ref = gIdRef;
-    gPiId.Fbk = gPark.Ds;
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       PI_MACRO(gPiId);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n ID PI_MACRO %d cycles\n", (uint32_t)gTotalTime);
-    
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       gCmsisPiIdOut = arm_pid_f32(&gCmsisPiId, gIdRef-gCmsisParkDsOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n ID arm_pid_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_pid_id_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    PI_MACRO(gPiId);
-    
-    // CMSIS library call
-    gCmsisPiIdOut = arm_pid_f32(&gCmsisPiId, gIdRef-gCmsisParkDsOut);
-#endif
-    
-    /* Connect inputs to Inverse Park macro, call macro */
-    gIPark.Sine = gSinElecTheta;
-    gIPark.Cosine = gCosElecTheta;
-    gIPark.Ds = gPiId.Out;
-    gIPark.Qs = gPiIq.Out;
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       IPARK_MACRO(gIPark);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n IPARKE_MACRO %d cycles\n", (uint32_t)gTotalTime);
 
-    // CMSIS library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       arm_inv_park_f32(gCmsisPiIdOut, gCmsisPiIqOut, &gCmsisParkAlphaOut, &gCmsisParkBetaOut, gCmsisSinElecThetaOut, gCmsisCosElecThetaOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n arm_inv_park_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_inv_park_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    IPARK_MACRO(gIPark);
+    /* CMSIS library call pid */
+    gCmsisPiIdOut = arm_pid_f32(&gCmsisPiId, gIdRef-gCmsisParkDsOut);
     
-    // CMSIS library call
+    /* CMSIS library call inv-park */
     arm_inv_park_f32(gCmsisPiIdOut, gCmsisPiIqOut, &gCmsisParkAlphaOut, &gCmsisParkBetaOut, gCmsisSinElecThetaOut, gCmsisCosElecThetaOut);
-#endif
     
-    /* Connect inputs to Space Vector Generation macro, call macro */
-    gSvgenDq.Ualpha = gIPark.Alpha;
-    gSvgenDq.Ubeta = gIPark.Beta;
-#if PROFILE == COMPONENTS
-    // Control Suite library call
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       SVGEN_MACRO(gSvgenDq);
-	}
-    gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n SVGEN_MACRO %d cycles\n", (uint32_t)gTotalTime);
-    
-    // CMSIS library call
-    /* Connect inputs to Inverse Clark transform */
-    /* Note: only purpose is benchmarking inverse Clarke transform in CMSIS-DSPLIB.
-       This is because no SVGen macro exists in CMSIS-DSPLIB */
-    gStartTime = readPmu();
-	for (i=0; i<NUM_LOOP; i++)
-	{
-       arm_inv_clarke_f32(gCmsisParkAlphaOut, gCmsisParkBetaOut, &gCmsisInvClarkeIaOut, &gCmsisInvClarkeIbOut);
-    }
-	gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
-    MCBENCH_log("\n arm_inv_clarke_f32 %d cycles\n", (uint32_t)gTotalTime);
-    gCmsis_inv_clarke_cyc[loopCnt] = gTotalTime;
-#else
-    // Control Suite library call
-    SVGEN_MACRO(gSvgenDq);
-    
-    // CMSIS library call
+    /* CMSIS library call inv-clarke */
     /* Connect inputs to Inverse Clark transform */
     /* Note: only purpose is benchmarking inverse Clarke transform in CMSIS-DSPLIB.
        This is because no SVGen macro exists in CMSIS-DSPLIB */
     arm_inv_clarke_f32(gCmsisParkAlphaOut, gCmsisParkBetaOut, &gCmsisInvClarkeIaOut, &gCmsisInvClarkeIbOut);
-#endif
+
     writeSvGenOut(gSvgenDq);
     writeInvClarkeOut(gCmsisInvClarkeIaOut, gCmsisInvClarkeIbOut);
+
+	gEndTime = readPmu();
+    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
+
+    /* Compute the average and max of count per loop */
+    if (gTotalTime>(uint64_t)gCountPerLoopMax)
+    {
+      /* Count per loop max */ 
+      gCountPerLoopMax = gTotalTime;
+    }
+    gCountPerLoopAve = ((uint64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
+    /* populate the core stat */
+    gCoreStat.payload_num = 0;
+    gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(uint64_t));
+    gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
+    /* get Group and CPU ID */
+    CSL_armR5GetCpuID(&cpuInfo);
+    /* compute core number */
+    gCoreStat.output.core_num = cpuInfo.grpId*2 + cpuInfo.cpuID;
+    gCoreStat.output.app = gAppSelect;
+    gCoreStat.output.freq = gOptionSelect;
+    gCoreStat.output.ccploop.ave = gCountPerLoopAve;
+    gCoreStat.output.ccploop.max = gCountPerLoopMax;
+    gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
+    gCoreStat.output.cload.ave = (uint64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
+    gCoreStat.output.cload.max = (uint64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
+    gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;		
+    gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;		
 }
 
 /* Read ADC samples */
@@ -552,17 +332,17 @@ static void readAdcSamps(_iq inData[4])
     int32_t sampI;
     float sampF;
 
-    // Input Phase Current A
+    /* Input Phase Current A */
     sampU = (Uint32)gTestInAdcDataA[gAdcSampCnt];
-    sampI = sampU - 32768;              // unsigned to signed
-    sampI = sampI - ADC_SAMP_OFFSET;    // remove DC offset
+    sampI = sampU - 32768;              /* unsigned to signed */
+    sampI = sampI - ADC_SAMP_OFFSET;    /* remove DC offset */
     sampF = (float)sampI/32768.0 * ADC_SAMP_SCALEF;
     inData[0] = _IQ(sampF);
 
-    // Input Phase Current B
+    /* Input Phase Current B */
     sampU = (uint32_t)gTestInAdcDataB[gAdcSampCnt];
-    sampI = sampU - 32768;              // unsigned to signed
-    sampI = sampI - ADC_SAMP_OFFSET;    // remove DC offset
+    sampI = sampU - 32768;              /* unsigned to signed */
+    sampI = sampI - ADC_SAMP_OFFSET;    /* remove DC offset */
     sampF = (float)sampI/32768.0 * ADC_SAMP_SCALEF;
     inData[1] = _IQ(sampF);
     

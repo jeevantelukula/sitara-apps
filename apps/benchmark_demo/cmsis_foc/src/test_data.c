@@ -43,15 +43,15 @@
 #include "arm_math.h"
 #include "test_data.h"
 
-// Input Phase Currents
-uint16_t gTestInAdcDataA[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData")));    // Phase A
-uint16_t gTestInAdcDataB[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData")));    // Phase B
+/* Input Phase Currents */
+uint16_t gTestInAdcDataA[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData")));    /* Phase A */
+uint16_t gTestInAdcDataB[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData")));    /* Phase B */
 
-// Space Vector Generation Outputs
-_iq gTestOutSvGenTa[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData"))); // Output A
-_iq gTestOutSvGenTb[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData"))); // Output B
-_iq gTestOutSvGenTc[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData"))); // Output C
+/* Space Vector Generation Outputs */
+_iq gTestOutSvGenTa[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData"))); /* Output A */
+_iq gTestOutSvGenTb[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData"))); /* Output B */
+_iq gTestOutSvGenTc[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData"))); /* Output C */
 
-// Inverse Clarke Outputs
+/* Inverse Clarke Outputs */
 float32_t gTestOutInvClarkeIa[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData")));
 float32_t gTestOutInvClarkeIb[NUM_FOC_LOOP_ITER] __attribute__((section(".testInData")));

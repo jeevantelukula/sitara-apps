@@ -39,7 +39,6 @@
  */
  
 #include <stdint.h>
-#include <ti/csl/arch/csl_arch.h>
 
 #ifndef IO_CONSOLE
 #include <ti/board/board.h>
@@ -47,130 +46,19 @@
 #endif
 
 #include "benchmark_log.h"
+#include "benchmark_stat.h"
 #include "profile.h"
 #include "test_data.h"
 #include "foc.h"
-
-const CSL_ArmR5MpuRegionCfg gCslR5MpuCfg[CSL_ARM_R5F_MPU_REGIONS_MAX] =
-{
-    {
-        /* Region 0 configuration: complete 32 bit address space = 4Gbits */
-        .regionId         = 0U,
-        .enable           = 1U,
-        .baseAddr         = 0x0U,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_4GB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 1U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)FALSE,
-        .cachePolicy      = 0U,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 1 configuration: 32 KB ATCM */
-        .regionId         = 1U,
-        .enable           = 1U,
-        .baseAddr         = 0x0U,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_32KB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_NON_CACHEABLE,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 1 configuration: 128 bytes memory for exception vector execution */
-        .regionId         = 2U, //1U,
-        .enable           = 1U,
-        .baseAddr         = 0x0U,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_128B,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_WB_WA,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 2 configuration: 512 KB OCMS RAM */
-        .regionId         = 3U, //2U,
-        .enable           = 1U,
-        .baseAddr         = 0x41C00000,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_512KB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_WB_WA,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 3 configuration: 2 MB MCMS3 RAM */
-        .regionId         = 4U, //3U,
-        .enable           = 1U,
-        .baseAddr         = 0x70000000,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_2MB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_WB_WA,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 4 configuration: 2 GB DDR RAM */
-        .regionId         = 5U, //4U,
-        .enable           = 1U,
-        .baseAddr         = 0x80000000,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_2GB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_WB_WA,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 5 configuration: 64 KB BTCM */
-        .regionId         = 6U, //5U,
-        .enable           = 1U,
-        .baseAddr         = 0x41010000,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_64KB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_NON_CACHEABLE,
-        .memAttr          = 0U,
-    },
-    {
-        /* Region 6 configuration: 128 MB FSS DAT */
-        .regionId         = 7U, //6U,
-        .enable           = 0U,
-        .baseAddr         = 0x50000000,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_128MB,
-        .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
-        .exeNeverControl  = 0U,
-        .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
-        .shareable        = 0U,
-        .cacheable        = (uint32_t)TRUE,
-        .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_WB_WA,
-        .memAttr          = 0U,
-    },
-};
+#include "ipc_setup.h"
+#include "benchmark_timer_interrupt.h"
 
 void main(void) 
 {
-    uint16_t i;
-    
+#ifdef DEBUG_PRINT
+  volatile uint32_t msCounter = 0;
+#endif
+
 #ifndef IO_CONSOLE
 	Board_initCfg boardCfg;
 #endif
@@ -180,39 +68,83 @@ void main(void)
                BOARD_INIT_MODULE_CLOCK  |
                BOARD_INIT_UART_STDIO;
     Board_init(boardCfg);
+#endif  
+
+/* define ENABLE_IPC_RPMSG_CHAR to enable    */
+/* the IPC RPMSG_char between A53 and R5     */
+/* In the case of R5 only test,              */
+/* ENABLE_IPC_RPMSG_CHAR should be undefined */
+
+#ifdef ENABLE_IPC_RPMSG_CHAR
+   /* Initializes the SCI Client driver */
+   MCBENCH_log("\n Initializes the SCI Client driver\n");
+   ipc_initSciclient();
+   MCBENCH_log("\n Set up the IPC RPMsg\n");
+   ipc_rpmsg_init();
 #endif
 
-#if PROFILE != COMPONENTS
-    init_profiling();
-    gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
-    gStartTime = readPmu();
-    gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;    
-    MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
-#endif    
+   /* Set up the timer interrupt */
+   benchmarkTimerInit();
 
-    /* Initialize FOC loop */
-    focLoopInit();
-    
-    MCBENCH_log("\n START FOC benchmark\n");
-    for (i = 0; i < NUM_FOC_LOOP_ITER; i++)
-    {
-        MCBENCH_log("\n ITERATION %d\n", (uint32_t)i);
-        
-#if PROFILE != COMPONENTS
-        gStartTime = readPmu();
-#endif        
-        /* Execute FOC loop */
-        focLoop(i);
-#if PROFILE != COMPONENTS
-        /*********** Compute benchmark in cycles ********/
-        gEndTime = readPmu();
-        gTotalTime = gEndTime - gStartTime - gOverheadTime;
-        MCBENCH_log("\n Test used %d cycles\n", (uint32_t)gTotalTime);
-#endif        
-    }
-    MCBENCH_log("\n END FOC benchmark\n");
+   /* set to RUN_FREQ_1K */
+   benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
+   gAppRunFreq = RUN_FREQ_1K;
 
-    /* End of Benchmark */
-    while(1);
+   MCBENCH_log("\n START FOC benchmark\n");
+   while (1)
+   {
+      /* Check for new timer interrupt */
+      if (gTimerIntStat.isrCnt>gTimerIntStat.isrCntPrev)
+      {
+        /* Execute FOC loop 1 time */
+        focLoop(1);
+        gTimerIntStat.isrCntPrev++;
+#ifdef DEBUG_PRINT
+		msCounter++;
+		if (msCounter>=DEBUG_PRINT_INTERVAL)
+		{
+			msCounter = 0;
+            MCBENCH_log(" gCountPerLoopAve = %d\n", gCountPerLoopAve);
+            MCBENCH_log(" gCountPerLoopMax = %d\n", gCountPerLoopMax);
+		}
+#endif      
+      }
+
+#ifdef ENABLE_IPC_RPMSG_CHAR
+      /* Check for new RPMsg arriving */
+      gCoreStatRcvSize = 0;
+      ipc_rpmsg_receive((char *)&gCoreStatRcv.payload_num, &gCoreStatRcvSize);
+      if (gCoreStatRcvSize>0)
+      {
+         /* has to match the FOC */
+         if (gCoreStatRcv.input.app==APP_SEL_FOC)
+         {
+            gOptionSelect = gCoreStatRcv.input.freq;
+            /* add ferquency selection offset */
+            gOptionSelect += RUN_FREQS_OFFSET;
+            /* set the running frequency to the selected one */
+            if ((gOptionSelect>0)&&(gOptionSelect<=NUM_RUN_FREQS))
+            {
+               if (gAppRunFreq!=gOption[gOptionSelect-1])
+               {
+                 /* set to selected frequency */
+                 benchmarkTimerSetFreq((Run_Freq_Sel)gOptionSelect);
+                 gAppRunFreq = gOption[gOptionSelect-1];
+                 gTimerIntStat.isrCnt = 0;
+                 gTimerIntStat.isrCntPrev = 0;
+                 gTimerIntStat.intLatencyMax = 0;
+                 gTimerIntStat.intLatencyAve = 0;
+                 gCountPerLoopAve = 0;
+                 gCountPerLoopMax = 0;
+               }
+            }
+         }
+         /* Send the gCoreStat to the A53 */
+         ipc_rpmsg_send((char *)&gCoreStat, (uint16_t)sizeof(gCoreStat));
+      }
+#endif
+
+      /* Execute a WFI */
+      asm volatile (" wfi");
+   }
 }
