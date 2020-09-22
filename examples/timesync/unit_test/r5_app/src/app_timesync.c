@@ -52,11 +52,11 @@ int32_t getIcssgId(
 )
 {
     /* Translate ICSSG hardware module ID to API */
-    if (icssInstId == PRUICCSS_INSTANCE_ONE) {
+    if (icssInstId == PRUICSS_INSTANCE_ONE) {
         *pIcssId = ICSSG_TS_DRV__ICSSG_ID_0;
         return APP_TS_ERR_NERR;
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_TWO) {
+    else if (icssInstId == PRUICSS_INSTANCE_TWO) {
         *pIcssId = ICSSG_TS_DRV__ICSSG_ID_1;
         return APP_TS_ERR_NERR;
     }
@@ -77,27 +77,27 @@ int32_t getPruId(
     /* Translate PRU hardware module ID to API */
     switch (pruInstId)
     {
-        case PRUICCSS_PRU0:
+        case PRUICSS_PRU0:
             *pPruId = ICSSG_TS_DRV__PRU_ID_0;
             retVal = APP_TS_ERR_NERR;
             break;
-        case PRUICCSS_PRU1:
+        case PRUICSS_PRU1:
             *pPruId = ICSSG_TS_DRV__PRU_ID_1;
             retVal = APP_TS_ERR_NERR;
             break;
-        case PRUICCSS_RTU0:
+        case PRUICSS_RTU0:
             *pPruId = ICSSG_TS_DRV__RTU_ID_0;
             retVal = APP_TS_ERR_NERR;
             break;
-        case PRUICCSS_RTU1:
+        case PRUICSS_RTU1:
             *pPruId = ICSSG_TS_DRV__RTU_ID_1;
             retVal = APP_TS_ERR_NERR;
             break;
-        case PRUICCSS_TPRU0:
+        case PRUICSS_TPRU0:
             *pPruId = ICSSG_TS_DRV__TPRU_ID_0;
             retVal = APP_TS_ERR_NERR;
             break;
-        case PRUICCSS_TPRU1:
+        case PRUICSS_TPRU1:
             *pPruId = ICSSG_TS_DRV__TPRU_ID_1;
             retVal = APP_TS_ERR_NERR;
             break;
@@ -122,13 +122,13 @@ int32_t cfgIcssgClkSel(
     CSL_main_ctrl_mmr_cfg0Regs *pCtrlMmrCfg0Regs = (CSL_main_ctrl_mmr_cfg0Regs *)CSL_CTRL_MMR0_CFG0_BASE;
     uint32_t regVal;
 
-    if (icssInstId == PRUICCSS_INSTANCE_ONE) {
+    if (icssInstId == PRUICSS_INSTANCE_ONE) {
         regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG0_CLKSEL);
         regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_CORE_CLKSEL_MASK;
         regVal |= source & 0x1;
         HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG0_CLKSEL, regVal);
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_TWO) {
+    else if (icssInstId == PRUICSS_INSTANCE_TWO) {
         regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL);
         regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_CORE_CLKSEL_MASK;
         regVal |= source & 0x1;
@@ -211,16 +211,16 @@ int32_t initPruTimesync(
     /* Determine PRU IMEM address */
     switch (pruInstId)
     {
-        case PRUICCSS_PRU0:
-        case PRUICCSS_PRU1:
+        case PRUICSS_PRU0:
+        case PRUICSS_PRU1:
             pruIMem = PRU_ICSS_IRAM_PRU(slicePruInstId);
             break;
-        case PRUICCSS_RTU0:
-        case PRUICCSS_RTU1:
+        case PRUICSS_RTU0:
+        case PRUICSS_RTU1:
             pruIMem = PRU_ICSS_IRAM_RTU(slicePruInstId);
             break;
-        case PRUICCSS_TPRU0:
-        case PRUICCSS_TPRU1:
+        case PRUICSS_TPRU0:
+        case PRUICSS_TPRU1:
             pruIMem = PRU_ICSS_IRAM_TXPRU(slicePruInstId);
             break;
         default:

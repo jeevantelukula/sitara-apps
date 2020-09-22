@@ -37,10 +37,10 @@
 #include <ti/drv/sciclient/sciclient.h>
 
 /* Test ICSSG instance ID */
-#define TEST_ICSSG_INST_ID              ( PRUICCSS_INSTANCE_TWO )
+#define TEST_ICSSG_INST_ID              ( PRUICSS_INSTANCE_TWO )
 
 /* Test PRU instance ID */
-#define TEST_PRU_INST_ID                ( PRUICCSS_PRU0 )
+#define TEST_PRU_INST_ID                ( PRUICSS_PRU0 )
 
 /* Interrupt Router to Configure */
 #define DEV_CMPEVT_INTRTR                   ( TISCI_DEV_CMP_EVENT_INTROUTER0 )
