@@ -58,10 +58,10 @@ int32_t escFwRegsInit(
 )
 {
     /* Translate ICSSG hardware module ID to PWM API */
-    if (icssInstId == PRUICCSS_INSTANCE_ONE) {
+    if (icssInstId == PRUICSS_INSTANCE_ONE) {
         pEscRegs = (uint8_t *)CSL_PRU_ICSSG0_RAM_SLV_RAM_BASE;
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_TWO) {
+    else if (icssInstId == PRUICSS_INSTANCE_TWO) {
         pEscRegs = (uint8_t *)CSL_PRU_ICSSG1_RAM_SLV_RAM_BASE;
     }
     else {

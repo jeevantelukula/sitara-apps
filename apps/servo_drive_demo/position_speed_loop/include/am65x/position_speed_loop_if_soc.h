@@ -38,10 +38,10 @@
 #include <ti/drv/pruss/pruicss.h>
 
 /* ICSS instance for FSI PRU FW */
-#define FSI_ICSS_INST_ID            ( PRUICCSS_INSTANCE_THREE )
+#define FSI_ICSS_INST_ID            ( PRUICSS_INSTANCE_THREE )
 /* PRU instance IDs for FSI PRU FWs */
-#define FSI_TX_PRU_INST_ID          ( PRUICCSS_PRU0 )
-#define FSI_RX_PRU_INST_ID          ( PRUICCSS_PRU1 )
+#define FSI_TX_PRU_INST_ID          ( PRUICSS_PRU0 )
+#define FSI_RX_PRU_INST_ID          ( PRUICSS_PRU1 )
 
 /* 
  * Definitions for FSI interrupts 

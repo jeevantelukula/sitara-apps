@@ -200,7 +200,7 @@ uint8_t task1_init()
 #if CiA402_DEVICE
 	/* Initialize Time Sync */
     memset(&tsPrms, 0, sizeof(tsPrms));
-    tsPrms.icssInstId = TS_ICSSG_INST_ID;
+    tsPrms.icssInstId = (PRUICSS_MaxInstances)TS_ICSSG_INST_ID;
     tsPrms.pruInstId = TS_PRU_INST_ID;
     tsPrms.prdCount[0] = TS_PRD_COUNT1;
     tsPrms.prdOffset[0] = TS_PRD_OFFSET1;

@@ -45,9 +45,9 @@
 #define TASK_PSL_CTRL_SZ                       ( 2048 )    /* Task PSL Control stack size */
 
 /* Time Sync PRU firmware, ICSSG instance ID */
-#define TS_ICSSG_INST_ID                       ( PRUICCSS_INSTANCE_ONE )
+#define TS_ICSSG_INST_ID                       ( PRUICSS_INSTANCE_ONE )
 /* Time Sync PRU firmware, PRU instance ID */
-#define TS_PRU_INST_ID                         ( PRUICCSS_RTU0 )
+#define TS_PRU_INST_ID                         ( PRUICSS_RTU0 )
 
 /* Time Sync IEP0 Period (nsec.) */
 #define TS_IEP_PRD_NSEC                        ( 5 )                                   /* 5 nsec = 1/200MHz */

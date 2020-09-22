@@ -52,15 +52,15 @@ int32_t appTs_getIcssgId(
 )
 {
     /* Translate ICSSG hardware module ID to TS API */
-    if (icssInstId == PRUICCSS_INSTANCE_ONE) {
+    if (icssInstId == PRUICSS_INSTANCE_ONE) {
         *pIcssId = ICSSG_TS_DRV__ICSSG_ID_0;
         return APP_TS_SOK;
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_TWO) {
+    else if (icssInstId == PRUICSS_INSTANCE_TWO) {
         *pIcssId = ICSSG_TS_DRV__ICSSG_ID_1;
         return APP_TS_SOK;
     }
-    else if (icssInstId == PRUICCSS_INSTANCE_MAX) {
+    else if (icssInstId == PRUICSS_INSTANCE_MAX) {
         *pIcssId = ICSSG_TS_DRV__ICSSG_ID_2;
         return APP_TS_SOK;
     }
@@ -89,19 +89,19 @@ int32_t appTs_getPruId(
            EthCAT firmware uses PRU0/1, 
            so TS firmware can only execute on RTU0/1 & TX_PRU0/1 
         */
-        case PRUICCSS_RTU0:
+        case PRUICSS_RTU0:
             *pPruId = ICSSG_TS_DRV__RTU_ID_0;
             retVal = APP_TS_SOK;
             break;
-        case PRUICCSS_RTU1:
+        case PRUICSS_RTU1:
             *pPruId = ICSSG_TS_DRV__RTU_ID_1;
             retVal = APP_TS_SOK;
             break;
-        case PRUICCSS_TPRU0:
+        case PRUICSS_TPRU0:
             *pPruId = ICSSG_TS_DRV__TPRU_ID_0;
             retVal = APP_TS_SOK;
             break;
-        case PRUICCSS_TPRU1:
+        case PRUICSS_TPRU1:
             *pPruId = ICSSG_TS_DRV__TPRU_ID_1;
             retVal = APP_TS_SOK;
             break;
@@ -150,16 +150,16 @@ int32_t appTs_initPruTs(
     /* Determine PRU IMEM address */
     switch (pruInstId)
     {
-        case PRUICCSS_PRU0:
-        case PRUICCSS_PRU1:
+        case PRUICSS_PRU0:
+        case PRUICSS_PRU1:
             pruIMem = PRU_ICSS_IRAM_PRU(slicePruInstId);
             break;
-        case PRUICCSS_RTU0:
-        case PRUICCSS_RTU1:
+        case PRUICSS_RTU0:
+        case PRUICSS_RTU1:
             pruIMem = PRU_ICSS_IRAM_RTU(slicePruInstId);
             break;
-        case PRUICCSS_TPRU0:
-        case PRUICCSS_TPRU1:
+        case PRUICSS_TPRU0:
+        case PRUICSS_TPRU1:
             pruIMem = PRU_ICSS_IRAM_TXPRU(slicePruInstId);
             break;
         default:
