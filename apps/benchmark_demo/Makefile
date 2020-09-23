@@ -33,7 +33,7 @@ endif
 ifeq ($(BUILD_LINUX_APPS),1)
 all: rpmsg_json_app app_img_build
 clean:: rpmsg_json_app_clean app_img_build_clean
-
+.PHONY: rpmsg_json_app app_img_build
 RPMSG_JSON_APP_BUILDDIR = webserver_app/linux_app/
 
 rpmsg_json_app:
@@ -46,7 +46,9 @@ rpmsg_json_app_clean:
 else
 all: app_img_build
 clean:: app_img_build_clean
+.PHONY: app_img_build
 endif
+
 RTOS_BIN_PATH=$(HOST_ROOT)/$(BUILD_OUTPUT)
 IMG1=mcu1_0,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_0_cmsis_cfft.out
 IMG2=mcu1_1,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_1_cmsis_cfft.out
@@ -59,10 +61,12 @@ KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am65xx-evm.bin,0x80080000
 DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am654-base-board.dtb,0x82000000
 HLOS_BOOT="optimized"
 
+ifeq ($(HOST_OS),Windows_NT)
+export GCC_LINUX_ARM_PATH=$(PSDK_PATH)/rtos/gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf
+endif
+
 app_img_build:
-	make -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
+	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
 	
 app_img_build_clean:
-	rm -rf $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/
-	
-	
+	$(CLEANDIR) $(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/)
