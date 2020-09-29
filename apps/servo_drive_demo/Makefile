@@ -47,7 +47,7 @@ HLOS_BOOT=
 ifeq ($(TARGET_PLATFORM),AM65X)
 IMG1=mcu1_0,$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/R5F/SYSBIOS/$(TARGET_BUILD)/app_tirtos_mcu1_0_servo_drive_ethcat.out)
 IMG2=mcu1_1,$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_1_servo_drive_pscontrol.out)
-SYSFWVERSION=V1
+SYSFWVERSION=V0
 SYSFWFILE=sysfw.bin
 endif
 
