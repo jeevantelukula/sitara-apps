@@ -40,6 +40,13 @@ ifeq ($(HOST_OS),Windows_NT)
 BUILD_LINUX_APPS = 0
 endif
 
+# Quick fix to support a RTOS/BM only (non-Linux) benchmark demo build
+# Linux images will not be available in this build flow
+# By default, set for RTOS + Linux build
+# But set RTOS_ONLY_BUILD=1 from console for RTOS only build
+# This needs to be revisited to move app_img_build in to packaging build flow
+RTOS_ONLY_BUILD ?= 0
+
 ifeq ($(BUILD_LINUX_APPS),1)
 all: rpmsg_json_app app_img_build
 clean:: rpmsg_json_app_clean app_img_build_clean
@@ -75,8 +82,10 @@ ifeq ($(HOST_OS),Windows_NT)
 export GCC_LINUX_ARM_PATH=$(PSDK_PATH)/rtos/gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf
 endif
 
+ifneq ($(RTOS_ONLY_BUILD),1)
 app_img_build:
 	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
 	
 app_img_build_clean:
 	$(CLEANDIR) $(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/)
+endif
