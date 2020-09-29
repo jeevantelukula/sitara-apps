@@ -177,8 +177,6 @@ uint8_t task1_init()
     }
 #endif
 
-    bsp_soc_evm_init();
-
     /* initialize the Hardware and the EtherCAT Slave Controller */
     HW_Init();
 
@@ -264,14 +262,9 @@ void task1(uint32_t arg0, uint32_t arg1)
 
     /* initialize SCICLIENT */
     u8Err = appSciclientInit();
-    
-    /* Perform PAD configuration */
-
-    if(icssgResetIsolated==FALSE)
-    {
-		/*This configuration is required only after poweron reset. Is not required after a warm reset.*/
-		tiesc_mii_pinmuxConfig();    
-    }
+   
+    /* Initialize board */
+    bsp_soc_evm_init();
     
     /* initialize CSL Mbx IPC */
     appMbxIpcInitPrmSetDefault(&mbxipc_init_prm);
