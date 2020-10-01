@@ -28,7 +28,7 @@ export BIOS_PATH               = $(call find_package_in,$(PRSDK_PATH),$(BIOS_PRE
 export XDCTOOLS_PATH           = $(call find_package_in,$(PRSDK_PATH),$(XDCTOOLS_PREFIX)*)
 export PDK_PATH                = $(call find_package_in,$(PRSDK_PATH),$(PDK_PREFIX)*)
 export LINUX_ENV_SETUP         = $(PLSDK_PATH)/linux-devkit/environment-setup
-
+export PSDK_PATH
 
 ifeq ($(BUILD_DEBUG),1)
 $(info TIARMCGT_ROOT         = $(TIARMCGT_ROOT))
