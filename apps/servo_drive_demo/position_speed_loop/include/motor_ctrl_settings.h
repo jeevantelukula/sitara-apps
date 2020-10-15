@@ -41,17 +41,8 @@
 //
 // Following is the list of the Build Level choices.
 //
-#define  FCL_LEVEL1   1     // Verify HAL
-#define  FCL_LEVEL2   2     // Verify IPC for Node_M with speed loop
-#define  FCL_LEVEL3   3     // Verify EtherCAT & IPC for Node_M w/o control
-#define  FCL_LEVEL4   4     // Verify EtherCAT & IPC with speed loop for Node_M
-#define  FCL_LEVEL5   5     // Verify FSI
-#define  FCL_LEVEL6   6     // Verify torque current control over FSI (**)
 #define  FCL_LEVEL7   7     // Verify speed loop over FSI & IPC
 #define  FCL_LEVEL8   8     // Verify position loop over FSI & IPC
-#define  FCL_LEVEL9   9     // SFRA verify slaves control bandwidth
-#define  FCL_LEVEL10  10    // Verify EtherCAT, IPC & FSI w/o control loop
-#define  FCL_LEVEL11  11    // Speed/position loop over EtherCAT, IPC and FSI
 
 //
 // Here below, pick position and speed loop controller option

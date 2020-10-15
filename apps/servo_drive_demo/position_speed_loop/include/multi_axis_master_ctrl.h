@@ -328,10 +328,7 @@ extern void initCtrlParameters(CTRL_Vars_t *pCtrl);
 extern void resetControllerVars(CTRL_Vars_t *pCtrl);
 
 // build level function prototypes
-extern void buildLevel2(void);
-extern void buildLevel5(void);
-extern void buildLevel6(void);
-extern void buildLevel7_9(void);
+extern void buildLevel7(void);
 extern void buildLevel8(void);
 extern void runController(SysNode_e node);
 

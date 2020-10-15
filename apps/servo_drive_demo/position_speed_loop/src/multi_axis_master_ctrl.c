@@ -83,16 +83,11 @@ static inline void switchActiveNode(void)
 }
 
 //****************************************************************************
-// INCRBUILD 2
+// INCRBUILD 7
 //****************************************************************************
-// TODO: buildLevel2()
-#if(BUILDLEVEL == FCL_LEVEL2)
-// FCL_LEVEL2: Speed or position loop over IPC
-// build level 2 subroutine for main node
-void buildLevel2(void)
+#if((BUILDLEVEL == FCL_LEVEL7))
+inline void buildLevel7(void)
 {
-    //setInterruptPriority();   // remove, C2000 interrupt architecture
-
 #if(SPD_CNTLR == SPD_PID_CNTLR)
     sysVars.speedLoopCount++;
 
@@ -107,252 +102,6 @@ void buildLevel2(void)
 
         ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
                 ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-
-        ctrlVars[sysVars.ctrlNode].pid_spd.term.Ref =
-                ctrlVars[sysVars.ctrlNode].ctrlSpeedRef;
-
-        ctrlVars[sysVars.ctrlNode].pid_spd.term.Fbk =
-                ctrlVars[sysVars.ctrlNode].speedWe;
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = 0.0;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-        }
-
-        runPID(&ctrlVars[sysVars.ctrlNode].pid_spd);
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpdOut =
-                ctrlVars[sysVars.ctrlNode].pid_spd.term.Out;
-
-        sysVars.speedLoopCount = 0;
-    }
-
-    if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb != CTRL_RUN)
-    {
-        ctrlVars[sysVars.ctrlNode].pid_spd.data.d1 = 0;
-        ctrlVars[sysVars.ctrlNode].pid_spd.data.d2 = 0;
-        ctrlVars[sysVars.ctrlNode].pid_spd.data.i1 = 0;
-        ctrlVars[sysVars.ctrlNode].pid_spd.data.ud = 0;
-        ctrlVars[sysVars.ctrlNode].pid_spd.data.ui = 0;
-        ctrlVars[sysVars.ctrlNode].pid_spd.data.up = 0;
-
-        ctrlVars[sysVars.ctrlNode].rc.SetpointValue = 0.0;
-    }
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
-
-#if(SPD_CNTLR == SPD_DCL_CNTLR)
-    sysVars.speedLoopCount++;
-
-    if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
-    {
-        switchActiveNode();
-
-        //
-        //  Connect inputs of the RMP module and call the ramp control module
-        //
-        fclRampControl(&ctrlVars[sysVars.ctrlNode].rc);
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = 0.0;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-        }
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umin = 0.0;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-        }
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpdOut =
-                DCL_runPI_C1(&ctrlVars[sysVars.ctrlNode].dcl_spd,
-                             ctrlVars[sysVars.ctrlNode].ctrlSpeedRef,
-                             ctrlVars[sysVars.ctrlNode].speedWe);
-
-        sysVars.speedLoopCount = 0;
-    }
-
-    if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb != CTRL_RUN)
-    {
-        DCL_resetPI(&ctrlVars[sysVars.ctrlNode].dcl_spd);
-        ctrlVars[sysVars.ctrlNode].rc.SetpointValue = 0.0;
-    }
-
-#endif  // (SPD_CNTLR == SPD_DCL_CNTLR)
-
-    ctrlVars[sysVars.ctrlNode].ctrlStateCom =
-            ctrlVars[sysVars.ctrlNode].ctrlStateSet;
-
-    if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_RUN)
-    {
-        ctrlVars[sysVars.ctrlNode].rc.TargetValue =
-                ctrlVars[sysVars.ctrlNode].speedRef;
-
-        ctrlVars[sysVars.ctrlNode].IdRef =
-                ctrlVars[sysVars.ctrlNode].ctrlIdRef;
-
-        ctrlVars[sysVars.ctrlNode].IqRef =
-                ctrlVars[sysVars.ctrlNode].ctrlSpdOut;
-    }
-    else if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_FAULT)
-    {
-        ctrlVars[sysVars.ctrlNode].rc.TargetValue = 0.0;
-        ctrlVars[sysVars.ctrlNode].IdRef = 0.0;
-        ctrlVars[sysVars.ctrlNode].IqRef = 0.0;
-        ctrlVars[sysVars.ctrlNode].ctrlModeCom = CTRL_MODE_FAULT;
-    }
-    else if(ctrlVars[sysVars.ctrlNode].ctrlStateCom == CTRL_RUN)
-    {
-        ctrlVars[sysVars.ctrlNode].rc.TargetValue = 0.0;
-
-        ctrlVars[sysVars.ctrlNode].IdRef =
-                ctrlVars[sysVars.ctrlNode].IdRefStart;
-
-        if(ctrlVars[sysVars.ctrlNode].speedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].IqRef =
-                    ctrlVars[sysVars.ctrlNode].IqRefStart;
-        }
-        else if(ctrlVars[sysVars.ctrlNode].speedRef < 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].IqRef =
-                    -ctrlVars[sysVars.ctrlNode].IqRefStart;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].IqRef = 0.0;
-        }
-    }
-    else
-    {
-        ctrlVars[sysVars.ctrlNode].rc.TargetValue = 0.0;
-        ctrlVars[sysVars.ctrlNode].IdRef = 0.0;
-        ctrlVars[sysVars.ctrlNode].IqRef = 0.0;
-    }
-
-    return;
-}
-#endif // (BUILDLEVEL==FCL_LEVEL2)
-
-
-//****************************************************************************
-// INCRBUILD 5
-//****************************************************************************
-// TODO: buildLevel5()
-#if(BUILDLEVEL == FCL_LEVEL5)
-// FCL_LEVEL5: Verify FSI
-// build level 5 subroutine for all slave nodes (node1~4)
-inline void buildLevel5(void)
-{
-    //setInterruptPriority();   // remove, C2000 interrupt architecture
-
-    sysVars.speedLoopCount++;
-
-    if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
-    {
-        switchActiveNode();
-
-        sysVars.speedLoopCount = 0;
-    }
-
-    ctrlVars[sysVars.ctrlNode].ctrlStateCom = CTRL_STOP;
-    ctrlVars[sysVars.ctrlNode].IdRef = ctrlVars[sysVars.ctrlNode].IdRefSet;
-    ctrlVars[sysVars.ctrlNode].IqRef = ctrlVars[sysVars.ctrlNode].IqRefSet;
-
-    return;
-}
-#endif // (BUILDLEVEL==FCL_LEVEL5)
-
-
-//****************************************************************************
-// INCRBUILD 6
-//****************************************************************************
-// TODO: buildLevel6()
-#if(BUILDLEVEL == FCL_LEVEL6)
-// FCL_LEVEL6: Verify torque current control over FSI
-// build level 6 subroutine for all slave nodes (node1~4)
-inline void buildLevel6(void)
-{
-    //setInterruptPriority();   // remove, C2000 interrupt architecture
-
-    sysVars.speedLoopCount++;
-
-    if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
-    {
-        switchActiveNode();
-
-        sysVars.speedLoopCount = 0;
-    }
-
-    ctrlVars[sysVars.ctrlNode].ctrlStateCom =
-            ctrlVars[sysVars.ctrlNode].ctrlStateSet;
-    ctrlVars[sysVars.ctrlNode].IdRef = ctrlVars[sysVars.ctrlNode].IdRefSet;
-    ctrlVars[sysVars.ctrlNode].IqRef = ctrlVars[sysVars.ctrlNode].IqRefSet;
-
-    return;
-}
-#endif // (BUILDLEVEL==FCL_LEVEL6)
-
-//****************************************************************************
-// INCRBUILD 7, and 9
-//****************************************************************************
-// TODO: buildLevel79() for all slave nodes (node1~4)
-#if((BUILDLEVEL == FCL_LEVEL7) || (BUILDLEVEL == FCL_LEVEL9))
-// FCL_LEVEL6: Verify speed loop over FSI
-// FCL_LEVEL8: SFRA integration to verify speed loop bandwidth
-// build level 6&8 subroutine for motor
-inline void buildLevel7_9(void)
-{
-    //setInterruptPriority();   // remove, C2000 interrupt architecture
-
-#if(SPD_CNTLR == SPD_PID_CNTLR)
-    sysVars.speedLoopCount++;
-
-    if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
-    {
-        switchActiveNode();
-
-        //
-        //  Connect inputs of the RMP module and call the ramp control module
-        //
-        fclRampControl(&ctrlVars[sysVars.ctrlNode].rc);
-
-    #if(BUILDLEVEL == FCL_LEVEL9)   // enables SFRA
-        // SFRA Noise injection in speed loop
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue + sfraNoiseW;
-    #else  // (BUILDLEVEL == FCL_LEVEL9)
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-    #endif // (BUILDLEVEL == FCL_LEVEL7)
 
         ctrlVars[sysVars.ctrlNode].pid_spd.term.Ref =
                 ctrlVars[sysVars.ctrlNode].ctrlSpeedRef;
@@ -411,14 +160,8 @@ inline void buildLevel7_9(void)
         //
         fclRampControl(&ctrlVars[sysVars.ctrlNode].rc);
 
-    #if(BUILDLEVEL == FCL_LEVEL9)   // enables SFRA
-        // SFRA Noise injection in speed loop
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue + sfraNoiseW;
-    #else  // (BUILDLEVEL == FCL_LEVEL9)
         ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
                 ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-    #endif // (BUILDLEVEL == FCL_LEVEL7)
 
         if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
         {
@@ -553,7 +296,7 @@ inline void buildLevel7_9(void)
     return;
 }
 
-#endif // ((BUILDLEVEL==FCL_LEVEL7) || (BUILDLEVEL == FCL_LEVEL9))
+#endif // ((BUILDLEVEL==FCL_LEVEL7))
 
 
 //****************************************************************************
@@ -565,8 +308,6 @@ inline void buildLevel7_9(void)
 // build level 8 subroutine for motor for all slave nodes (node1~4)
 void buildLevel8(void)
 {
-    //setInterruptPriority();   // remove, C2000 interrupt architecture
-
 #if(SPD_CNTLR == SPD_PID_CNTLR)
     sysVars.speedLoopCount++;
 
@@ -758,15 +499,12 @@ void buildLevel8(void)
 
 #endif // (BUILDLEVEL==FCL_LEVEL8)
 
-
-
 //
 // run the controller
 //
 // TODO: runController
 void runController(SysNode_e node)
 {
-#if((BUILDLEVEL >= FCL_LEVEL5) && (BUILDLEVEL <= FCL_LEVEL9))
     if(sysVars.ctrlSynSet == CTRL_SYN_ENABLE)
     {
         ctrlVars[node].ctrlStateSet = sysVars.ctrlStateSet;
@@ -778,7 +516,6 @@ void runController(SysNode_e node)
         ctrlVars[node].speedRef = ctrlVars[node].speedSet;
         ctrlVars[node].positionSet = ctrlVars[node].positionSet;
     }
-#endif  // ((BUILDLEVEL >= FCL_LEVEL5) && (BUILDLEVEL <= FCL_LEVEL9))
 
     return;
 }

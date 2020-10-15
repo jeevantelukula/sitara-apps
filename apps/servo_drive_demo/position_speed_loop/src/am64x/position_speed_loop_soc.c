@@ -254,7 +254,7 @@ void tsIrqHandler(void)
         /* Clear pulse-type interrupt before executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
     
-        buildLevel7_9();
+        buildLevel7();
         FSI_updateTransmissionData();
 
         FSI_setTxBufferPtr(gFsiTxBase, 0U);
