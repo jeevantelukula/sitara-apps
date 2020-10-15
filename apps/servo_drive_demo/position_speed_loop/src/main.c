@@ -80,12 +80,6 @@ int main(void)
         return -1;
     }
 
-#if 1
-    while(1)
-    {
-        appPositionSpeedLoopStart();
-    }
-#else
-    appCommonDeInit();
-#endif
+    appPositionSpeedLoopStart();
+
 }
