@@ -264,11 +264,11 @@ int32_t appPositionSpeedLoopInit(void)
     return POSITION_SPEED_LOOP_SOK;
 }
 
+volatile uint8_t gRunFlag = 1;
 /* Entry point function */
 int32_t appPositionSpeedLoopStart(void)
 {
     SysNode_e nodeIdx;
-    volatile uint8_t run_flag = 1;
 
     FSI_handshakeLead(gFsiTxBase, gFsiRxBase);
 
@@ -278,7 +278,7 @@ int32_t appPositionSpeedLoopStart(void)
     McuIntc_enableIntr(MCU_INTR_IDX(4), true);
 
     /* move to background task */
-    while (run_flag) {
+    while (gRunFlag) {
         for (nodeIdx = SYS_NODE1; nodeIdx <= SYS_NODE4; nodeIdx++)
         {
             /* Rx MC message from EthCAT */
