@@ -265,18 +265,12 @@ int32_t appPositionSpeedLoopStart(void)
     SysNode_e nodeIdx;
     volatile uint8_t run_flag = 1;
 
-    appLogPrintf("APP: Position Speed Loop demo started !!!\n");
-
     FSI_handshakeLead(gFsiTxBase, gFsiRxBase);
-
-    appLogPrintf("APP: FSI Handshake Done !!!\n");
 
     FSI_setupTRxFrameData(gFsiTxBase, gFsiRxBase);
 
     /* Enable Time Sync Interrupts */
     McuIntc_enableIntr(MCU_INTR_IDX(4), true);
-
-    appLogPrintf("APP: Time Sync started !!!\n");
 
     /* move to background task */
     while (run_flag) {
