@@ -53,15 +53,19 @@ extern "C" {
 /**********************************************************************
  ************************** Macros ************************************
  **********************************************************************/
-#define TEST_GPIO_PORT_NUM  ( 0 )
-#define TEST_GPIO_PIN_NUM   ( 14 )
-#define TEST_GPIO2_PIN_NUM  ( 15 )
+#define TEST_GPIO_PORT0_NUM         ( 0 )
+#define TEST_GPIO_PORT0_PIN0_NUM    ( 14 )
+#define TEST_GPIO_PORT0_PIN1_NUM    ( 15 )
+
+#define TEST_GPIO_PORT1_NUM         ( 1 )
+#define TEST_GPIO_PORT1_PIN0_NUM    ( 88 )
 
 #define GPIO_PIN_VAL_LOW    ( 0U )
 #define GPIO_PIN_VAL_HIGH   ( 1U )
 
-#define TEST_GPIO_IDX       ( 0 )
-#define TEST_GPIO2_IDX      ( 1 )
+#define TEST_GPIO0_IDX      ( 0 )
+#define TEST_GPIO1_IDX      ( 1 )
+#define TEST_GPIO2_IDX      ( 2 )
 
 #ifdef __cplusplus
 }

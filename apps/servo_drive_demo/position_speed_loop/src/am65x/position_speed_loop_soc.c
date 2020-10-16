@@ -85,7 +85,7 @@ __attribute__((interrupt("IRQ")))   void tsIrqHandler(void);
 #pragma CODE_STATE (fsiTxInt2IrqHandler,32)
 #pragma CODE_STATE (tsIrqHandler,32)
 
-/* debug */
+/* FSI interrupt statistics counters */
 uint32_t gFsiRxInt1IsrCnt=0;    /* FSI Rx INT1 ISR count */
 uint32_t gFsiRxInt2IsrCnt=0;    /* FSI Rx INT2 ISR count */
 uint32_t gFsiTxInt1IsrCnt=0;    /* FSI Tx INT1 ISR count */
@@ -248,8 +248,10 @@ int32_t appPositionSpeedLoopInit(void)
     */
     /*
     GPIO_init();
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH);
-    GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW);
+    GPIO_write(TEST_GPIO0_IDX, GPIO_PIN_VAL_HIGH);
+    GPIO_write(TEST_GPIO0_IDX, GPIO_PIN_VAL_LOW);
+    GPIO_write(TEST_GPIO1_IDX, GPIO_PIN_VAL_HIGH);
+    GPIO_write(TEST_GPIO1_IDX, GPIO_PIN_VAL_LOW);
     GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH);
     GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW);
     */
@@ -300,10 +302,10 @@ void tsIrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    /* debug, increment ISR count */
+    /* Update statistics */
     gTsIsrCnt++;
     /* debug, observe timing of Time Sync ISR using GPIO */
-    /* GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_LOW); */
+    /* GPIO_write(TEST_GPIO0_IDX, GPIO_PIN_VAL_HIGH); */
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
@@ -312,7 +314,7 @@ void tsIrqHandler(void)
         /* Clear pulse-type interrupt before executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
 
-        buildLevel7_9();
+        buildLevel7();
         FSI_updateTransmissionData();
 
         FSI_setTxBufferPtr(gFsiTxBase, 0U);
@@ -337,7 +339,7 @@ void tsIrqHandler(void)
     }
     
     /* debug */
-    /* GPIO_write(TEST_GPIO_IDX, GPIO_PIN_VAL_HIGH); */
+    /* GPIO_write(TEST_GPIO0_IDX, GPIO_PIN_VAL_LOW); */
 }
 
 /* IRQ handler, FSI RX INT1 */
@@ -347,10 +349,10 @@ void fsiRxInt1IrqHandler(void)
     uint16_t fsiRxStatus = 0;
     int32_t status;
 
-    /* debug, increment ISR count */
+    /* Update statistics */
     gFsiRxInt1IsrCnt++;
     /* debug, observe timing of FSI RX INT1 ISR using GPIO */
-    /* GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_LOW); */
+    /* GPIO_write(TEST_GPIO1_IDX, GPIO_PIN_VAL_HIGH); */
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
@@ -390,7 +392,7 @@ void fsiRxInt1IrqHandler(void)
     }
 
     /* debug */
-    /* GPIO_write(TEST_GPIO2_IDX, GPIO_PIN_VAL_HIGH); */
+    /* GPIO_write(TEST_GPIO1_IDX, GPIO_PIN_VAL_LOW); */
 }
 
 /* IRQ handler, FSI RX INT2 */
@@ -399,7 +401,7 @@ void fsiRxInt2IrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    /* debug, increment ISR counter */
+    /* Update statistics */
     gFsiRxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -423,7 +425,7 @@ void fsiTxInt1IrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    /* debug, increment ISR count */
+    /* Update statistics */
     gFsiTxInt1IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
@@ -447,7 +449,7 @@ void fsiTxInt2IrqHandler(void)
     volatile uint32_t intNum;
     int32_t status;
 
-    /* debug, increment ISR count */
+    /* Update statistics */
     gFsiTxInt2IsrCnt++;
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
