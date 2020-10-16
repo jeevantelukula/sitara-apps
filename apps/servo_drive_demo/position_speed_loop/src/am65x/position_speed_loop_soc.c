@@ -58,10 +58,6 @@
 /* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
 /* #define _CTRL_SYN_ENABLE */
 
-/* Time Sync interrupt */
-uint32_t gTsIsrCnt=0;
-
-
 /* 
  * PRU IRQ handlers
  */
@@ -86,10 +82,19 @@ __attribute__((interrupt("IRQ")))   void tsIrqHandler(void);
 #pragma CODE_STATE (tsIrqHandler,32)
 
 /* FSI interrupt statistics counters */
-uint32_t gFsiRxInt1IsrCnt=0;    /* FSI Rx INT1 ISR count */
-uint32_t gFsiRxInt2IsrCnt=0;    /* FSI Rx INT2 ISR count */
-uint32_t gFsiTxInt1IsrCnt=0;    /* FSI Tx INT1 ISR count */
-uint32_t gFsiTxInt2IsrCnt=0;    /* FSI Tx INT2 ISR count */
+volatile uint32_t gFsiRxInt1IsrCnt=0;   /* FSI Rx INT1 ISR count */
+volatile uint32_t gFsiRxInt2IsrCnt=0;   /* FSI Rx INT2 ISR count */
+volatile uint32_t gFsiTxInt1IsrCnt=0;   /* FSI Tx INT1 ISR count */
+volatile uint32_t gFsiTxInt2IsrCnt=0;   /* FSI Tx INT2 ISR count */
+volatile uint32_t gFsiRxInt1ErrCnt=0;   /* FSI Rx INT1 ISR error count */
+volatile uint32_t gFsiRxInt2ErrCnt=0;   /* FSI Rx INT2 ISR error count */
+volatile uint32_t gFsiTxInt1ErrCnt=0;   /* FSI Tx INT1 ISR error count */
+volatile uint32_t gFsiTxInt2ErrCnt=0;   /* FSI Tx INT2 ISR error count */
+
+/* Time Sync interrupt statistics counters */
+volatile uint32_t gTsIsrCnt=0;          /* Time Sync ISR count */
+volatile uint32_t gTsIntErrCnt=0;       /* Time Sync ISR error count */
+
 
 /* ------------------------------------------------------------------------- *
  *                                Globals                                    *
@@ -303,7 +308,7 @@ void tsIrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == TS_INT_NUM))
     {
         /* Clear pulse-type interrupt before executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
@@ -329,7 +334,11 @@ void tsIrqHandler(void)
         gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
 
         /* Acknowledge interrupt servicing */
-        CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );
+        CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, TS_INT_MAP );
+    }
+    else 
+    {
+        gTsIntErrCnt++;
     }
     
     /* debug */
@@ -350,9 +359,8 @@ void fsiRxInt1IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_RX_INT1_INT_NUM)) 
     {
-        
         /* Clear interrupt at source */
         /* Write 18 to ICSSG_STATUS_CLR_INDEX_REG
             18 = 16+2, 2 is Host Interrupt Number. See AM654x TRM, Table 6-391.
@@ -382,7 +390,10 @@ void fsiRxInt1IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT1_INT_MAP );
-
+    }
+    else 
+    {
+        gFsiRxInt1ErrCnt++;
     }
 
     /* debug */
@@ -400,7 +411,7 @@ void fsiRxInt2IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_RX_INT2_INT_NUM)) 
     {
         /* Clear interrupt at source */
         PRUICSS_pruClearEvent(gPruIcssHandle, 16+3);
@@ -410,6 +421,10 @@ void fsiRxInt2IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );
+    }
+    else 
+    {
+        gFsiRxInt2ErrCnt++;
     }
 }
 
@@ -424,7 +439,7 @@ void fsiTxInt1IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_TX_INT1_INT_NUM))
     {
         /* Clear interrupt at source */
         PRUICSS_pruClearEvent(gPruIcssHandle, 16+4);
@@ -434,6 +449,10 @@ void fsiTxInt1IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_TX_INT1_INT_MAP );
+    }
+    else 
+    {
+        gFsiTxInt1ErrCnt++;
     }
 }
 
@@ -448,7 +467,7 @@ void fsiTxInt2IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_TX_INT2_INT_NUM))
     {
         /* Clear interrupt at source */
         PRUICSS_pruClearEvent(gPruIcssHandle, 16+5);
@@ -458,6 +477,10 @@ void fsiTxInt2IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_TX_INT2_INT_MAP );
+    }
+    else 
+    {
+        gFsiTxInt2ErrCnt++;
     }
 }
 
