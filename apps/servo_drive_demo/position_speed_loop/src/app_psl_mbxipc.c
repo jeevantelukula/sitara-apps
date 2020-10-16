@@ -220,15 +220,15 @@ int32_t appPslMbxIpcTxMsg(
         /* Get transmit object */
         txobj = &gAppPslTxMsgAxes[mcAxisIdx].sendObj;
 
-        /* Disable FSI Rx interrupts for critical section. */
+        /* Disable FSI Rx INT1 (data) interrupts for critical section. */
         /* Velocity & Position updated in FSI ISR. */
-        McuIntc_enableIntr(MCU_INTR_IDX(mcAxisIdx), false);  
+        McuIntc_enableIntr(MCU_INTR_IDX(0), false);  
  
         /* Translate MC feedback variables for node, write to control Tx MC parameters */
         xlateTxMcParams(txobj, &ctrlVars[nodeIdx]);
 
         /* Re-enable FSI Rx interrupts for critical section */
-        McuIntc_enableIntr(MCU_INTR_IDX(mcAxisIdx), true);
+        McuIntc_enableIntr(MCU_INTR_IDX(0), true);
         
         txobj->u16AxisIndex = mcAxisIdx;
         
