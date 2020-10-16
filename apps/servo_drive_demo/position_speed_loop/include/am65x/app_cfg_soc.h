@@ -50,6 +50,6 @@ extern pinmuxPerCfg_t gFsiPinCfg[];
 #define TS_INT_NUM                  ( CSL_MCU0_INTR_MAIN2MCU_PULSE_INTR0_OUTP_0 + TS_MAIN2MCU_RTR_PLS_MUX_INTR0 )
 #define TS_INT_TYPE                 ( CSL_VIM_INTR_TYPE_PULSE )
 #define TS_INT_MAP                  ( CSL_VIM_INTR_MAP_IRQ )
-#define TS_INT_PRI                  ( 0 ) /* 0(lowest)..15(highest) */
+#define TS_INT_PRI                  ( 0 ) /* 0(highest)..15(lowest) */
 
 #endif /* APP_CFG_SOC_H_ */

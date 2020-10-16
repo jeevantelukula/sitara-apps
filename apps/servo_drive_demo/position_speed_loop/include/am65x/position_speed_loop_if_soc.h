@@ -50,7 +50,7 @@
 #define FSI_RX_INT1_INT_NUM         ( 192 ) 
 #define FSI_RX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_RX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_RX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
+#define FSI_RX_INT1_INT_PRI         ( 0 ) /* 0(highest)..15(lowest) */
 #define FSI_RX_INT1_INTR_RTR_DEV_SRC_ID    \
     (  TISCI_DEV_PRU_ICSSG2 )
 #define FSI_RX_INT1_INTR_RTR_DEV_SRC_IRQ_IDX   \
@@ -60,7 +60,7 @@
 #define FSI_RX_INT2_INT_NUM         ( 193 )
 #define FSI_RX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_RX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_RX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
+#define FSI_RX_INT2_INT_PRI         ( 0 ) /* 0(highest)..15(lowest) */
 #define FSI_RX_INT2_INTR_RTR_DEV_SRC_ID    \
     (  TISCI_DEV_PRU_ICSSG2 )
 #define FSI_RX_INT2_INTR_RTR_DEV_SRC_IRQ_IDX   \
@@ -70,7 +70,7 @@
 #define FSI_TX_INT1_INT_NUM         ( 194 )
 #define FSI_TX_INT1_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_TX_INT1_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_TX_INT1_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
+#define FSI_TX_INT1_INT_PRI         ( 0 ) /* 0(highest)..15(lowest) */
 #define FSI_TX_INT1_INTR_RTR_DEV_SRC_ID    \
     (  TISCI_DEV_PRU_ICSSG2 )
 #define FSI_TX_INT1_INTR_RTR_DEV_SRC_IRQ_IDX   \
@@ -80,7 +80,7 @@
 #define FSI_TX_INT2_INT_NUM         ( 195 )
 #define FSI_TX_INT2_INT_TYPE        ( CSL_VIM_INTR_TYPE_LEVEL )
 #define FSI_TX_INT2_INT_MAP         ( CSL_VIM_INTR_MAP_IRQ )
-#define FSI_TX_INT2_INT_PRI         ( 0 ) /* 0(lowest)..15(highest) */
+#define FSI_TX_INT2_INT_PRI         ( 0 ) /* 0(highest)..15(lowest) */
 #define FSI_TX_INT2_INTR_RTR_DEV_SRC_ID    \
     (  TISCI_DEV_PRU_ICSSG2 )
 #define FSI_TX_INT2_INTR_RTR_DEV_SRC_IRQ_IDX   \
