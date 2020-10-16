@@ -69,6 +69,8 @@
 #define TEST_TS_ERR_INIT_TS_DRV_HL    ( -7 )  /* initialize TS DRV HL error */
 #define TEST_TS_ERR_INIT_TS_DRV_LL    ( -8 )  /* initialize TS DRV LL error */
 #define TEST_TS_ERR_START_TS          ( -9 )  /* start TS error */
+/* Interrupt priority of timesync App */
+#define INTERRUPT_PRIORITY            ( 10 )
 
 HwiP_Handle hwiHandle = NULL;
 
@@ -92,7 +94,8 @@ int32_t registerIntrOnCmpEvent(
     Osal_RegisterInterrupt_initParams(&interruptRegParams);
     interruptRegParams.corepacConfig.triggerSensitivity = OSAL_ARM_GIC_TRIG_TYPE_EDGE;
     interruptRegParams.corepacConfig.isrRoutine = isrRoutine;
-    interruptRegParams.corepacConfig.priority = 0x20U;
+    /* R5F VIM and TIRTOS support only 16 priority levels (0-15) */
+    interruptRegParams.corepacConfig.priority = INTERRUPT_PRIORITY;
     interruptRegParams.corepacConfig.name = NULL;
     interruptRegParams.corepacConfig.corepacEventNum = intrNum;
     interruptRegParams.corepacConfig.intVecNum = intrNum; /* Host Interrupt vector */

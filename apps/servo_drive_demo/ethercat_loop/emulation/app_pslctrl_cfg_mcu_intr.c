@@ -47,6 +47,8 @@
 #define NUM_MAIN2MCU_LVL_INTR0_IN        ( 192 )
 /* MAIN2MCU_LVL_INTRTR0 number of output interrupts */
 #define NUM_MAIN2MCU_LVL_INTR0_OUT       ( 64 )
+/* Interrupt priority of timesync App */
+#define INTERRUPT_PRIORITY               ( 10 )
 
 HwiP_Handle hwiHandle = NULL;
 
@@ -100,7 +102,8 @@ int32_t registerIntrOnCmpEvent(
     Osal_RegisterInterrupt_initParams(&interruptRegParams);
     interruptRegParams.corepacConfig.triggerSensitivity = OSAL_ARM_GIC_TRIG_TYPE_EDGE;
     interruptRegParams.corepacConfig.isrRoutine = isrRoutine;
-    interruptRegParams.corepacConfig.priority = 0x20U;
+    /* R5F VIM and TIRTOS support only 16 priority levels (0-15) */
+    interruptRegParams.corepacConfig.priority = INTERRUPT_PRIORITY;
     interruptRegParams.corepacConfig.name = NULL;
     interruptRegParams.corepacConfig.corepacEventNum = intrNum;
     interruptRegParams.corepacConfig.intVecNum = intrNum; /* Host Interrupt vector */
