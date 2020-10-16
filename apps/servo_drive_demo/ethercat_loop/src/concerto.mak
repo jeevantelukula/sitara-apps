@@ -34,15 +34,11 @@ EXAMPLEDIR := $(abspath $(SDIR)/../../../../examples)
 
 # FIXME
 ifeq ($(TARGET_PLATFORM),AM65X)
-ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM65xx_r5f.lib
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM65xx
-LDIRS += $(APPDIR)/lib/am65xx/r5f
 endif
 
 ifeq ($(TARGET_PLATFORM),AM64X)
-ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM64x_r5f.lib
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_idkAM64x
-LDIRS += $(APPDIR)/lib/am64xx/r5f
 endif
 
 # Add directory to include search path
@@ -105,6 +101,7 @@ ADDITIONAL_STATIC_LIBS += ti.drv.i2c.aer5f
 # FIXME : gpio library is not yet available from PDK. Once available, library will be included for AM64X and AM65X.
 ifeq ($(TARGET_PLATFORM),AM65X)
 ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM65xx_r5f.lib
 endif
 ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.pruss.aer5f
@@ -112,6 +109,7 @@ ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.utils.copyvecs.aer5f
 ifeq ($(TARGET_PLATFORM),AM64X)
 ADDITIONAL_STATIC_LIBS += mailbox.aer5f
+ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM64x_r5f.lib
 endif
 
 # Add run-time libraries from toolchain

@@ -23,6 +23,7 @@ PDK_PREFIX              = pdk_
 GCC_SYSBIOS_ARM_PREFIX  = gcc-arm-
 BIOS_PREFIX             = bios_
 XDCTOOLS_PREFIX         = xdctools_
+ETHERCAT_PREFIX         = pru_icss_ethercat
 
 # Set paths
 export TIARMCGT_ROOT           = $(call find_package_in,$(PRSDK_PATH),$(TIARMCGT_PREFIX)*)
@@ -31,6 +32,7 @@ export BIOS_PATH               = $(call find_package_in,$(PRSDK_PATH),$(BIOS_PRE
 export XDCTOOLS_PATH           = $(call find_package_in,$(PRSDK_PATH),$(XDCTOOLS_PREFIX)*)
 export PDK_PATH                = $(call find_package_in,$(PRSDK_PATH),$(PDK_PREFIX)*)
 export LINUX_ENV_SETUP         = $(PLSDK_PATH)/linux-devkit/environment-setup
+export ECAT_PATH               = $(call find_package_in,$(PRSDK_PATH),$(ETHERCAT_PREFIX)*)
 export PSDK_PATH
 
 ifeq ($(BUILD_DEBUG),1)
