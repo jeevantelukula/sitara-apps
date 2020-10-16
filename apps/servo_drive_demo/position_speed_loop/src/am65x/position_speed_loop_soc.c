@@ -361,12 +361,6 @@ void fsiRxInt1IrqHandler(void)
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if ((status == CSL_PASS) && (intNum == FSI_RX_INT1_INT_NUM)) 
     {
-        /* Clear interrupt at source */
-        /* Write 18 to ICSSG_STATUS_CLR_INDEX_REG
-            18 = 16+2, 2 is Host Interrupt Number. See AM654x TRM, Table 6-391.
-        */
-        PRUICSS_pruClearEvent(gPruIcssHandle, 16+2);
-
         FSI_getRxEventStatus(gFsiRxBase, &fsiRxStatus);
 
         if (fsiRxStatus & FSI_RX_EVT_DATA_FRAME)
@@ -384,6 +378,12 @@ void fsiRxInt1IrqHandler(void)
 
         /* Clear the interrupt flag and issue ACK */
         FSI_clearRxEvents(gFsiRxBase, fsiRxStatus);
+
+        /* Clear interrupt at source */
+        /* Write 18 to ICSSG_STATUS_CLR_INDEX_REG
+            18 = 16+2, 2 is Host Interrupt Number. See AM654x TRM, Table 6-391.
+        */
+        PRUICSS_pruClearEvent(gPruIcssHandle, 16+2);
 
         /* Clear level-type interrupt after executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
@@ -404,6 +404,7 @@ void fsiRxInt1IrqHandler(void)
 void fsiRxInt2IrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t fsiRxStatus = 0;
     int32_t status;
 
     /* Update statistics */
@@ -413,6 +414,11 @@ void fsiRxInt2IrqHandler(void)
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if ((status == CSL_PASS) && (intNum == FSI_RX_INT2_INT_NUM)) 
     {
+        FSI_getRxEventStatus(gFsiRxBase, &fsiRxStatus);
+
+        /* Clear the interrupt flag and issue ACK */
+        FSI_clearRxEvents(gFsiRxBase, fsiRxStatus);
+
         /* Clear interrupt at source */
         PRUICSS_pruClearEvent(gPruIcssHandle, 16+3);
 
@@ -432,6 +438,7 @@ void fsiRxInt2IrqHandler(void)
 void fsiTxInt1IrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t fsiTxStatus = 0;
     int32_t status;
 
     /* Update statistics */
@@ -441,6 +448,11 @@ void fsiTxInt1IrqHandler(void)
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if ((status == CSL_PASS) && (intNum == FSI_TX_INT1_INT_NUM))
     {
+        FSI_getTxEventStatus(gFsiTxBase, &fsiTxStatus);
+
+        /* Clear the interrupt flag and issue ACK */
+        FSI_clearTxEvents(gFsiTxBase, fsiTxStatus);
+
         /* Clear interrupt at source */
         PRUICSS_pruClearEvent(gPruIcssHandle, 16+4);
 
@@ -460,6 +472,7 @@ void fsiTxInt1IrqHandler(void)
 void fsiTxInt2IrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t fsiTxStatus = 0;
     int32_t status;
 
     /* Update statistics */
@@ -469,6 +482,11 @@ void fsiTxInt2IrqHandler(void)
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
     if ((status == CSL_PASS) && (intNum == FSI_TX_INT2_INT_NUM))
     {
+        FSI_getTxEventStatus(gFsiTxBase, &fsiTxStatus);
+
+        /* Clear the interrupt flag and issue ACK */
+        FSI_clearTxEvents(gFsiTxBase, fsiTxStatus);
+
         /* Clear interrupt at source */
         PRUICSS_pruClearEvent(gPruIcssHandle, 16+5);
 
