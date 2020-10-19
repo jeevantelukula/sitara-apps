@@ -138,10 +138,6 @@ extern void FSI_initParams(void);
 static inline void
 FSI_writeTxTagUserData(uint32_t base, uint16_t userDataTag)
 {
-    //HAL_Obj *obj = (HAL_Obj *)handle;
-    //HWREGH(obj->fsiTxHandle + FSI_O_TX_FRAME_TAG_UDATA) = userDataTag;
-    
-    //HWREGH(base + FSI_O_TX_FRAME_TAG_UDATA) = userDataTag;
     HWREGH(base + CSL_FSI_TX_CFG_TX_FRAME_TAG_UDATA) = userDataTag;
     
     return;
@@ -154,15 +150,13 @@ FSI_writeTxTagUserData(uint32_t base, uint16_t userDataTag)
 static inline void
 FSI_writeTxDataBuffer(uint32_t base, uint16_t *pTxData, uint16_t length)
 {
-    //HAL_Obj *obj = (HAL_Obj *)handle;
     uint16_t i;
 
     for(i = 0U; i < length; i++)
     {
+        //
         // Write one 16 bit word, increment buffer pointer
         //
-        //HWREGH(obj->fsiTxHandle + FSI_O_TX_BUF_BASE(i)) = *(pTxData+i);
-        //HWREGH(base + FSI_O_TX_BUF_BASE(i)) = *(pTxData+i);
         HWREGH(base + CSL_FSI_TX_CFG_TX_BUF_BASE(i)) = *(pTxData+i);
     }
 
@@ -173,7 +167,6 @@ FSI_writeTxDataBuffer(uint32_t base, uint16_t *pTxData, uint16_t length)
 //! \param[in]  handle is the hardware abstraction layer (HAL) handle
 static inline uint16_t FSI_readRxFrameTag(uint32_t base) // JR: change prototype
 {
-    //HAL_Obj *obj = (HAL_Obj *)handle;
     uint16_t userDataTag = HWREGH(base + CSL_FSI_RX_CFG_RX_FRAME_TAG_UDATA);
     uint16_t frameTag = (userDataTag>>1) & 0x000F;
 
@@ -184,7 +177,6 @@ static inline uint16_t FSI_readRxFrameTag(uint32_t base) // JR: change prototype
 //! \param[in]  handle is the hardware abstraction layer (HAL) handle
 static inline uint16_t FSI_readRxUserData(uint32_t base) // JR: change prototype
 {
-    //HAL_Obj *obj = (HAL_Obj *)handle;
     uint16_t userDataTag = HWREGH(base + CSL_FSI_RX_CFG_RX_FRAME_TAG_UDATA);
     uint16_t userData = (userDataTag>>8) & 0x00FF;
 
@@ -198,7 +190,6 @@ static inline uint16_t FSI_readRxUserData(uint32_t base) // JR: change prototype
 static inline void
 FSI_readRxDataBuffer(uint32_t base, uint16_t *pRxData, uint16_t length) // JR: change prototype
 {
-    //HAL_Obj *obj = (HAL_Obj *)handle;
     uint16_t i;
 
     for(i = 0U; i < length; i++)
@@ -206,7 +197,6 @@ FSI_readRxDataBuffer(uint32_t base, uint16_t *pRxData, uint16_t length) // JR: c
         //
         // Read one 16 bit word, increment buffer pointer
         //
-        //*(pRxData+i) = HWREGH(obj->fsiRxHandle + FSI_O_RX_BUF_BASE(i));
         *(pRxData+i) = HWREGH(base + CSL_FSI_RX_CFG_RX_BUF_BASE(i));
     }
 
