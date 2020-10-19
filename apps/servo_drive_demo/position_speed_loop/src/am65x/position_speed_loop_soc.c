@@ -274,7 +274,9 @@ int32_t appPositionSpeedLoopStart(void)
 
     FSI_setupTRxFrameData(gFsiTxBase, gFsiRxBase);
 
+    /* Clear pending Time Sync interrupts */
     /* Enable Time Sync Interrupts */
+    CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, TS_INT_NUM );
     McuIntc_enableIntr(MCU_INTR_IDX(4), true);
 
     /* move to background task */
