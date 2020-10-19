@@ -48,13 +48,12 @@
 // Here below, pick position and speed loop controller option
 //
 #define  SPD_PID_CNTLR      1
-#define  SPD_DCL_CNTLR      2
 
 //
 // User can select choices from available control configurations
 //
 #define  BUILDLEVEL          FCL_LEVEL7         // 7 & 11 for demo
-#define  SPD_CNTLR           SPD_PID_CNTLR      // SPD_DCL_CNTLR     //
+#define  SPD_CNTLR           SPD_PID_CNTLR      // PID controller
 
 #ifndef BUILDLEVEL
 #error  Critical: BUILDLEVEL must be defined !!

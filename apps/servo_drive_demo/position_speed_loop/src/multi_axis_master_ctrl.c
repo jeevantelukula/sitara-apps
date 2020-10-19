@@ -86,7 +86,6 @@ static inline void switchActiveNode(void)
 #if((BUILDLEVEL == FCL_LEVEL7))
 inline void buildLevel7(void)
 {
-#if(SPD_CNTLR == SPD_PID_CNTLR)
     sysVars.speedLoopCount++;
 
     if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
@@ -138,71 +137,6 @@ inline void buildLevel7(void)
         ctrlVars[sysVars.ctrlNode].pid_spd.data.ui = 0;
         ctrlVars[sysVars.ctrlNode].pid_spd.data.up = 0;
     }
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
-
-#if(SPD_CNTLR == SPD_DCL_CNTLR)
-    sysVars.speedLoopCount++;
-
-    if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
-    {
-        switchActiveNode();
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_RUN)
-        {
-            ctrlVars[sysVars.ctrlNode].rc.TargetValue =
-                    ctrlVars[sysVars.ctrlNode].speedRef;
-        }
-
-        //
-        //  Connect inputs of the RMP module and call the ramp control module
-        //
-        fclRampControl(&ctrlVars[sysVars.ctrlNode].rc);
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = 0.0;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-        }
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umin = 0.0;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-        }
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpdOut =
-                DCL_runPI_C1(&ctrlVars[sysVars.ctrlNode].dcl_spd,
-                             ctrlVars[sysVars.ctrlNode].ctrlSpeedRef,
-                             ctrlVars[sysVars.ctrlNode].speedWe);
-
-        sysVars.speedLoopCount = 0;
-    }
-
-    if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb != CTRL_RUN)
-    {
-        DCL_resetPI(&ctrlVars[sysVars.ctrlNode].dcl_spd);
-    }
-
-#endif  // (SPD_CNTLR == SPD_DCL_CNTLR)
 
     ctrlVars[sysVars.ctrlNode].ctrlStateCom =
             ctrlVars[sysVars.ctrlNode].ctrlStateSet;
@@ -306,7 +240,6 @@ inline void buildLevel7(void)
 // build level 8 subroutine for motor for all slave nodes (node1~4)
 void buildLevel8(void)
 {
-#if(SPD_CNTLR == SPD_PID_CNTLR)
     sysVars.speedLoopCount++;
 
     if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
@@ -389,75 +322,6 @@ void buildLevel8(void)
 
     }
 
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
-
-#if(SPD_CNTLR == SPD_DCL_CNTLR)
-    sysVars.speedLoopCount++;
-
-    if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
-    {
-        switchActiveNode();
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb != CTRL_RUN)
-        {
-            ctrlVars[sysVars.ctrlNode].rc.SetpointValue =
-                    ctrlVars[sysVars.ctrlNode].posMechTheta;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].rc.TargetValue =
-                refPosGen(ctrlVars[sysVars.ctrlNode].rc.TargetValue,
-                          &ctrlVars[sysVars.ctrlNode]);
-
-            ctrlVars[sysVars.ctrlNode].rc.SetpointValue =
-                ctrlVars[sysVars.ctrlNode].rc.TargetValue -
-                (float32_t)((int32_t)ctrlVars[sysVars.ctrlNode].rc.TargetValue);
-
-            // Rolling in angle within 0.0 to 1.0pu
-            if(ctrlVars[sysVars.ctrlNode].rc.SetpointValue < 0.0)
-            {
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue += 1.0;
-            }
-        }
-
-        ctrlVars[sysVars.ctrlNode].ctrlPosRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                DCL_runPI_C1(&ctrlVars[sysVars.ctrlNode].dcl_pos,
-                             ctrlVars[sysVars.ctrlNode].ctrlPosRef,
-                             ctrlVars[sysVars.ctrlNode].posMechTheta);
-
-        if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
-        {
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umin = 0.0;
-        }
-        else
-        {
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].dcl_spd.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
-        }
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpdOut =
-                DCL_runPI_C1(&ctrlVars[sysVars.ctrlNode].dcl_spd,
-                             ctrlVars[sysVars.ctrlNode].ctrlSpeedRef,
-                             ctrlVars[sysVars.ctrlNode].speedWe);
-
-        sysVars.speedLoopCount = 0;
-    }
-
-    if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb != CTRL_RUN)
-    {
-        DCL_resetPI(&ctrlVars[sysVars.ctrlNode].dcl_pos);
-        DCL_resetPI(&ctrlVars[sysVars.ctrlNode].dcl_spd);
-    }
-
-#endif  // (SPD_CNTLR == SPD_DCL_CNTLR)
-
     ctrlVars[sysVars.ctrlNode].ctrlStateCom =
             ctrlVars[sysVars.ctrlNode].ctrlStateSet;
 
@@ -525,19 +389,12 @@ void resetControllerVars(CTRL_Vars_t *pCtrl)
 {
     pCtrl->ctrlStateCom = CTRL_STOP;
     pCtrl->ctrlStateFdb = CTRL_STOP;
-
-#if(SPD_CNTLR == SPD_PID_CNTLR)
     pCtrl->pid_spd.data.d1 = 0;
     pCtrl->pid_spd.data.d2 = 0;
     pCtrl->pid_spd.data.i1 = 0;
     pCtrl->pid_spd.data.ud = 0;
     pCtrl->pid_spd.data.ui = 0;
     pCtrl->pid_spd.data.up = 0;
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
-
-#if(SPD_CNTLR == SPD_DCL_CNTLR)
-    DCL_resetPI(&pCtrl->dcl_spd);
-#endif  // (SPD_CNTLR == SPD_DCL_CNTLR)
 
     return;
 }

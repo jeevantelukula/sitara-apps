@@ -124,7 +124,6 @@ void initCtrlParameters(CTRL_Vars_t *pCtrl)
     pCtrl->rc.RampLowLimit = -1.0;
     pCtrl->rc.RampHighLimit = 1.0;
 
-#if(SPD_CNTLR == SPD_PID_CNTLR)
     //
     // PI Controllers Configuration
     // Initialize the PI module for position
@@ -140,25 +139,6 @@ void initCtrlParameters(CTRL_Vars_t *pCtrl)
     pCtrl->pid_spd.param.Kr   = 1.0;
     pCtrl->pid_spd.param.Umax = 0.95;
     pCtrl->pid_spd.param.Umin = -0.95;
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
-
-#if(SPD_CNTLR == SPD_DCL_CNTLR)
-    //
-    // initialize DCL controller for position
-    //
-    pCtrl->dcl_pos.Kp = 0.2;
-    pCtrl->dcl_pos.Ki = 0.001;
-    pCtrl->dcl_pos.Umax = 1.0;
-    pCtrl->dcl_pos.Umin = -1.0;
-
-    //
-    // initialize DCL controller for speed
-    //
-    pCtrl->dcl_spd.Kp = 0.36;
-    pCtrl->dcl_spd.Ki = 0.0018;
-    pCtrl->dcl_spd.Umax = 0.95;
-    pCtrl->dcl_spd.Umin = -0.95;
-#endif  // (SPD_CNTLR == SPD_DCL_CNTLR)
 
     pCtrl->posRampMax = 1000;
     pCtrl->posRampCntr = 0;

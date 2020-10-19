@@ -245,15 +245,8 @@ typedef struct _CTRL_Vars_t_
 
     RMPCNTL rc;                      // ramp control
 
-#if(SPD_CNTLR == SPD_PID_CNTLR)
     PID_CONTROLLER  pid_spd;
     PI_CONTROLLER   pi_pos;
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
-
-#if(SPD_CNTLR == SPD_DCL_CNTLR)
-    DCL_PI dcl_spd;
-    DCL_PI dcl_pos;
-#endif  // (SPD_CNTLR == SPD_DCL_CNTLR)
 
     uint16_t posRampMax;
     uint16_t posRampCntr;
