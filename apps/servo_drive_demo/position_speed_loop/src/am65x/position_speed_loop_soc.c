@@ -268,7 +268,8 @@ volatile uint8_t gRunFlag = 1;
 /* Entry point function */
 int32_t appPositionSpeedLoopStart(void)
 {
-    SysNode_e nodeIdx;
+    SysNode_e sysNodeIdx;   /* SYSTEM MC node index:    FSI_NODE_FIRST+1...FSI_NODE_LAST+1 */
+    uint16_t mcAxisIdx;     /* IPC MC axis index:       0...MAX_NUM_AXES-1 */
 
     FSI_handshakeLead(gFsiTxBase, gFsiRxBase);
 
@@ -281,16 +282,20 @@ int32_t appPositionSpeedLoopStart(void)
 
     /* move to background task */
     while (gRunFlag) {
-        for (nodeIdx = SYS_NODE1; nodeIdx <= SYS_NODE4; nodeIdx++)
+        /* Continuously loop over all MC axes */
+        sysNodeIdx = (SysNode_e)(FSI_NODE_FIRST+1);
+        for (mcAxisIdx = 0; mcAxisIdx < MAX_NUM_AXES; mcAxisIdx++)
         {
             /* Rx MC message from EthCAT */
-            appPslMbxIpcRxMsg(nodeIdx);
+            appPslMbxIpcRxMsg(mcAxisIdx, sysNodeIdx);
             
             /* Run controller */
-            runController(nodeIdx);
+            runController(sysNodeIdx);
             
             /* Tx MC message to EthCAT */
-            appPslMbxIpcTxMsg(nodeIdx);
+            appPslMbxIpcTxMsg(mcAxisIdx, sysNodeIdx);
+            
+            sysNodeIdx++;
         }
     }
     
@@ -301,6 +306,7 @@ int32_t appPositionSpeedLoopStart(void)
 void tsIrqHandler(void)
 {
     volatile uint32_t intNum;
+    uint16_t mcAxisIdx;
     int32_t status;
 
     /* Update statistics */
@@ -331,9 +337,11 @@ void tsIrqHandler(void)
         FSI_startTxTransmit(gFsiTxBase);
         
         /* Inform background task to transmit latest actual values to EtherCAT   */
-        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
-        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
-        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
+        for (mcAxisIdx = 0; mcAxisIdx < MAX_NUM_AXES; mcAxisIdx++)
+        {
+            /* Set transmit flag for background task */
+            gAppPslTxMsgAxes[mcAxisIdx].isMsgSend = 1;
+        }
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, TS_INT_MAP );

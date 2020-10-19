@@ -47,8 +47,6 @@
 //! @{
 //
 
-#define FSI_NODE_ACTIVE     FSI_SLAVE_N1
-
 //
 // Global variables for FSI
 //

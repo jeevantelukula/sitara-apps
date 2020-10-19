@@ -74,14 +74,16 @@ int32_t appPslMbxIpcInit(
     appPslMbxIpcCfg_t *pPslMbxIpcCfg
 );
 
-/* Mailbox IPC, receive message for MC node (axis) */
+/* Mailbox IPC, receive message for MC axis (node) */
 int32_t appPslMbxIpcRxMsg(
-    SysNode_e nodeIdx
+    uint16_t mcAxisIdx, 
+    SysNode_e sysNodeIdx
 );
 
-/* Mailbox IPC, transmit message for MC axis */
+/* Mailbox IPC, transmit message for MC axis (node) */
 int32_t appPslMbxIpcTxMsg(
-    SysNode_e nodeIdx
+    uint16_t mcAxisIdx, 
+    SysNode_e sysNodeIdx
 );
 
 /* Mailbox IPC Rx message handler */

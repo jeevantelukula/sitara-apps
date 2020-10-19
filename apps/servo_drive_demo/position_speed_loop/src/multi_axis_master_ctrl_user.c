@@ -42,6 +42,9 @@
 //
 void initSysParameters(SYS_Vars_t *pSys)
 {
+    /* set defaults */
+    *pSys = (SYS_Vars_t)SYS_DEFAULTS;
+    
     pSys->isrTicker = 0;
 
     pSys->focExecutionTime_us = 0;
@@ -71,6 +74,9 @@ void initSysParameters(SYS_Vars_t *pSys)
 //
 void initCtrlParameters(CTRL_Vars_t *pCtrl)
 {
+    /* set defaults */
+    *pCtrl = (CTRL_Vars_t)CTRL_DEFAULTS;
+    
     pCtrl->posArray[0] = 6.5;
     pCtrl->posArray[1] = -6.5;
     pCtrl->posArray[2] = 8.5;

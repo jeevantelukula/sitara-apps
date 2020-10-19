@@ -149,16 +149,13 @@ static int32_t xlateRxMcParams(
 
 /* Mailbox IPC, receive message for MC node (axis) */
 int32_t appPslMbxIpcRxMsg(
-    SysNode_e nodeIdx
+    uint16_t mcAxisIdx, 
+    SysNode_e sysNodeIdx
 )
 {
     uintptr_t key;
     ecat2mc_msg_obj_t *rxobj;    
-    uint16_t mcAxisIdx;
 
-    /* Translate slave node index to MBX IPC mailbox index */
-    mcAxisIdx = (uint16_t)(nodeIdx - 1);
-    
     /* Get latest target values from EtherCAT */
     if (mcAxisIdx < MAX_NUM_AXES) {
         /* Enter critical section (Rx mailbox message receive flag), disable interrupts */
@@ -172,7 +169,7 @@ int32_t appPslMbxIpcRxMsg(
             rxobj = &gAppPslRxMsgAxes[mcAxisIdx].receiveObj;            
             
             /* Translate Rx MC parameters, write translated parameters to control variables for node */
-            xlateRxMcParams(rxobj, &ctrlVars[nodeIdx]);
+            xlateRxMcParams(rxobj, &ctrlVars[sysNodeIdx]);
         }
         else {
             /* Exit critical section (Rx mailbox message receive flag), restore interrupt setting */
@@ -198,16 +195,13 @@ static inline int32_t xlateTxMcParams(
 
 /* Mailbox IPC, transmit message for MC node (axis) */
 int32_t appPslMbxIpcTxMsg(
-    SysNode_e nodeIdx
+    uint16_t mcAxisIdx, 
+    SysNode_e sysNodeIdx
 )
 {
     uint32_t payload;
     mc2ecat_msg_obj_t *txobj;
-    uint16_t mcAxisIdx;
 
-    /* Translate slave node index to MBX IPC mailbox index */
-    mcAxisIdx = (uint16_t)(nodeIdx - 1);
-    
     if ((mcAxisIdx < MAX_NUM_AXES) && 
         (gAppPslTxMsgAxes[mcAxisIdx].isMsgSend == 1))
     {
@@ -225,7 +219,7 @@ int32_t appPslMbxIpcTxMsg(
         McuIntc_enableIntr(MCU_INTR_IDX(0), false);  
  
         /* Translate MC feedback variables for node, write to control Tx MC parameters */
-        xlateTxMcParams(txobj, &ctrlVars[nodeIdx]);
+        xlateTxMcParams(txobj, &ctrlVars[sysNodeIdx]);
 
         /* Re-enable FSI Rx interrupts for critical section */
         McuIntc_enableIntr(MCU_INTR_IDX(0), true);

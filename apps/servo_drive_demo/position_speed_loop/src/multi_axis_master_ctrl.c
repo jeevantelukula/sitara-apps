@@ -42,13 +42,9 @@
 //
 // Global variables used in this system
 //
-CTRL_Vars_t ctrlVars[SYS_NODE_NUM] = {  CTRL_DEFAULTS,                         \
-                                        CTRL_DEFAULTS,                         \
-                                        CTRL_DEFAULTS,                         \
-                                        CTRL_DEFAULTS,                         \
-                                        CTRL_DEFAULTS                          \
-                                      };
-SYS_Vars_t  sysVars = SYS_DEFAULTS;
+CTRL_Vars_t ctrlVars[SYS_NODE_NUM];
+SYS_Vars_t  sysVars;
+
 
 //
 //   Various Incremental Build levels

@@ -92,13 +92,21 @@
 #define FSI_SLAVE_N7        6
 #define FSI_SLAVE_N8        7
 
-#define FSI_NODES           4               // Slave Nodes = 8
-//#define FSI_NODES         8               // Maximum Slave Nodes = 8
+/* number of FSI nodes in FSI daisy chain */
+//#define FSI_NODES           1               // Slave Nodes = 1
+#define FSI_NODES           4               // Slave Nodes = 4
+//#define FSI_NODES           8               // Maximum Slave Nodes = 8
 
 #define FSI_NODE_NUM        FSI_NODES       // Node Tag Array Number
 
+/* first FSI node in FSI daisy chain */
 #define FSI_NODE_FIRST      FSI_SLAVE_N1
-#define FSI_NODE_LAST       FSI_SLAVE_N4
+
+/* last FSI node in FSI daisy chain */
+//#define FSI_NODE_LAST       FSI_SLAVE_N1    // Slave Nodes = 1
+#define FSI_NODE_LAST       FSI_SLAVE_N4    // Slave Nodes = 4
+
+/* initially active FSI node in FSI daisy chain, must be between first & last FSI node */
 #define FSI_NODE_ACTIVE     FSI_SLAVE_N1
 
 #define FSI_USERTAG_CHK     0xAE
