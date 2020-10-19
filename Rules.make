@@ -1,5 +1,8 @@
 # Provide PATH to install directory of Sitara SDK
-PSDK_PATH ?= /builds/ti-processor-sdk_0.1A_evm_am65xx_2020-04-02-12-30-11
+PSDK_PATH ?= $(abspath ../)
+
+# Set SoC platform. Supported values: AM64X AM65X
+export TARGET_PLATFORM ?= AM64X
 
 # Derive path to RTOS board support package
 PRSDK_PATH = $(PSDK_PATH)/rtos
