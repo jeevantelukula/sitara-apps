@@ -194,7 +194,7 @@ int32_t appMbxIpcInterruptInit(uint32_t intNum, uint16_t remoteId)
                    (uint32_t)mailboxIsrArray[remoteId] );
         CSL_vimSetIntrEnable((CSL_vimRegs *)(uintptr_t)VIM_BASE_ADDR,
                          intNum, true );   /* Enable interrupt in vim */
-        Intc_SystemEnable();
+        CSL_armR5IntrEnableIrq(1);  /* Enable IRQ interrupt in R5 */
     }
     else
     {
