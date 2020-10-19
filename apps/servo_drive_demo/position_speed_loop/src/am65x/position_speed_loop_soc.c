@@ -244,8 +244,8 @@ int32_t appPositionSpeedLoopInit(void)
     /* Enable Host interrupts for events from FSI PRU FW */
     McuIntc_enableIntr(MCU_INTR_IDX(0), true);
     McuIntc_enableIntr(MCU_INTR_IDX(1), true);
-    McuIntc_enableIntr(MCU_INTR_IDX(2), true);
-    McuIntc_enableIntr(MCU_INTR_IDX(3), true);
+    McuIntc_enableIntr(MCU_INTR_IDX(2), false); /* FSI Tx INT1 currently unused */
+    McuIntc_enableIntr(MCU_INTR_IDX(3), false); /* FSI Tx INT2 currently unused */
        
     /* Debug, GPIOs:
         see GPIO_board.h for GPIO definitions
