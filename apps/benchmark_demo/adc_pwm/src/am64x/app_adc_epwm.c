@@ -847,9 +847,7 @@ static void appEpwmTbClockEnable(uint32_t pwmId)
         } while (!(regVal & 0x1));
     }
     
-    pMainCtrlMmrCfg0Reg = &pMainCtrlMmrCfg0Regs->EPWM0_CTRL + pwmId;    
-    HW_WR_FIELD32(pMainCtrlMmrCfg0Reg,
-        CSL_MAIN_CTRL_MMR_CFG0_EPWM_TB_CLKEN_EPWM0_TB_CLKEN,
+    HW_WR_REG32(CSL_CTRL_MMR0_CFG0_BASE + CSL_MAIN_CTRL_MMR_CFG0_EPWM_TB_CLKEN,
         APP_MAIN_CTRL_MMR_CFG0_EPWM0_CTRL_TB_CLKEN_EN);
 }
 
