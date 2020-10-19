@@ -12,7 +12,7 @@ ifeq ($(TARGET_CPU),R5F)
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
-ifneq ($(BUILD_ALL_TEST_TARGETS),1)
+ifneq ($(BUILD_DEBUG_TEST_TARGETS),1)
 SKIPBUILD=1
 endif
 

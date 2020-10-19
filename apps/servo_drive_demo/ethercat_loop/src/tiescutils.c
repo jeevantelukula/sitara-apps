@@ -111,6 +111,8 @@ extern UINT16 APPL_GenerateMapping(UINT16 *pInputSize, UINT16 *pOutputSize);
 extern UINT16 CiA402_Init();
 #endif
 
+TCiA402Axis *ptrLocalAxes[MAX_NUM_AXES] = {NULL};
+uint32_t PositionActualValue;
 
 TaskP_Handle tsk1; // ECAT mainloop
 #ifdef ENABLE_PDI_TASK
@@ -693,6 +695,11 @@ void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
         {
             *rxobj = *payload_ptr;
             gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived = 1;
+            if(NULL != rxobj)
+            {
+                (ptrLocalAxes[axisIndex])->Objects.objPositionActualValue = rxobj->i32PositionActual;
+                (ptrLocalAxes[axisIndex])->Objects.objVelocityActualValue = rxobj->i32VelocityActual;
+            }
         }
     }
 }
@@ -700,12 +707,12 @@ void appMbxIpcMsgHandler (uint32_t src_cpu_id, uint32_t payload)
 #ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
 void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 {
-    uintptr_t key;
     uint32_t payload;
     ecat2mc_msg_obj_t *txobj;
-    mc2ecat_msg_obj_t *rxobj;	
 	static uint8_t msgsent=0U;
 	uint16_t axisIndex = pCiA402Axis->axisIndex;
+	float IncFactor    = (float)0.0010922 * (float) pCiA402Axis->u32CycleTime;
+	int32_t i32TargetVelocity = 0;
 	
 	if(msgsent == 0U)
 	{
@@ -715,46 +722,88 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 	}
  
 	axisIndex = pCiA402Axis->axisIndex;
+	ptrLocalAxes[axisIndex] = pCiA402Axis;
     if (axisIndex < MAX_NUM_AXES)
     {
         txobj = &gAppIpcMsgObj.axisObj[axisIndex].sendObj;
-        rxobj = &gAppIpcMsgObj.axisObj[axisIndex].receiveObj;
         payload = (uint32_t)txobj;
 
-        /* In EthCAT IPC loopback application, send Actual values calculated */
-        /* by CiA402_DummyMotionControl() to Motor Control R5F and receiving */
-        /* back on EtherCAT R5F.  This will be later modified to make use of */
-        /* Position-speed MC algo on MC R5F to calculate the Actual Values.  */
-        CiA402_DummyMotionControl(pCiA402Axis);
-        txobj->i32TargetPosition = pCiA402Axis->Objects.objPositionActualValue;
-        txobj->i32TargetVelocity = pCiA402Axis->Objects.objVelocityActualValue;
-        txobj->i16ModesOfOperation = pCiA402Axis->Objects.objModesOfOperation;
-        txobj->i16State = pCiA402Axis->i16State;
-        txobj->u16AxisIndex = axisIndex;
+        #ifdef ENABLE_EXTENDED_ETHERCATLOOPBACKTEST
+        /*calculate actual position */
+        pCiA402Axis->fCurPosition += ((double)pCiA402Axis->Objects.objVelocityActualValue) * IncFactor;;
+        PositionActualValue = (INT32)(pCiA402Axis->fCurPosition);
+        #endif
+
+		txobj->i16ModesOfOperation = pCiA402Axis->Objects.objModesOfOperation;
+		txobj->i16State = pCiA402Axis->i16State;
+		txobj->u16AxisIndex = axisIndex;
+		if(pCiA402Axis->bAxisFunctionEnabled &&
+		   pCiA402Axis->bLowLevelPowerApplied &&
+		   pCiA402Axis->bHighLevelPowerApplied &&
+		   !pCiA402Axis->bBrakeApplied)
+		{
+			if((pCiA402Axis->Objects.objSoftwarePositionLimit.i32MaxLimit> pCiA402Axis->Objects.objPositionActualValue
+				|| pCiA402Axis->Objects.objPositionActualValue > pCiA402Axis->Objects.objTargetPosition) &&
+				(pCiA402Axis->Objects.objSoftwarePositionLimit.i32MinLimit < pCiA402Axis->Objects.objPositionActualValue
+				|| pCiA402Axis->Objects.objPositionActualValue < pCiA402Axis->Objects.objTargetPosition))
+			{
+				pCiA402Axis->Objects.objStatusWord &= ~STATUSWORD_INTERNAL_LIMIT;
+
+				if (pCiA402Axis->i16State == STATE_OPERATION_ENABLED)
+				{
+				    switch(pCiA402Axis->Objects.objModesOfOperationDisplay)
+                    {
+                         case CYCLIC_SYNC_POSITION_MODE:
+                             if (IncFactor != 0)
+                             {
+                                 i32TargetVelocity = (pCiA402Axis->Objects.objTargetPosition - pCiA402Axis->Objects.objPositionActualValue) / ((long)IncFactor);
+                             }
+                             else
+                             {
+                                   i32TargetVelocity = 0;
+                             }
+                         break;
+                         case CYCLIC_SYNC_VELOCITY_MODE:
+                             if (pCiA402Axis->i16State == STATE_OPERATION_ENABLED)
+                             {
+                                   i32TargetVelocity = pCiA402Axis->Objects.objTargetVelocity;
+                             }
+                             else
+                             {
+                                   i32TargetVelocity = 0;
+                             }
+                         break;
+                         default:
+                         break;
+                    }
+                    #ifdef ENABLE_EXTENDED_ETHERCATLOOPBACKTEST
+				    /*Position/Speed Core IPC Loopback*/
+					txobj->i32TargetPosition = PositionActualValue;
+					txobj->i32TargetVelocity = i32TargetVelocity;
+                    #else
+					/*Actual Motor Connected.*/
+					txobj->i32TargetVelocity = i32TargetVelocity;
+					txobj->i32TargetPosition = pCiA402Axis->Objects.objTargetPosition;
+                    #endif
+				}
+				else
+				{
+					txobj->i32TargetPosition = 0;
+					txobj->i32TargetVelocity = 0;
+				}
+			}
+			else
+			{
+				pCiA402Axis->Objects.objStatusWord |= STATUSWORD_INTERNAL_LIMIT;
+			}
+        }
+
+		/*Accept new mode of operation*/
+		pCiA402Axis->Objects.objModesOfOperationDisplay = pCiA402Axis->Objects.objModesOfOperation;
 
         if (appMbxIpcGetSelfCpuId()==IPC_ETHERCAT_CPU_ID)
         {
             appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, CPU0_ATCM_SOCVIEW(payload));
-        }
-
-        /* Wait for IPC MSG from MC R5F with updated actual MC parameters */
-        do
-        {
-            TaskP_yield();
-        } while (1!=gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived);
-
-        key = HwiP_disable();
-        gAppIpcMsgObj.axisObj[axisIndex].isMsgReceived = 0;
-        HwiP_restore(key);
-        /* Copy updated actual MC parameters to CiA402 Axis data object */
-        if (axisIndex==rxobj->u16AxisIndex)
-        {
-            pCiA402Axis->Objects.objPositionActualValue = rxobj->i32PositionActual;
-            pCiA402Axis->Objects.objVelocityActualValue = rxobj->i32VelocityActual;
-        }
-        else
-        {
-            APP_ASSERT_SUCCESS(1);
         }
     }
     else
