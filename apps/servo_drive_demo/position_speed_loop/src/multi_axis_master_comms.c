@@ -298,11 +298,11 @@ void FSI_updateReceivedData(void)
 
             tempData = (int32_t)frameDataRX[1];
             tempData = (tempData<<16) + frameDataRX[2];
-            ctrlVars[ctrlNode].speedWe = FSI_puToFloat(tempData);
+            ctrlVars[ctrlNode].speedWe = FSI_convertPUToFloat(tempData);
 
             tempData = (int32_t)frameDataRX[3];
             tempData = (tempData<<16) + frameDataRX[4];
-            ctrlVars[ctrlNode].posMechTheta = FSI_puToFloat(tempData);
+            ctrlVars[ctrlNode].posMechTheta = FSI_convertPUToFloat(tempData);
 
             #if(BUILDLEVEL == FCL_LEVEL5)       // Verify FSI
             if(fabsf(ctrlVars[ctrlNode].speedWe -
@@ -388,7 +388,7 @@ void FSI_updateTransmissionData(void)
         case FSI_UDATA_IS_REF:
             frameDataTX[0] += ctrlVars[ctrlNode].ctrlStateCom & 0x00FF;
 
-            tempData = FSI_floatToPU(ctrlVars[ctrlNode].IqRef);
+            tempData = FSI_convertFloatToPU(ctrlVars[ctrlNode].IqRef);
 #if FSI_LOOPBACK
             /* if LOOPBACK just send the target speed reference to get looped back as actual */
             tempData = FSI_floatToPU(ctrlVars[ctrlNode].speedSet);
@@ -396,7 +396,7 @@ void FSI_updateTransmissionData(void)
             frameDataTX[1] = (uint16_t)((tempData>>16) & 0x0000FFFF);
             frameDataTX[2] = (uint16_t)(tempData & 0x0000FFFF);
 
-            tempData = FSI_floatToPU(ctrlVars[ctrlNode].IdRef);
+            tempData = FSI_convertFloatToPU(ctrlVars[ctrlNode].IdRef);
 #if FSI_LOOPBACK
             /* if LOOPBACK just send the target position reference to get looped back as actual */
             tempData = FSI_floatToPU(ctrlVars[ctrlNode].positionSet);

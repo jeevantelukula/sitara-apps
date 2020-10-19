@@ -165,14 +165,14 @@ typedef enum
 #define FSI_FLOAT2PU_SF     10000L
 #define FSI_PU2FLOAT_SF     0.0001F
 
-static inline int32_t FSI_floatToPU(float32_t valueFloat)
+static inline int32_t FSI_convertFloatToPU(float32_t valueFloat)
 {
     int32_t resultPU = FSI_FLOAT2PU_SF * valueFloat;
 
     return(resultPU);
 }
 
-static inline float32_t FSI_puToFloat(int32_t valuePu)
+static inline float32_t FSI_convertPUToFloat(int32_t valuePu)
 {
     int32_t valueTemp;
 
