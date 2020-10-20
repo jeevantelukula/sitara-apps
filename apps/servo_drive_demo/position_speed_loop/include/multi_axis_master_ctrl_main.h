@@ -34,26 +34,10 @@
 #ifndef MULTI_AXIS_MASTER_CTRL_MAIN_H
 #define MULTI_AXIS_MASTER_CTRL_MAIN_H
 
-//
-//! \defgroup MASTER
-//! @{
-//
-
-//
-// includes
-//
-
 #include "motor_ctrl_settings.h"
 #include "motor_ctrl_user.h"
-
 #include "multi_axis_fsi_shared.h"
 #include "multi_axis_master_lead.h"
 #include "multi_axis_master_ctrl.h"
 
-
-//
-// Close the Doxygen group.
-//! @} //defgroup MASTER
-//
-
-#endif // end of MULTI_AXIS_MASTER_CTRL_MAIN_H definition
+#endif /* end of MULTI_AXIS_MASTER_CTRL_MAIN_H definition */

@@ -42,14 +42,6 @@
 #include "multi_axis_fsi_shared.h"
 #include <ti/csl/src/ip/fsi_tx/V0/cslr_fsi_tx.h>
 
-//
-//! \defgroup MASTER_DRIVE
-//! @{
-//
-
-//
-// Global variables for FSI
-//
 extern uint16_t fsiTxStatus;
 extern uint16_t fsiRxStatus;
 
@@ -61,18 +53,18 @@ extern uint16_t fsiSlaveNodeActive;
 extern uint16_t fsiSlaveNodeReceived;
 extern uint16_t fsiSlaveNodeNext;
 
-extern uint16_t *fsiTxDataBufAddr;  // FSI TX data buffer address
-extern uint16_t *fsiRxDataBufAddr;  // FSI RX data buffer address
-extern uint16_t *fsiTxTagBufAddr;   // FSI TX Tag & user data buffer address
-extern uint16_t *fsiRxTagBufAddr;   // FSI RX Tag & user data buffer address
+extern uint16_t *fsiTxDataBufAddr;  /* FSI TX data buffer address */
+extern uint16_t *fsiRxDataBufAddr;  /* FSI RX data buffer address */
+extern uint16_t *fsiTxTagBufAddr;   /* FSI TX Tag & user data buffer address */
+extern uint16_t *fsiRxTagBufAddr;   /* FSI RX Tag & user data buffer address */
 
-extern uint16_t *fsiTxTagAddr;      // FSI TX frame tag and user data address
-extern uint16_t *fsiRxTagAddr;      // FSI RX frame tag and user data address
+extern uint16_t *fsiTxTagAddr;      /* FSI TX frame tag and user data address */
+extern uint16_t *fsiRxTagAddr;      /* FSI RX frame tag and user data address */
 
-extern uint16_t fsiTxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];   // TX data array
-extern uint16_t fsiRxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];   // RX data array
+extern uint16_t fsiTxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];   /* TX data array */
+extern uint16_t fsiRxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];   /* RX data array */
 
-// Frame tag used with Data/Ping transfers
+/* Frame tag used with Data/Ping transfers */
 extern FSI_FrameTag fsiFrameTag[FSI_NODE_NUM];
 extern FSI_FrameTag fsiPingTag0;
 extern FSI_FrameTag fsiPingTag1;
@@ -89,7 +81,7 @@ extern FSI_DataWidth fsiRxLanes;
 extern volatile uint16_t fsiTxUserData[FSI_NODE_NUM];
 extern volatile uint16_t fsiRxUserData[FSI_NODE_NUM];
 
-// User data to be sent with Data frame(for CPU control)
+/* User data to be sent with Data frame(for CPU control) */
 extern volatile uint16_t fsiTxUserDataTag;
 extern volatile uint16_t fsiRxUserDataTag;
 
@@ -124,15 +116,10 @@ extern uint16_t dataCrcCalc;
 extern uint16_t dataCrcRX;
 extern uint16_t dataCrcTX;
 
-//
-// FSI initialize
-//
+/* FSI initialize */
 extern void FSI_initParams(void);
 
-//! \brief     Writes user defined data and frame tag for transmission
-//! \param[in] handle     The hardware abstraction layer (HAL) handle
-//! \param[in] array is the address of the array of words to be transmitted.
-//! \param[in] length is the number of words in the array to be transmitted.
+/* Writes user defined data and frame tag for transmission */
 static inline void
 FSI_writeTxTagUserData(uint32_t base, uint16_t userDataTag)
 {
@@ -141,10 +128,7 @@ FSI_writeTxTagUserData(uint32_t base, uint16_t userDataTag)
     return;
 }
 
-//! \brief     Writes data in FSI Tx buffer
-//! \param[in] handle is the hardware abstraction layer (HAL) handle
-//! \param[in] array is the address of the array of words to be transmitted.
-//! \param[in] length is the number of words in the array to be transmitted.
+/* Writes data in FSI Tx buffer */
 static inline void
 FSI_writeTxDataBuffer(uint32_t base, uint16_t *pTxData, uint16_t length)
 {
@@ -152,17 +136,14 @@ FSI_writeTxDataBuffer(uint32_t base, uint16_t *pTxData, uint16_t length)
 
     for(i = 0U; i < length; i++)
     {
-        //
-        // Write one 16 bit word, increment buffer pointer
-        //
+        /* Write one 16 bit word, increment buffer pointer */
         HWREGH(base + CSL_FSI_TX_CFG_TX_BUF_BASE(i)) = *(pTxData+i);
     }
 
     return;
 }
 
-//! \brief      Reads user defined data and frame tag from received
-//! \param[in]  handle is the hardware abstraction layer (HAL) handle
+/* Reads user defined data and frame tag from received */
 static inline uint16_t FSI_readRxFrameTag(uint32_t base) // JR: change prototype
 {
     uint16_t userDataTag = HWREGH(base + CSL_FSI_RX_CFG_RX_FRAME_TAG_UDATA);
@@ -171,8 +152,7 @@ static inline uint16_t FSI_readRxFrameTag(uint32_t base) // JR: change prototype
     return(frameTag);
 }
 
-//! \brief      Reads user defined data and frame tag from received
-//! \param[in]  handle is the hardware abstraction layer (HAL) handle
+/* Reads user defined data and frame tag from received */
 static inline uint16_t FSI_readRxUserData(uint32_t base) // JR: change prototype
 {
     uint16_t userDataTag = HWREGH(base + CSL_FSI_RX_CFG_RX_FRAME_TAG_UDATA);
@@ -181,10 +161,7 @@ static inline uint16_t FSI_readRxUserData(uint32_t base) // JR: change prototype
     return(userData);
 }
 
-//! \brief      Reads data from FSI Rx buffer
-//! \param[in]  handle is the hardware abstraction layer (HAL) handle
-//! \param[out] array is the address of the array of words to receive the data
-//! \param[in]  length is the number of words in the array to be received
+/* Reads data from FSI Rx buffer */
 static inline void
 FSI_readRxDataBuffer(uint32_t base, uint16_t *pRxData, uint16_t length) // JR: change prototype
 {
@@ -192,23 +169,17 @@ FSI_readRxDataBuffer(uint32_t base, uint16_t *pRxData, uint16_t length) // JR: c
 
     for(i = 0U; i < length; i++)
     {
-        //
-        // Read one 16 bit word, increment buffer pointer
-        //
+        /* Read one 16 bit word, increment buffer pointer */
         *(pRxData+i) = HWREGH(base + CSL_FSI_RX_CFG_RX_BUF_BASE(i));
     }
 
     return;
 }
 
-//
-// read new data for frame received
-//
+/* Read new data for frame received */
 static inline void FSI_readRxFrameData(uint32_t base) // JR: change prototype
 {
-    //
-    // Reads user defined data and frame tag from received
-    //
+    /* Reads user defined data and frame tag from received */
     fsiRxFrameTag = FSI_readRxFrameTag(base);
 
     if(fsiRxFrameTag == fsiFrameTag[fsiSlaveNodeActive])
@@ -243,34 +214,20 @@ static inline void FSI_readRxFrameData(uint32_t base) // JR: change prototype
     fsiRxDataBufAddr = (uint16_t *)(&fsiRxDataBuf[fsiSlaveNodeReceived][0]);
     fsiTxDataBufAddr = (uint16_t *)(&fsiTxDataBuf[fsiSlaveNodeActive][0]);
 
-    // read RX data buffer
+    /* Read RX data buffer */
     FSI_readRxDataBuffer(base, fsiRxDataBufAddr, fsiRxDataWords);
 }
 
-//
-// FSI handshake
-//
+/* FSI handshake */
 extern void FSI_handshakeLead(uint32_t gFsiTxBase, uint32_t gFsiRxBase);
 
-//
-// setup Tx/Rx frame data
-//
+/* Setup Tx/Rx frame data */
 extern void FSI_setupTRxFrameData(uint32_t gFsiTxBase, uint32_t gFsiRxBase);
 
-//
-// update the received data
-//
+/* Update the received data */
 extern void FSI_updateReceivedData(void);
 
-//
-// update the transmission data
-//
+/* Update the transmission data */
 extern void FSI_updateTransmissionData(void);
 
-//
-// Close the Doxygen group.
-//! @} //defgroup MASTER_DRIVE
-//
-
-#endif  // end of MULTI_AXIS_MASTER_LEAD_H definition
-
+#endif  /* end of MULTI_AXIS_MASTER_LEAD_H definition */

@@ -42,7 +42,7 @@
 extern pinmuxPerCfg_t gFsiPinCfg[];
 
 /* Time Sync Int */
- /* CMP_EVT_RTR_OUT_24 -> R5F2_0/R5F2_1_IN_48 */
+/* CMP_EVT_RTR_OUT_24 -> R5F2_0/R5F2_1_IN_48 */
 #define TS_INT_NUM                  ( CSLR_R5FSS1_CORE0_INTR_CMP_EVENT_INTROUTER0_OUTP_24 )
 #define TS_INT_TYPE                 ( CSL_VIM_INTR_TYPE_PULSE )
 #define TS_INT_MAP                  ( CSL_VIM_INTR_MAP_IRQ )

@@ -36,4 +36,4 @@
 
 typedef float         float32_t;
 
-#endif // HW_TYPES_H
+#endif /* HW_TYPES_H */

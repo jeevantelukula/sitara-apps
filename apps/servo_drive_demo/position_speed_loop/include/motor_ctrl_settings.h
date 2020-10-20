@@ -34,34 +34,23 @@
 #ifndef MOTOR_CTRL_SETTINGS_H
 #define MOTOR_CTRL_SETTINGS_H
 
-//
-// Include project specific include files.
-//
+/* Following is the list of the Build Level choices. */
+#define  FCL_LEVEL7   7     /* Verify speed loop over FSI & IPC */
+#define  FCL_LEVEL8   8     /* Verify position loop over FSI & IPC */
 
-//
-// Following is the list of the Build Level choices.
-//
-#define  FCL_LEVEL7   7     // Verify speed loop over FSI & IPC
-#define  FCL_LEVEL8   8     // Verify position loop over FSI & IPC
-
-//
-// Here below, pick position and speed loop controller option
-//
+/* Here below, pick position and speed loop controller option */
 #define  SPD_PID_CNTLR      1
 
-//
-// User can select choices from available control configurations
-//
-#define  BUILDLEVEL          FCL_LEVEL7         // 7 & 11 for demo
-#define  SPD_CNTLR           SPD_PID_CNTLR      // PID controller
+/* User can select choices from available control configurations */
+#define  BUILDLEVEL          FCL_LEVEL7         /* 7 & 11 for demo */
+#define  SPD_CNTLR           SPD_PID_CNTLR      /* PID controller */
 
 #ifndef BUILDLEVEL
 #error  Critical: BUILDLEVEL must be defined !!
-#endif  // BUILDLEVEL
+#endif  /* BUILDLEVEL */
 
 #ifndef PI
 #define PI 3.14159265358979
 #endif
 
-#endif  // end of MOTOR_CTRL_SETTINGS_H definition
-
+#endif  /* end of MOTOR_CTRL_SETTINGS_H definition */

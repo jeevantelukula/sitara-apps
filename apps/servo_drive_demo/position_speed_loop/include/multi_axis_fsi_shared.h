@@ -37,26 +37,21 @@
 #include <ti/csl/tistdtypes.h>
 #include "hw_types.h"
 
-//
-//! \defgroup MASTER_DRIVE
-//! @{
-//
-
+/* MASTER_DRIVE */
 #define POWER_ON_DELAY_MAX       36000000L
 #define POWER_ON_DELAY_NODE       2000000L
 #define POWER_ON_DELAY_MASTER     1000000L
 #define POWER_ON_DELAY_DRIVE      2000000L
 
-//*****************************************************************************
-//  Defines for setting FSI clock speeds in normal FSI mode (SPI_MODE == 0)
-//*****************************************************************************
-//
-//  TXCLKIN = INPUT_CLOCK / PRESCALE_VAL
-//  TXCLK (in FSI mode) = TXCLKIN / 2
-//  TXCLK (in SPI mode) = TXCLKIN
-//
-//  Below assumes INPUT_CLOCK == 200 MHz (PLLRAWCLK, SEL_PLLCLK == 1)
-//
+/*****************************************************************************
+ * Defines for setting FSI clock speeds in normal FSI mode (SPI_MODE == 0)
+ *****************************************************************************
+ * TXCLKIN = INPUT_CLOCK / PRESCALE_VAL 
+ * TXCLK (in FSI mode) = TXCLKIN / 2
+ * TXCLK (in SPI mode) = TXCLKIN
+ *
+ * Below assumes INPUT_CLOCK == 200 MHz (PLLRAWCLK, SEL_PLLCLK == 1)
+ ****************************************************************************/
 #define FSI_PRESCALE_50MHZ          2U
 #define FSI_PRESCALE_25MHZ          4U
 #define FSI_PRESCALE_12_5MHZ        8U
@@ -76,13 +71,13 @@
 #define FSI_TRX_WORDS       FSI_RX_WORDS
 #endif
 
-#define FSI_DATA_NUM        FSI_TSF_WORDS       // Data Array Number
+#define FSI_DATA_NUM        FSI_TSF_WORDS       /* Data Array Number */
 
-// Transfer can be happen over single or double lane
+/* Transfer can be happen over single or double lane */
 #define FSI_TX_LANES        FSI_DATA_WIDTH_1_LANE
 #define FSI_RX_LANES        FSI_DATA_WIDTH_1_LANE
 
-// node number
+/* Node Number */
 #define FSI_SLAVE_N1        0
 #define FSI_SLAVE_N2        1
 #define FSI_SLAVE_N3        2
@@ -92,23 +87,23 @@
 #define FSI_SLAVE_N7        6
 #define FSI_SLAVE_N8        7
 
-/* number of FSI nodes in FSI daisy chain */
-//#define FSI_NODES           1               // Slave Nodes = 1
-#define FSI_NODES           3               // Slave Nodes = 3
-//#define FSI_NODES           4               // Slave Nodes = 4
-//#define FSI_NODES           8               // Maximum Slave Nodes = 8
+/* Number of FSI nodes in FSI daisy chain */
+/*#define FSI_NODES           1            */ /* Slave Nodes = 1 */
+#define FSI_NODES           3               /* Slave Nodes = 3 */
+/*#define FSI_NODES           4            */ /* Slave Nodes = 4 */
+/*#define FSI_NODES           8            */ /* Maximum Slave Nodes = 8 */
 
-#define FSI_NODE_NUM        FSI_NODES       // Node Tag Array Number
+#define FSI_NODE_NUM        FSI_NODES       /* Node Tag Array Number */
 
-/* first FSI node in FSI daisy chain */
+/* First FSI node in FSI daisy chain */
 #define FSI_NODE_FIRST      FSI_SLAVE_N1
 
-/* last FSI node in FSI daisy chain */
-//#define FSI_NODE_LAST       FSI_SLAVE_N1    // Slave Nodes = 1
-#define FSI_NODE_LAST       FSI_SLAVE_N3    // Slave Nodes = 3
-//#define FSI_NODE_LAST       FSI_SLAVE_N4    // Slave Nodes = 4
+/* Last FSI node in FSI daisy chain */
+/*#define FSI_NODE_LAST       FSI_SLAVE_N1   */ /* Slave Nodes = 1 */
+#define FSI_NODE_LAST       FSI_SLAVE_N3        /* Slave Nodes = 3 */
+/*#define FSI_NODE_LAST       FSI_SLAVE_N4   */ /* Slave Nodes = 4 */
 
-/* initially active FSI node in FSI daisy chain, must be between first & last FSI node */
+/* Initially active FSI node in FSI daisy chain, must be between first & last FSI node */
 #define FSI_NODE_ACTIVE     FSI_SLAVE_N1
 
 #define FSI_USERTAG_CHK     0xAE
@@ -126,9 +121,7 @@
 #define FSI_NODE_TAG_LAST       FSI_FRAME_TAG_NODE4
 #define FSI_NODE_TAG_OFFSET     FSI_FRAME_TAG_NODE1
 
-//
-// used values of a FSI frame user data for slave
-//
+/* Used values of a FSI frame user data for slave */
 typedef enum
 {
     FSI_UDATA_PS_SP_N = 0U,
@@ -139,9 +132,7 @@ typedef enum
     FSI_UDATA_REQ_TXM = 0x80U
 } FSI_SlaveUserData_e;
 
-//
-// used values of a FSI frame user data for master
-//
+/* Used values of a FSI frame user data for master */
 typedef enum
 {
     FSI_UDATA_IS_REF   = 0U,
@@ -152,9 +143,7 @@ typedef enum
     FSI_UDATA_REQ_TXN  = 0x80U
 } FSI_MasterUserData_e;
 
-//
-// used values of a FSI RX/TX action states
-//
+/* Used values of a FSI RX/TX action states */
 typedef enum
 {
     FSI_TRx_IDLE  = 0,
@@ -162,9 +151,7 @@ typedef enum
     FSI_TRx_DONE  = 2
 } FSI_TRxState_e;
 
-//
-// used values of a FSI RX/TX action states
-//
+/* Used values of a FSI RX/TX action states */
 typedef enum
 {
     FSI_HANDSHAKE_NO    = 0,
@@ -234,10 +221,4 @@ static inline uint16_t getChkSumValue(uint16_t *ptrData, uint16_t length)
     return(checkSum);
 }
 
-//
-// Close the Doxygen group.
-//! @} //defgroup MASTER_DRIVE
-//
-
-#endif  // end of MULTI_AXIS_FSI_SHARED_H definition
-
+#endif  /* end of MULTI_AXIS_FSI_SHARED_H definition */

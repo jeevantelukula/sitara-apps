@@ -31,24 +31,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  
-//
-// includes
-//
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/hw_types.h>
 #include "multi_axis_fsi_shared.h"
 #include "multi_axis_master_ctrl.h"
 
-//
-// Global variables used in this system
-//
 CTRL_Vars_t ctrlVars[SYS_NODE_NUM];
 SYS_Vars_t  sysVars;
 
-
-//
-//   Various Incremental Build levels
-//
 static inline void switchActiveNode(void)
 {
     switch(sysVars.ctrlNode)
@@ -80,9 +70,9 @@ static inline void switchActiveNode(void)
     return;
 }
 
-//****************************************************************************
-// INCRBUILD 7
-//****************************************************************************
+/****************************************************************************/
+/* INCRBUILD 7                                                              */
+/****************************************************************************/
 #if((BUILDLEVEL == FCL_LEVEL7))
 inline void buildLevel7(void)
 {
@@ -92,39 +82,26 @@ inline void buildLevel7(void)
     {
         switchActiveNode();
 
-        //
-        //  Connect inputs of the RMP module and call the ramp control module
-        //
+        /*  Connect inputs of the RMP module and call the ramp control module */
         fclRampControl(&ctrlVars[sysVars.ctrlNode].rc);
 
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-
-        ctrlVars[sysVars.ctrlNode].pid_spd.term.Ref =
-                ctrlVars[sysVars.ctrlNode].ctrlSpeedRef;
-
-        ctrlVars[sysVars.ctrlNode].pid_spd.term.Fbk =
-                ctrlVars[sysVars.ctrlNode].speedWe;
+        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef = ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
+        ctrlVars[sysVars.ctrlNode].pid_spd.term.Ref = ctrlVars[sysVars.ctrlNode].ctrlSpeedRef;
+        ctrlVars[sysVars.ctrlNode].pid_spd.term.Fbk = ctrlVars[sysVars.ctrlNode].speedWe;
 
         if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
         {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
+            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
             ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = 0.0;
         }
         else
         {
             ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
+            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
         }
 
         runPID(&ctrlVars[sysVars.ctrlNode].pid_spd);
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpdOut =
-                ctrlVars[sysVars.ctrlNode].pid_spd.term.Out;
-
+        ctrlVars[sysVars.ctrlNode].ctrlSpdOut = ctrlVars[sysVars.ctrlNode].pid_spd.term.Out;
         sysVars.speedLoopCount = 0;
     }
 
@@ -138,12 +115,11 @@ inline void buildLevel7(void)
         ctrlVars[sysVars.ctrlNode].pid_spd.data.up = 0;
     }
 
-    ctrlVars[sysVars.ctrlNode].ctrlStateCom =
-            ctrlVars[sysVars.ctrlNode].ctrlStateSet;
+    ctrlVars[sysVars.ctrlNode].ctrlStateCom = ctrlVars[sysVars.ctrlNode].ctrlStateSet;
 
     if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_RUN)
     {
-        //#####BEGIN_INTERNAL#####
+        /* BEGIN_INTERNAL */
         #ifdef TEST_ENABLE
         GPIO_writePin(TGIO_MOTORS_NUM, 1);
 
@@ -151,21 +127,16 @@ inline void buildLevel7(void)
         {
             GPIO_writePin(TGIO_MOTOR1_NUM, 1);
         }
-        #endif // TEST_ENABLE
-        //#####END_INTERNAL#####
+        #endif /* TEST_ENABLE */
+        /* END_INTERNAL */
 
-        ctrlVars[sysVars.ctrlNode].rc.TargetValue =
-                ctrlVars[sysVars.ctrlNode].speedRef;
-
-        ctrlVars[sysVars.ctrlNode].IdRef =
-                ctrlVars[sysVars.ctrlNode].ctrlIdRef;
-
-        ctrlVars[sysVars.ctrlNode].IqRef =
-                ctrlVars[sysVars.ctrlNode].ctrlSpdOut;
+        ctrlVars[sysVars.ctrlNode].rc.TargetValue = ctrlVars[sysVars.ctrlNode].speedRef;
+        ctrlVars[sysVars.ctrlNode].IdRef = ctrlVars[sysVars.ctrlNode].ctrlIdRef;
+        ctrlVars[sysVars.ctrlNode].IqRef = ctrlVars[sysVars.ctrlNode].ctrlSpdOut;
     }
     else if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_FAULT)
     {
-        //#####BEGIN_INTERNAL#####
+        /* BEGIN_INTERNAL */
         #ifdef TEST_ENABLE
         GPIO_writePin(TGIO_MOTORS_NUM, 0);
 
@@ -173,8 +144,8 @@ inline void buildLevel7(void)
         {
             GPIO_writePin(TGIO_MOTOR1_NUM, 0);
         }
-        #endif // TEST_ENABLE
-        //#####END_INTERNAL#####
+        #endif /* TEST_ENABLE */
+        /* END_INTERNAL */
 
         ctrlVars[sysVars.ctrlNode].IdRef = 0.0;
         ctrlVars[sysVars.ctrlNode].IqRef = 0.0;
@@ -182,7 +153,7 @@ inline void buildLevel7(void)
     }
     else if(ctrlVars[sysVars.ctrlNode].ctrlStateCom == CTRL_RUN)
     {
-        //#####BEGIN_INTERNAL#####
+        /* BEGIN_INTERNAL */
         #ifdef TEST_ENABLE
         GPIO_writePin(TGIO_MOTORS_NUM, 1);
 
@@ -190,28 +161,25 @@ inline void buildLevel7(void)
         {
             GPIO_writePin(TGIO_MOTOR1_NUM, 1);
         }
-        #endif // TEST_ENABLE
-        //#####END_INTERNAL#####
+        #endif /* TEST_ENABLE */
+        /* END_INTERNAL */
 
         ctrlVars[sysVars.ctrlNode].rc.TargetValue = 0.0;
 
-        ctrlVars[sysVars.ctrlNode].IdRef =
-                ctrlVars[sysVars.ctrlNode].IdRefStart;
+        ctrlVars[sysVars.ctrlNode].IdRef = ctrlVars[sysVars.ctrlNode].IdRefStart;
 
         if(ctrlVars[sysVars.ctrlNode].speedRef > 0.0)
         {
-            ctrlVars[sysVars.ctrlNode].IqRef =
-                    ctrlVars[sysVars.ctrlNode].IqRefStart;
+            ctrlVars[sysVars.ctrlNode].IqRef = ctrlVars[sysVars.ctrlNode].IqRefStart;
         }
         else if(ctrlVars[sysVars.ctrlNode].speedRef < 0.0)
         {
-            ctrlVars[sysVars.ctrlNode].IqRef =
-                    -ctrlVars[sysVars.ctrlNode].IqRefStart;
+            ctrlVars[sysVars.ctrlNode].IqRef = -ctrlVars[sysVars.ctrlNode].IqRefStart;
         }
     }
     else
     {
-        //#####BEGIN_INTERNAL#####
+        /* BEGIN_INTERNAL */
         #ifdef TEST_ENABLE
         GPIO_writePin(TGIO_MOTORS_NUM, 0);
 
@@ -219,8 +187,8 @@ inline void buildLevel7(void)
         {
             GPIO_writePin(TGIO_MOTOR1_NUM, 0);
         }
-        #endif // TEST_ENABLE
-        //#####END_INTERNAL#####
+        #endif /* TEST_ENABLE */
+        /* END_INTERNAL */
 
         ctrlVars[sysVars.ctrlNode].ctrlModeCom = CTRL_MODE_STOP;
     }
@@ -228,16 +196,12 @@ inline void buildLevel7(void)
     return;
 }
 
-#endif // ((BUILDLEVEL==FCL_LEVEL7))
+#endif /* ((BUILDLEVEL==FCL_LEVEL7)) */
 
-
-//****************************************************************************
-// INCRBUILD 8
-//****************************************************************************
-// TODO: buildLevel8()
+/****************************************************************************/
+/* INCRBUILD 8                                                              */
+/****************************************************************************/
 #if(BUILDLEVEL == FCL_LEVEL8)
-// FCL_LEVEL8: verifies the position control
-// build level 8 subroutine for motor for all slave nodes (node1~4)
 void buildLevel8(void)
 {
     sysVars.speedLoopCount++;
@@ -248,63 +212,43 @@ void buildLevel8(void)
 
         if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb != CTRL_RUN)
         {
-            ctrlVars[sysVars.ctrlNode].rc.SetpointValue =
-                    ctrlVars[sysVars.ctrlNode].posMechTheta;
+            ctrlVars[sysVars.ctrlNode].rc.SetpointValue = ctrlVars[sysVars.ctrlNode].posMechTheta;
         }
         else
         {
-            ctrlVars[sysVars.ctrlNode].rc.TargetValue =
-                    refPosGen(ctrlVars[sysVars.ctrlNode].rc.TargetValue,
-                              &ctrlVars[sysVars.ctrlNode]);
+            ctrlVars[sysVars.ctrlNode].rc.TargetValue = refPosGen(ctrlVars[sysVars.ctrlNode].rc.TargetValue, &ctrlVars[sysVars.ctrlNode]);
+            ctrlVars[sysVars.ctrlNode].rc.SetpointValue =  ctrlVars[sysVars.ctrlNode].rc.TargetValue - (float32_t)((int32_t)ctrlVars[sysVars.ctrlNode].rc.TargetValue);
 
-            ctrlVars[sysVars.ctrlNode].rc.SetpointValue =
-                ctrlVars[sysVars.ctrlNode].rc.TargetValue -
-                (float32_t)((int32_t)ctrlVars[sysVars.ctrlNode].rc.TargetValue);
-
-            // Rolling in angle within 0 to 1pu
+            /* Rolling in angle within 0 to 1pu */
             if(ctrlVars[sysVars.ctrlNode].rc.SetpointValue < 0)
             {
                 ctrlVars[sysVars.ctrlNode].rc.SetpointValue += 1.0;
             }
         }
 
-        ctrlVars[sysVars.ctrlNode].ctrlPosRef =
-                ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
-        ctrlVars[sysVars.ctrlNode].pi_pos.Ref =
-                ctrlVars[sysVars.ctrlNode].ctrlPosRef;
-        ctrlVars[sysVars.ctrlNode].pi_pos.Fbk =
-                ctrlVars[sysVars.ctrlNode].posMechTheta;
+        ctrlVars[sysVars.ctrlNode].ctrlPosRef = ctrlVars[sysVars.ctrlNode].rc.SetpointValue;
+        ctrlVars[sysVars.ctrlNode].pi_pos.Ref = ctrlVars[sysVars.ctrlNode].ctrlPosRef;
+        ctrlVars[sysVars.ctrlNode].pi_pos.Fbk = ctrlVars[sysVars.ctrlNode].posMechTheta;
 
         runPIPos(&ctrlVars[sysVars.ctrlNode].pi_pos);
 
-        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef =
-                ctrlVars[sysVars.ctrlNode].pi_pos.Out;
-
-        ctrlVars[sysVars.ctrlNode].pid_spd.term.Ref =
-                ctrlVars[sysVars.ctrlNode].ctrlSpeedRef;
-
-        ctrlVars[sysVars.ctrlNode].pid_spd.term.Fbk =
-                ctrlVars[sysVars.ctrlNode].speedWe;
+        ctrlVars[sysVars.ctrlNode].ctrlSpeedRef = ctrlVars[sysVars.ctrlNode].pi_pos.Out;
+        ctrlVars[sysVars.ctrlNode].pid_spd.term.Ref = ctrlVars[sysVars.ctrlNode].ctrlSpeedRef;
+        ctrlVars[sysVars.ctrlNode].pid_spd.term.Fbk = ctrlVars[sysVars.ctrlNode].speedWe;
 
         if(ctrlVars[sysVars.ctrlNode].ctrlSpeedRef > 0.0)
         {
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax =
-                    ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
+            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
             ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = 0.0;
         }
         else
         {
             ctrlVars[sysVars.ctrlNode].pid_spd.param.Umax = 0.0;
-
-            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin =
-                    -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
+            ctrlVars[sysVars.ctrlNode].pid_spd.param.Umin = -ctrlVars[sysVars.ctrlNode].ctrlSpdMaxOut;
         }
 
         runPID(&ctrlVars[sysVars.ctrlNode].pid_spd);
-
-        ctrlVars[sysVars.ctrlNode].ctrlSpdOut =
-                ctrlVars[sysVars.ctrlNode].pid_spd.term.Out;
-
+        ctrlVars[sysVars.ctrlNode].ctrlSpdOut = ctrlVars[sysVars.ctrlNode].pid_spd.term.Out;
         sysVars.speedLoopCount = 0;
     }
 
@@ -316,22 +260,17 @@ void buildLevel8(void)
         ctrlVars[sysVars.ctrlNode].pid_spd.data.ud = 0;
         ctrlVars[sysVars.ctrlNode].pid_spd.data.ui = 0;
         ctrlVars[sysVars.ctrlNode].pid_spd.data.up = 0;
-
         ctrlVars[sysVars.ctrlNode].pi_pos.ui = 0;
         ctrlVars[sysVars.ctrlNode].pi_pos.i1 = 0;
 
     }
 
-    ctrlVars[sysVars.ctrlNode].ctrlStateCom =
-            ctrlVars[sysVars.ctrlNode].ctrlStateSet;
+    ctrlVars[sysVars.ctrlNode].ctrlStateCom = ctrlVars[sysVars.ctrlNode].ctrlStateSet;
 
     if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_RUN)
     {
-        ctrlVars[sysVars.ctrlNode].IdRef =
-                ctrlVars[sysVars.ctrlNode].ctrlIdRef;
-
-        ctrlVars[sysVars.ctrlNode].IqRef =
-                ctrlVars[sysVars.ctrlNode].ctrlSpdOut;
+        ctrlVars[sysVars.ctrlNode].IdRef = ctrlVars[sysVars.ctrlNode].ctrlIdRef;
+        ctrlVars[sysVars.ctrlNode].IqRef = ctrlVars[sysVars.ctrlNode].ctrlSpdOut;
     }
     else if(ctrlVars[sysVars.ctrlNode].ctrlStateFdb == CTRL_FAULT)
     {
@@ -341,30 +280,23 @@ void buildLevel8(void)
     }
     else if(ctrlVars[sysVars.ctrlNode].ctrlStateCom == CTRL_RUN)
     {
-        ctrlVars[sysVars.ctrlNode].IdRef =
-                ctrlVars[sysVars.ctrlNode].IdRefStart;
+        ctrlVars[sysVars.ctrlNode].IdRef = ctrlVars[sysVars.ctrlNode].IdRefStart;
 
         if(ctrlVars[sysVars.ctrlNode].speedRef > 0.0)
         {
-            ctrlVars[sysVars.ctrlNode].IqRef =
-                    ctrlVars[sysVars.ctrlNode].IqRefStart;
+            ctrlVars[sysVars.ctrlNode].IqRef = ctrlVars[sysVars.ctrlNode].IqRefStart;
         }
         else if(ctrlVars[sysVars.ctrlNode].speedRef < 0.0)
         {
-            ctrlVars[sysVars.ctrlNode].IqRef =
-                    -ctrlVars[sysVars.ctrlNode].IqRefStart;
+            ctrlVars[sysVars.ctrlNode].IqRef = -ctrlVars[sysVars.ctrlNode].IqRefStart;
         }
     }
 
     return;
 }
 
-#endif // (BUILDLEVEL==FCL_LEVEL8)
+#endif /* (BUILDLEVEL==FCL_LEVEL8) */
 
-//
-// run the controller
-//
-// TODO: runController
 void runController(SysNode_e node)
 {
     if(sysVars.ctrlSynSet == CTRL_SYN_ENABLE)
@@ -382,9 +314,6 @@ void runController(SysNode_e node)
     return;
 }
 
-//
-// reset the controller
-//
 void resetControllerVars(CTRL_Vars_t *pCtrl)
 {
     pCtrl->ctrlStateCom = CTRL_STOP;
@@ -398,4 +327,3 @@ void resetControllerVars(CTRL_Vars_t *pCtrl)
 
     return;
 }
-

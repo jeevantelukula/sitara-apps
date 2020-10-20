@@ -34,64 +34,50 @@
 #ifndef MOTOR_CTRL_USER_H
 #define MOTOR_CTRL_USER_H
 
-//
-// Include project specific include files.
-//
 #include "motor_ctrl_settings.h"
 
-//
-// FCL Computation time predetermined from library
-//
-#define M_FCL_COMPUTATION_TIME  (1.00)  //in uS
+/* FCL Computation time predetermined from library */
+#define M_FCL_COMPUTATION_TIME  (1.00)  /* in uS */
 
-//
-// NOTE:-
-// Base voltage and base current information from TIDA-00909 doc is
-// based off of an ADC that works at 3.3V reference.
-// The base current = 16.5A (for a spread of 3.3V - 1.65V = 1.65V)
-// The base voltage  = 81.5 / sqrt(3)=
-// Define the base quantites
-//
-#define M_BASE_VOLTAGE          236.14 // Base peak phase voltage (volt),
-                                       // maximum measurable Vdc/sqrt(3)
-#define M_BASE_SHUNT_CURRENT    9.95   // Base peak phase current (amp),
-                                       // maximum measurable peak curr.
-#define M_BASE_LEM_CURRENT      12.0   // Base peak phase current (amp),
-                                       // maximum measurable peak current
+/*
+ * NOTE:-
+ * Base voltage and base current information from TIDA-00909 doc is
+ * based off of an ADC that works at 3.3V reference.
+ * The base current = 16.5A (for a spread of 3.3V - 1.65V = 1.65V)
+ * The base voltage  = 81.5 / sqrt(3)=
+ * Define the base quantites
+*/
+#define M_BASE_VOLTAGE          236.14 /* Base peak phase voltage (volt), */
+                                       /* maximum measurable Vdc/sqrt(3) */
+#define M_BASE_SHUNT_CURRENT    9.95   /* Base peak phase current (amp), */
+                                       /* maximum measurable peak curr. */
+#define M_BASE_LEM_CURRENT      12.0   /* Base peak phase current (amp), */
+                                       /* maximum measurable peak current */
 #define M_BASE_CURRENT          M_BASE_LEM_CURRENT
-#define M_BASE_TORQUE           NULL    // Base torque (N.m)
-#define M_BASE_FLUX             NULL    // Base flux linkage (volt.sec/rad)
-#define M_BASE_FREQ             250     // Base electrical frequency (Hz)
-#define M_MAXIMUM_CURRENT       8.0     // Motor maximum torque current (amp)
+#define M_BASE_TORQUE           NULL    /* Base torque (N.m) */
+#define M_BASE_FLUX             NULL    /* Base flux linkage (volt.sec/rad) */
+#define M_BASE_FREQ             250     /* Base electrical frequency (Hz) */
+#define M_MAXIMUM_CURRENT       8.0     /* Motor maximum torque current (amp) */
 
-#define M_SPEED_REF     0.05            // reference speed (pu)
-#define M_ID_START      0.1             // alignment reference d-axis current
-#define M_ID_RUN        0.0             // running d-axis current
-#define M_IQ_START      0.05            // startup q-axis current
+#define M_SPEED_REF     0.05            /* reference speed (pu) */
+#define M_ID_START      0.1             /* alignment reference d-axis current */
+#define M_ID_RUN        0.0             /* running d-axis current */
+#define M_IQ_START      0.05            /* startup q-axis current */
 
-//
-// Current sensors scaling
-// 1.0pu current ==> 9.95A -> 2048 counts ==> 8A -> 1647
-//
+/* Current sensors scaling */
+/* 1.0pu current ==> 9.95A -> 2048 counts ==> 8A -> 1647 */
 #define M_CURRENT_SCALE(A)             (uint16_t)(2048 * A / M_BASE_CURRENT)
 
-//
-// Analog scaling with ADC
-//
-#define M_ADC_PU_SCALE_FACTOR          0.000244140625     // 1/2^12
-#define M_ADC_PU_PPB_SCALE_FACTOR      0.000488281250     // 1/2^11
+/* Analog scaling with ADC */
+#define M_ADC_PU_SCALE_FACTOR          0.000244140625     /* 1/2^12 */
+#define M_ADC_PU_PPB_SCALE_FACTOR      0.000488281250     /* 1/2^11 */
 
-//
-// Current Scale
-//
+/* Current Scale */
 #define M_MAXIMUM_SCALE_CURRENT        M_BASE_CURRENT * 2.0
 #define M_CURRENT_SENSE_SCALE          (M_MAXIMUM_SCALE_CURRENT / 4096.0)
 
-//
-// Voltage Scale
-//
+/* Voltage Scale */
 #define M_MAXIMUM_SCALE_VOLATGE        M_BASE_VOLTAGE * 1.732050808
 #define M_VOLTAGE_SENSE_SCALE          (M_MAXIMUM_SCALE_VOLATGE / 4096.0)
 
-#endif  // end of MOTOR_CTRL_USER_H definition
-
+#endif  /* end of MOTOR_CTRL_USER_H definition */

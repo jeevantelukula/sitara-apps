@@ -31,15 +31,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  
-//
-// includes
-//
 #include "multi_axis_master_ctrl.h"
 #include "multi_axis_master_ctrl_main.h"
 
-//
-// initSysParameters()
-//
 void initSysParameters(SYS_Vars_t *pSys)
 {
     /* set defaults */
@@ -70,9 +64,6 @@ void initSysParameters(SYS_Vars_t *pSys)
     return;
 }
 
-//
-// initCtrlParameters()
-//
 void initCtrlParameters(CTRL_Vars_t *pCtrl)
 {
     /* set defaults */
@@ -86,7 +77,7 @@ void initCtrlParameters(CTRL_Vars_t *pCtrl)
     pCtrl->posSlewRate = 0.001;
 
     pCtrl->baseFreq = M_BASE_FREQ;
-    pCtrl->curLimit = M_MAXIMUM_CURRENT;        // 5.0A
+    pCtrl->curLimit = M_MAXIMUM_CURRENT;        /* 5.0A */
 
     pCtrl->IdRefStart = M_ID_START;
     pCtrl->IqRefStart = M_ID_START;
@@ -101,13 +92,13 @@ void initCtrlParameters(CTRL_Vars_t *pCtrl)
     pCtrl->ctrlSpdMaxOut = 0.95;
     pCtrl->ctrlPosMaxOut = 0.95;
 
-#if(BUILDLEVEL == FCL_LEVEL5)   // Verify FSI
+#if(BUILDLEVEL == FCL_LEVEL5)   /* Verify FSI */
     pCtrl->speedWeDelta = 0.001;
     pCtrl->posMechThetaDelta = 0.001;
-#else   // (BUILDLEVEL != FCL_LEVEL5)
+#else   /* (BUILDLEVEL != FCL_LEVEL5) */
     pCtrl->speedWeDelta = 0.020;
     pCtrl->posMechThetaDelta = 0.010;
-#endif  // (BUILDLEVEL != FCL_LEVEL5)
+#endif  /* (BUILDLEVEL != FCL_LEVEL5) */
 
     pCtrl->speedSet = M_SPEED_REF;
     pCtrl->positionSet = 2.0;
@@ -124,15 +115,16 @@ void initCtrlParameters(CTRL_Vars_t *pCtrl)
     pCtrl->rc.RampLowLimit = -1.0;
     pCtrl->rc.RampHighLimit = 1.0;
 
-    //
-    // PI Controllers Configuration
-    // Initialize the PI module for position
-    pCtrl->pi_pos.Kp = 0.2;             //0.2;
-    pCtrl->pi_pos.Ki = 0.001;           //T*speedLoopPrescaler/0.3;
+    /*
+     * PI Controllers Configuration
+     * Initialize the PI module for position
+     */
+    pCtrl->pi_pos.Kp = 0.2;             /* 0.2; */
+    pCtrl->pi_pos.Ki = 0.001;           /* T*speedLoopPrescaler/0.3; */
     pCtrl->pi_pos.Umax = 1.0;
     pCtrl->pi_pos.Umin = -1.0;
 
-    // Initialize the PID module for speed
+    /* Initialize the PID module for speed */
     pCtrl->pid_spd.param.Kp   = 0.36;
     pCtrl->pid_spd.param.Ki   = 0.0018;
     pCtrl->pid_spd.param.Kd   = 0.0;
@@ -158,7 +150,3 @@ void initCtrlParameters(CTRL_Vars_t *pCtrl)
 
     return;
 }
-
-//
-// End of Code
-//

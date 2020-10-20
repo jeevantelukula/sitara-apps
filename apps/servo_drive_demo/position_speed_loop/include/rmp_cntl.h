@@ -39,34 +39,34 @@
 #include "minmax.h"
 
 typedef struct {
-    float32_t TargetValue; 	  // Input: Target input (pu)
-    uint32_t  RampDelayMax;	  // Parameter: Maximum delay rate (Q0) - independently with global Q
-    float32_t RampLowLimit;	  // Parameter: Minimum limit (pu)
-    float32_t RampHighLimit;  // Parameter: Maximum limit (pu)
-    uint32_t  RampDelayCount; // Variable: Incremental delay (Q0) - independently with global Q
-    float32_t SetpointValue;  // Output: Target output (pu)
-    uint32_t  EqualFlag;	  // Output: Flag output (Q0) - independently with global Q
-    float32_t Tmp;			  // Variable: Temp variable
+    float32_t TargetValue;		/* Input: Target input (pu) */
+    uint32_t  RampDelayMax;		/* Parameter: Maximum delay rate (Q0) - independently with global Q */
+    float32_t RampLowLimit;		/* Parameter: Minimum limit (pu) */
+    float32_t RampHighLimit;		/* Parameter: Maximum limit (pu) */
+    uint32_t  RampDelayCount;		/* Variable: Incremental delay (Q0) - independently with global Q */
+    float32_t SetpointValue;		/* Output: Target output (pu) */
+    uint32_t  EqualFlag;		/* Output: Flag output (Q0) - independently with global Q */
+    float32_t Tmp;			/* Variable: Temp variable */
 } RMPCNTL;
 
 
-/*-----------------------------------------------------------------------------
-Default initalizer for the RMPCNTL object.
------------------------------------------------------------------------------*/                     
-#define RMPCNTL_DEFAULTS {  \
-    0, /* TargetValue */ \
-    1, /* RampDelayMax */ \
-   -1, /* RampLowLimit */ \
-    1, /* RampHighLimit */ \
-    0, /* RampDelayCount */ \
-    0, /* SetpointValue */ \
-    0, /* EqualFlag */ \
-    0  /* Tmp */ \
-    }
+/*************************************************************************************
+ * Default initalizer for the RMPCNTL object.
+ ************************************************************************************/                    
+#define RMPCNTL_DEFAULTS {					\
+				0,	/* TargetValue */	\
+				1,	/* RampDelayMax */	\
+				-1,	/* RampLowLimit */	\
+				1,	/* RampHighLimit */	\
+				0,	/* RampDelayCount */	\
+				0,	/* SetpointValue */	\
+				0,	/* EqualFlag */		\
+				0	/* Tmp */		\
+}
 
-/*------------------------------------------------------------------------------
- 	RAMP Controller Macro Definition
-------------------------------------------------------------------------------*/
+/*************************************************************************************
+ * RAMP Controller Macro Definition
+ ************************************************************************************/
 static inline void fclRampControl(RMPCNTL * rc1)
 {
 	rc1->Tmp = (rc1->TargetValue) - (rc1->SetpointValue);
@@ -101,25 +101,24 @@ static inline void fclRampControl(RMPCNTL * rc1)
     return;
 }
 
+#define RC_MACRO(v)											\
+	v.Tmp = v.TargetValue - v.SetpointValue;							\
+	/*  0.0000305 is resolution of Q15 */								\
+	if (_IQabs(v.Tmp) >= _IQ(0.0000305))				    				\
+	{																					\
+		v.RampDelayCount++	;								\
+			if (v.RampDelayCount >= v.RampDelayMax)						\
+			{																			\
+				if (v.TargetValue >= v.SetpointValue)					\
+					v.SetpointValue += _IQ(0.0000305);				\
+				else									\
+					v.SetpointValue -= _IQ(0.0000305);				\
+																						\
+				v.SetpointValue=_IQsat(v.SetpointValue,v.RampHighLimit,v.RampLowLimit);	\
+				v.RampDelayCount = 0;							\
+																						\
+			}																			\
+	}																					\
+	else v.EqualFlag = 0x7FFFFFFF;
 
-#define RC_MACRO(v)																	\
-	v.Tmp = v.TargetValue - v.SetpointValue;										\
-/*  0.0000305 is resolution of Q15 */												\
-if (_IQabs(v.Tmp) >= _IQ(0.0000305))				    							\
-{																					\
-	v.RampDelayCount++	;															\
-		if (v.RampDelayCount >= v.RampDelayMax)										\
-		{																			\
-			if (v.TargetValue >= v.SetpointValue)									\
-				v.SetpointValue += _IQ(0.0000305);									\
-			else																	\
-				v.SetpointValue -= _IQ(0.0000305);									\
-																					\
-			v.SetpointValue=_IQsat(v.SetpointValue,v.RampHighLimit,v.RampLowLimit);	\
-			v.RampDelayCount = 0;													\
-																					\
-		}																			\
-}																					\
-else v.EqualFlag = 0x7FFFFFFF;
-
-#endif // __RMP_CNTL_H__
+#endif /* __RMP_CNTL_H__ */

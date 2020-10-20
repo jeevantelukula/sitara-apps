@@ -30,10 +30,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-//
-// includes
-//
+
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/csl_fsi_tx.h>
 #include <ti/csl/csl_fsi_rx.h>
@@ -44,9 +41,6 @@
 extern uint32_t gFsiTxBase;
 extern uint32_t gFsiRxBase;
 
-//
-// Global variables for FSI
-//
 uint16_t fsiTxIndex;
 uint16_t fsiRxIndex;
 uint16_t fsiSlaveNodeFirst;
@@ -55,19 +49,19 @@ uint16_t fsiSlaveNodeActive;
 uint16_t fsiSlaveNodeReceived;
 uint16_t fsiSlaveNodeNext;
 
-uint16_t *fsiTxDataBufAddr;     // FSI TX data buffer address
-uint16_t *fsiRxDataBufAddr;     // FSI RX data buffer address
-uint16_t *fsiTxTagBufAddr;      // FSI TX Tag & user data buffer address
-uint16_t *fsiRxTagBufAddr;      // FSI RX Tag & user data buffer address
+uint16_t *fsiTxDataBufAddr;     /* FSI TX data buffer address */
+uint16_t *fsiRxDataBufAddr;     /* FSI RX data buffer address */
+uint16_t *fsiTxTagBufAddr;      /* FSI TX Tag & user data buffer address */
+uint16_t *fsiRxTagBufAddr;      /* FSI RX Tag & user data buffer address */
 
-uint16_t *fsiTxTagAddr;         // FSI TX frame tag and user data address
-uint16_t *fsiRxTagAddr;         // FSI RX frame tag and user data address
+uint16_t *fsiTxTagAddr;         /* FSI TX frame tag and user data address */
+uint16_t *fsiRxTagAddr;         /* FSI RX frame tag and user data address */
 
-uint16_t fsiTxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];      // FSI TX data array
-uint16_t fsiRxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];      // FSI RX data array
+uint16_t fsiTxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];      /* FSI TX data array */
+uint16_t fsiRxDataBuf[FSI_NODE_NUM][FSI_DATA_NUM];      /* FSI RX data array */
 
-// Frame tag used with Data/Ping transfers
-FSI_FrameTag fsiFrameTag[FSI_NODE_NUM];     // FSI frame Tag array for ping
+/* Frame tag used with Data/Ping transfers */
+FSI_FrameTag fsiFrameTag[FSI_NODE_NUM];     /* FSI frame Tag array for ping */
 FSI_FrameTag fsiPingTag0;
 FSI_FrameTag fsiPingTag1;
 
@@ -83,7 +77,7 @@ FSI_DataWidth fsiRxLanes;
 volatile uint16_t fsiTxUserData[FSI_NODE_NUM];
 volatile uint16_t fsiRxUserData[FSI_NODE_NUM];
 
-// User data to be sent with Data frame(for CPU control)
+/* User data to be sent with Data frame(for CPU control) */
 volatile uint16_t fsiTxUserDataTag;
 volatile uint16_t fsiRxUserDataTag;
 
@@ -117,9 +111,7 @@ uint16_t dataCrcCalc;
 uint16_t dataCrcRX;
 uint16_t dataCrcTX;
 
-//
-// FSI initialize
-//
+/* FSI initialize */
 void FSI_initParams(void)
 {
     fsiTxIndex = 0;
@@ -156,10 +148,8 @@ void FSI_initParams(void)
     fsiRxFrameTag = fsiFrameTag[fsiSlaveNodeActive];
     fsiTxFrameTag = fsiFrameTag[fsiSlaveNodeActive];
 
-    fsiTxUserDataTag = fsiTxUserData[fsiSlaveNodeActive] +
-                       fsiFrameTag[fsiSlaveNodeActive];
-    fsiRxUserDataTag = fsiRxUserData[fsiSlaveNodeActive] +
-                       fsiFrameTag[fsiSlaveNodeActive];
+    fsiTxUserDataTag = fsiTxUserData[fsiSlaveNodeActive] + fsiFrameTag[fsiSlaveNodeActive];
+    fsiRxUserDataTag = fsiRxUserData[fsiSlaveNodeActive] + fsiFrameTag[fsiSlaveNodeActive];
 
 #if FSI_LOOPBACK
     FSI_enableRxInternalLoopback(gFsiRxBase);
@@ -175,15 +165,10 @@ void FSI_initParams(void)
     fsiTxTagAddr  = (uint16_t *)(gFsiTxBase + CSL_FSI_TX_CFG_TX_FRAME_TAG_UDATA);
     fsiRxTagAddr  = (uint16_t *)(gFsiRxBase + CSL_FSI_RX_CFG_RX_FRAME_TAG_UDATA);
 
-    //TODO: HAL_setupFSIInterrupts (Interrupt register x4, Interrupt enable x4, interrupt ACK)
-
     return;
 }
 
-//
-// FSI handshake
-//
-//TODO: allow a timeout to occur and then resend PING0 frame
+/* FSI handshake */
 void FSI_handshakeLead(uint32_t gFsiTxBase, uint32_t gFsiRxBase)
 {
     extern volatile uint8_t numPingFrames;
@@ -213,10 +198,7 @@ void FSI_handshakeLead(uint32_t gFsiTxBase, uint32_t gFsiRxBase)
     return;
 }
 
-//
-// setup Tx/Rx frame data
-//
-//TODO: pass FSI TX and RX addresses as function arguments
+/* setup Tx/Rx frame data */
 void FSI_setupTRxFrameData(uint32_t gFsiTxBase, uint32_t gFsiRxBase)
 {
     /* Setting the requested nWords and nLanes for application */
@@ -228,9 +210,7 @@ void FSI_setupTRxFrameData(uint32_t gFsiTxBase, uint32_t gFsiRxBase)
     FSI_setRxDataWidth(gFsiRxBase, (FSI_DataWidth)FSI_RX_LANES);
 
     /* Set RX INT2 to CRC, EOF, and TYPE errors */
-    FSI_enableRxInterrupt(gFsiRxBase, FSI_INT2, (FSI_RX_EVT_CRC_ERR |
-                                                        FSI_RX_EVT_EOF_ERR |
-                                                        FSI_RX_EVT_TYPE_ERR));
+    FSI_enableRxInterrupt(gFsiRxBase, FSI_INT2, (FSI_RX_EVT_CRC_ERR | FSI_RX_EVT_EOF_ERR | FSI_RX_EVT_TYPE_ERR));
     /* Set RX INT1 to only data frame events (no interrupt on PING) */
     FSI_disableRxInterrupt(gFsiRxBase, FSI_INT1, FSI_RX_EVT_PING_FRAME);
     FSI_enableRxInterrupt(gFsiRxBase, FSI_INT1, FSI_RX_EVT_DATA_FRAME);
@@ -242,9 +222,7 @@ void FSI_setupTRxFrameData(uint32_t gFsiTxBase, uint32_t gFsiRxBase)
     FSI_setRxBufferPtr(gFsiRxBase, 0);
 }
 
-//
-// update the received data
-//
+/* update the received data */
 void FSI_updateReceivedData(void)
 {
     int32_t tempData;
@@ -252,7 +230,9 @@ void FSI_updateReceivedData(void)
     uint16_t ni;
     uint16_t dataType;
 
+    /*
     //DINT;          // Disable Global interrupt INTM
+    */
 
     fsiNode = fsiSlaveNodeReceived;
     ctrlNode = fsiNode + 1;
@@ -263,7 +243,9 @@ void FSI_updateReceivedData(void)
         frameDataRX[ni] = fsiRxDataBuf[fsiNode][ni];
     }
 
+    /*
     //EINT;          // Enable Global interrupt INTM
+    */
 
     if(((frameDataRX[0]>>12) & 0x000F) != fsiFrameTag[fsiNode])
     {
@@ -293,8 +275,7 @@ void FSI_updateReceivedData(void)
     switch(dataType)
     {
         case FSI_UDATA_PS_SP_N:
-            ctrlVars[ctrlNode].ctrlStateFdb =
-                    (CtrlState_e)(frameDataRX[0] & 0x00FF);
+            ctrlVars[ctrlNode].ctrlStateFdb = (CtrlState_e)(frameDataRX[0] & 0x00FF);
 
             tempData = (int32_t)frameDataRX[1];
             tempData = (tempData<<16) + frameDataRX[2];
@@ -304,46 +285,32 @@ void FSI_updateReceivedData(void)
             tempData = (tempData<<16) + frameDataRX[4];
             ctrlVars[ctrlNode].posMechTheta = FSI_convertPUToFloat(tempData);
 
-            #if(BUILDLEVEL == FCL_LEVEL5)       // Verify FSI
-            if(fabsf(ctrlVars[ctrlNode].speedWe -
-                     ctrlVars[ctrlNode].speedWePrev) >
-                                       ctrlVars[ctrlNode].speedWeDelta)
+            #if(BUILDLEVEL == FCL_LEVEL5) /* Verify FSI */
+            if(fabsf(ctrlVars[ctrlNode].speedWe -  ctrlVars[ctrlNode].speedWePrev) > ctrlVars[ctrlNode].speedWeDelta)
             {
-                ctrlVars[ctrlNode].speedWeError =
-                        ctrlVars[ctrlNode].speedWe;
+                ctrlVars[ctrlNode].speedWeError = ctrlVars[ctrlNode].speedWe;
             }
 
-            if(fabsf(ctrlVars[ctrlNode].posMechTheta -
-                     ctrlVars[ctrlNode].posMechThetaPrev) >
-                             ctrlVars[ctrlNode].posMechThetaDelta)
+            if(fabsf(ctrlVars[ctrlNode].posMechTheta - ctrlVars[ctrlNode].posMechThetaPrev) > ctrlVars[ctrlNode].posMechThetaDelta)
             {
-                ctrlVars[ctrlNode].posMechThetaError =
-                        ctrlVars[ctrlNode].posMechTheta;
+                ctrlVars[ctrlNode].posMechThetaError = ctrlVars[ctrlNode].posMechTheta;
             }
             #else
-            if(fabsf(ctrlVars[ctrlNode].speedWe -
-                     ctrlVars[ctrlNode].speedWePrev) >
-                             ctrlVars[ctrlNode].speedWeDelta)
+            if(fabsf(ctrlVars[ctrlNode].speedWe - ctrlVars[ctrlNode].speedWePrev) > ctrlVars[ctrlNode].speedWeDelta)
             {
-                ctrlVars[ctrlNode].speedWeError =
-                        ctrlVars[ctrlNode].speedWe;
-
-                ctrlVars[ctrlNode].speedWe = ctrlVars[ctrlNode].speedWe * 0.4 +
-                        ctrlVars[ctrlNode].speedWePrev * 0.6;
+                ctrlVars[ctrlNode].speedWeError = ctrlVars[ctrlNode].speedWe;
+                ctrlVars[ctrlNode].speedWe = ctrlVars[ctrlNode].speedWe * 0.4 + ctrlVars[ctrlNode].speedWePrev * 0.6;
             }
 
             ctrlVars[ctrlNode].speedWePrev = ctrlVars[ctrlNode].speedWe;
 
-            if(fabsf(ctrlVars[ctrlNode].posMechTheta -
-                     ctrlVars[ctrlNode].posMechThetaPrev) >
-                              ctrlVars[ctrlNode].posMechThetaDelta)
+            if(fabsf(ctrlVars[ctrlNode].posMechTheta - ctrlVars[ctrlNode].posMechThetaPrev) > ctrlVars[ctrlNode].posMechThetaDelta)
             {
-                ctrlVars[ctrlNode].posMechThetaError =
-                        ctrlVars[ctrlNode].posMechTheta;
+                ctrlVars[ctrlNode].posMechThetaError = ctrlVars[ctrlNode].posMechTheta;
             }
-            #endif  // (BUILDLEVEL != FCL_LEVEL5)
+            #endif  /* (BUILDLEVEL != FCL_LEVEL5) */
 
-            /* Inform background task to transmit latest actual values to EtherCAT   */
+            /* Inform background task to transmit latest actual values to EtherCAT */
             gAppPslTxMsgAxes[fsiSlaveNodeReceived].isMsgSend = 1;
 
             break;
@@ -368,10 +335,7 @@ void FSI_updateReceivedData(void)
     return;
 }
 
-//
-// update the transmission data
-//
-// TODO: FSI_updateTransmissionData
+/* update the transmission data */
 void FSI_updateTransmissionData(void)
 {
     int32_t tempData;
@@ -438,7 +402,9 @@ void FSI_updateTransmissionData(void)
         #endif
     }
 
+    /*
     //DINT;          // Disable Global interrupt INTM
+    */
     fsiTxUserData[fsiNode] = dataCrcTX;
 
 #if FSI_LOOPBACK
@@ -449,11 +415,8 @@ void FSI_updateTransmissionData(void)
     {
         fsiTxDataBuf[fsiNode][ni] = frameDataTX[ni];
     }
+    /*
     //EINT;          // Enable Global interrupt INTM
-
+    */
     return;
 }
-
-//
-// End of Code
-//

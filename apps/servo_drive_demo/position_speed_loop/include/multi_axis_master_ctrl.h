@@ -34,10 +34,8 @@
 #ifndef MULTI_AXIS_MASTER_CTRL_H
 #define MULTI_AXIS_MASTER_CTRL_H
 
-
-// controllers header files
-#include "pi_cntl.h"		// Include header for the PI  object
-#include "rmp_cntl.h"		// Include header for the RMPCNTL object
+#include "pi_cntl.h"		/* Include header for the PI  object */
+#include "rmp_cntl.h"		/* Include header for the RMPCNTL object */
 #include "pid_cntl_grando.h"
 #include "hw_types.h"
 
@@ -46,16 +44,14 @@
 #include "motor_ctrl_user.h"
 #include "multi_axis_fsi_shared.h"
 
-// node number
+/* Node number */
 #define SYS_NODE_NUM        FSI_NODE_NUM + 1
 
 #define POS_BUF_NUM         4
 #define POS_PTR_MAX         4
 #define POS_CNTR_MAX        1000
 
-//
-//! \brief Enumeration for controled node
-//
+/* Enumeration for controled node */
 typedef enum
 {
     SYS_NODEM  = 0,
@@ -70,9 +66,7 @@ typedef enum
 } SysNode_e;
 
 #if(SPD_CNTLR == SPD_PID_CNTLR)
-//
-// Default values for controller variables
-//
+/* Default values for controller variables */
 #define CTRL_DEFAULTS  {                                                       \
     {2.5, -2.5, 3.5, -3.5},            /*posArray[POS_BUF_NUM] */              \
     0.001,                             /* posSlewRate */                       \
@@ -147,11 +141,9 @@ typedef enum
     CTRL_STOP,                         /* ctrlSateCom */                       \
     CTRL_STOP                          /* ctrlSateFdb */                       \
 }
-#endif  // (SPD_CNTLR == SPD_PID_CNTLR)
+#endif  /* (SPD_CNTLR == SPD_PID_CNTLR) */
 
-//
-// Default values for system variables
-//
+/* Default values for system variables */
 #define SYS_DEFAULTS  {                                                        \
     0,                                  /* isrTicker */                        \
                                                                                \
@@ -182,39 +174,37 @@ typedef enum
     ECAT_CTRL_ENABLE                    /* ecatCtrlSet */                      \
 }
 
-//
-//!  \brief typedefs for ctrlVars
-//
+/* Typedefs for ctrlVars */
 typedef struct _CTRL_Vars_t_
 {
     float32_t posArray[POS_BUF_NUM];
     float32_t posSlewRate;
     float32_t baseFreq;
 
-    float32_t IdRefStart;           // Id reference (pu) for startup
-    float32_t IqRefStart;           // Iq reference (pu) for startup
-    float32_t ctrlIdRef;            // Id reference (pu) to controller
-    float32_t ctrlIqRef;            // Iq reference (pu) to controller
-    float32_t ctrlSpeedRef;         // Speed reference (pu) to controller
-    float32_t ctrlPosRef;           // Position reference (pu) to controller
+    float32_t IdRefStart;           /* Id reference (pu) for startup */
+    float32_t IqRefStart;           /* Iq reference (pu) for startup */
+    float32_t ctrlIdRef;            /* Id reference (pu) to controller */
+    float32_t ctrlIqRef;            /* Iq reference (pu) to controller */
+    float32_t ctrlSpeedRef;         /* Speed reference (pu) to controller */
+    float32_t ctrlPosRef;           /* Position reference (pu) to controller */
 
-    float32_t ctrlSpdOut;           // the output of speed controller
-    float32_t ctrlPosOut;           // the output of position controller
-    float32_t ctrlSpdMaxOut;        // the maximum output of speed controller
-    float32_t ctrlSpdMinOut;        // the minimum output of speed controller
-    float32_t ctrlPosMaxOut;        // the maximum output of position controller
+    float32_t ctrlSpdOut;           /* the output of speed controller */
+    float32_t ctrlPosOut;           /* the output of position controller */
+    float32_t ctrlSpdMaxOut;        /* the maximum output of speed controller */
+    float32_t ctrlSpdMinOut;        /* the minimum output of speed controller */
+    float32_t ctrlPosMaxOut;        /* the maximum output of position controller */
 
-    float32_t IdRefSet;             // Id reference setting (pu)
-    float32_t IqRefSet;             // Iq reference setting (pu)
+    float32_t IdRefSet;             /* Id reference setting (pu) */
+    float32_t IqRefSet;             /* Iq reference setting (pu) */
 
-    float32_t IdRef;                // Id reference (pu)
-    float32_t IqRef;                // Iq reference (pu)
+    float32_t IdRef;                /* Id reference (pu) */
+    float32_t IqRef;                /* Iq reference (pu) */
 
-    float32_t speedSet;             // For Closed Loop tests
-    float32_t positionSet;          // For Position Loop tests
+    float32_t speedSet;             /* For Closed Loop tests */
+    float32_t positionSet;          /* For Position Loop tests */
 
-    float32_t speedRef;             // speed reference Closed Loop (pu)
-    float32_t positionRef;          // speed reference Position Loop (pu)
+    float32_t speedRef;             /* speed reference Closed Loop (pu) */
+    float32_t positionRef;          /* speed reference Position Loop (pu) */
 
     float32_t posElecTheta;
     float32_t posMechTheta;
@@ -243,7 +233,7 @@ typedef struct _CTRL_Vars_t_
 
     float32_t curLimit;
 
-    RMPCNTL rc;                      // ramp control
+    RMPCNTL rc;                      /* Ramp control */
 
     PID_CONTROLLER  pid_spd;
     PI_CONTROLLER   pi_pos;
@@ -264,23 +254,21 @@ typedef struct _CTRL_Vars_t_
 
 } CTRL_Vars_t;
 
-//
-//!  \brief typedefs for ctrlVars
-//
+/* Typedefs for ctrlVars */
 typedef struct _SYS_Vars_t_
 {
     uint32_t isrTicker;
 
-    float32_t speedSet;                 // For Closed Loop tests
-    float32_t positionSet;              // For Position Loop tests
+    float32_t speedSet;                 /* For Closed Loop tests */
+    float32_t positionSet;              /* For Position Loop tests */
 
-    float32_t focExecutionTime_us;      // FOC execution time since sampling
+    float32_t focExecutionTime_us;      /* FOC execution time since sampling */
     uint16_t  focClrCntr;
     uint16_t  focCycleCountMax;
-    uint16_t  focCycleCount;            // FOC execution time variable
+    uint16_t  focCycleCount;            /* FOC execution time variable */
 
-    uint16_t  speedLoopPrescaler;       // Speed loop pre scalar
-    uint16_t  speedLoopCount;           // Speed loop counter
+    uint16_t  speedLoopPrescaler;       /* Speed loop pre scalar */
+    uint16_t  speedLoopCount;           /* Speed loop counter */
 
     SysNode_e  dacNode;
 
@@ -298,31 +286,22 @@ typedef struct _SYS_Vars_t_
     EcatCtrl_e  ecatCtrlSet;
 } SYS_Vars_t;
 
-//
-// Global variables used in this system
-//
+/* Global variables used in this system */
 extern CTRL_Vars_t ctrlVars[SYS_NODE_NUM];
 extern SYS_Vars_t  sysVars;
 
-//! \brief      Initializes the parameters of system
-//! \details    Initializes all the parameters
-//! \param[in]  pMotor   A pointer to the system object
+/* Initializes the parameters of system */
 extern void initSysParameters(SYS_Vars_t *pSys);
 
-//! \brief      Initializes the parameters of controller
-//! \details    Initializes all the parameters for each controller
-//! \param[in]  pCtrl   A pointer to the controller object
+/* Initializes the parameters of controller */
 extern void initCtrlParameters(CTRL_Vars_t *pCtrl);
 
-
-//! \brief      Reset the control variables of motor
-//! \details    Reset the control variables for each motor
-//! \param[in]  pMotor   A pointer to the motorVars object
+/* Reset the control variables of motor */
 extern void resetControllerVars(CTRL_Vars_t *pCtrl);
 
-// build level function prototypes
+/* Build level function prototypes */
 extern void buildLevel7(void);
 extern void buildLevel8(void);
 extern void runController(SysNode_e node);
 
-#endif // end of MULTI_AXIS_MASTER_CTRL_H definition
+#endif /* end of MULTI_AXIS_MASTER_CTRL_H definition */

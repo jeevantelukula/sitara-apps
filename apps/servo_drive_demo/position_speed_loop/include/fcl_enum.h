@@ -34,9 +34,7 @@
 #ifndef FCL_ENUM_H
 #define FCL_ENUM_H
 
-//
-//! \brief Enumeration for PWM update mode
-//
+/* Enumeration for PWM update mode */
 typedef enum
 {
     PWW_CMP_CTR_ZERO  = 0,
@@ -45,9 +43,7 @@ typedef enum
     PWW_CMP_IMMEDIATE = 3
 } PWMUpdateMode_e;
 
-//
-//! \brief Enumeration for State Machine typedef for motor QEP calibration
-//
+/* Enumeration for State Machine typedef for motor QEP calibration */
 typedef enum
 {
     QEP_CALIB_LOOPFLUSH = 0,
@@ -56,35 +52,28 @@ typedef enum
     QEP_CALIB_DONE = 3
 } QEPCalibSM_e;
 
-//
-//! \brief Enumeration for Motor run/ stop command
-//
+/* Enumeration for Motor run/ stop command */
 typedef enum
 {
     MOTOR_STOP = 0,
     MOTOR_RUN = 1
 } MotorRunStop_e;
 
-//
-//! \brief Enumeration for synchronization control
-//
+/* Enumeration for synchronization control */
 typedef enum
 {
     CTRL_SYN_DISABLE = 0,
     CTRL_SYN_ENABLE  = 1
 } CtrlSync_e;
 
-//
-//! \brief Enumeration for ethercat control
-//
+/* Enumeration for EtherCAT control */
 typedef enum
 {
     ECAT_CTRL_DISABLE = 0,
     ECAT_CTRL_ENABLE  = 1
 } EcatCtrl_e;
-//
-//! \brief Enumeration for Motor control state
-//
+
+/* Enumeration for Motor control state */
 typedef enum
 {
     CTRL_STOP  = 0,
@@ -94,9 +83,7 @@ typedef enum
     CTRL_FAULT = 4
 } CtrlState_e;
 
-//
-//! \brief Enumeration for controller loop
-//
+/* Enumeration for controller loop */
 typedef enum
 {
     CTRL_MODE_STOP     = 0,
@@ -106,9 +93,7 @@ typedef enum
     CTRL_MODE_FAULT    = 4
 } CtrlMode_e;
 
-//
-//! \brief Enumeration for Load motor selection/ reset
-//
+/* Enumeration for Load motor selection/ reset */
 typedef enum
 {
     LOAD_NONE = 0,
@@ -116,18 +101,14 @@ typedef enum
     LOAD_MOTOR2 = 2
 } LoadMotor_e;
 
-//
-//! \brief Enumeration for FCL controller --> PI/ FCL
-//
+/* Enumeration for FCL controller --> PI/ FCL */
 typedef enum
 {
     CNTLR_CPI = 0,
     CNTLR_CMPLX = 1
 } CurrentCntlr_e;
 
-//
-//! \brief Enumeration for SFRA test axis
-//
+/* Enumeration for SFRA test axis */
 typedef enum
 {
     SFRA_TEST_D_AXIS = 0,
@@ -135,13 +116,11 @@ typedef enum
     SFRA_TEST_SPEEDLOOP = 2
 } SFRATest_e;
 
-//
-//! \brief Enumeration for PWM update mode
-//
+/* Enumeration for PWM update mode */
 typedef enum
 {
     PWM_UPDATE_IMMEDIATE = 0,
     PWM_UPDATE_SHADOW = 1
 } PWMUpdateType_e;
 
-#endif // end of FCL_ENUM_H definition
+#endif /* end of FCL_ENUM_H definition */
