@@ -313,7 +313,6 @@ int32_t appPositionSpeedLoopStart(void)
 void tsIrqHandler(void)
 {
     volatile uint32_t intNum;
-    uint16_t mcAxisIdx;
     int32_t status;
 
     /* Update statistics */
@@ -342,13 +341,6 @@ void tsIrqHandler(void)
 #endif    
 
         FSI_startTxTransmit(gFsiTxBase);
-        
-        /* Inform background task to transmit latest actual values to EtherCAT   */
-        for (mcAxisIdx = 0; mcAxisIdx < MAX_NUM_AXES; mcAxisIdx++)
-        {
-            /* Set transmit flag for background task */
-            gAppPslTxMsgAxes[mcAxisIdx].isMsgSend = 1;
-        }
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, TS_INT_MAP );

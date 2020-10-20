@@ -265,11 +265,6 @@ void tsIrqHandler(void)
         FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
 
         FSI_startTxTransmit(gFsiTxBase);
-    
-        /* Inform background task to transmit latest actual values to EtherCAT   */
-        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX0].isMsgSend = 1;
-        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX1].isMsgSend = 1;
-        gAppPslTxMsgAxes[ECAT_MC_AXIS_IDX2].isMsgSend = 1;
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );

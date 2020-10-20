@@ -39,6 +39,7 @@
 #include <ti/csl/csl_fsi_rx.h>
 #include "multi_axis_fsi_shared.h"
 #include "multi_axis_master_ctrl_main.h"
+#include "app_psl_mbxipc.h"
 
 extern uint32_t gFsiTxBase;
 extern uint32_t gFsiRxBase;
@@ -341,6 +342,9 @@ void FSI_updateReceivedData(void)
                         ctrlVars[ctrlNode].posMechTheta;
             }
             #endif  // (BUILDLEVEL != FCL_LEVEL5)
+
+            /* Inform background task to transmit latest actual values to EtherCAT   */
+            gAppPslTxMsgAxes[fsiSlaveNodeReceived].isMsgSend = 1;
 
             break;
 
