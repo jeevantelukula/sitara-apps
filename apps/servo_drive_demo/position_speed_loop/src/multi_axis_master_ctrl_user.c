@@ -55,7 +55,8 @@ void initSysParameters(SYS_Vars_t *pSys)
 
     pSys->speedSet = 0.2;
 
-    pSys->speedLoopPrescaler = 2;
+    /* initialize pre-scaler for pos-speed loop algorithm execution */
+    pSys->speedLoopPrescaler = 0;
     pSys->speedLoopCount = 0;
 
     pSys->fsiNode = SYS_NODE1;
