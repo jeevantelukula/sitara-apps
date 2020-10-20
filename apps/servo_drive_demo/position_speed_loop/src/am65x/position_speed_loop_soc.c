@@ -334,11 +334,7 @@ void tsIrqHandler(void)
         FSI_setTxFrameType(gFsiTxBase, 0x3);
         FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
 
-#if FSI_LOOPBACK
         FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
-#else        
-        FSI_writeTxTagUserData(gFsiTxBase, (fsiTxUserDataTag << 8) | FSI_FRAME_TAG_NODE1);
-#endif    
 
         FSI_startTxTransmit(gFsiTxBase);
 
