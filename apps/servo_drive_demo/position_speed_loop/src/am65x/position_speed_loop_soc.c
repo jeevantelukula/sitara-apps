@@ -116,6 +116,13 @@ int32_t appPositionSpeedLoopInit(void)
     McuIntrRtrPrms mcuIntrRtrPrms;
     int32_t status;
 
+    /* compile-time check for match between IPC & FSI number of motor control axes */
+#if (MAX_NUM_AXES != FSI_NODES)
+    #error "Mismatch between IPC and FSI number of MC axes"    
+#elif (MAX_NUM_AXES != (FSI_NODE_LAST-FSI_NODE_FIRST+1))
+    #error "Mismatch between IPC and FSI number of MC axes"
+#endif
+
     /* initialize system parameters */
 #if (BUILDLEVEL >= FCL_LEVEL5 && BUILDLEVEL <= FCL_LEVEL9)
 #ifndef _CTRL_SYN_ENABLE

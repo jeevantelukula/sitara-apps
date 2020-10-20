@@ -148,7 +148,6 @@ void FSI_initParams(void)
     fsiFrameTag[FSI_SLAVE_N1] = FSI_FRAME_TAG_NODE1;
     fsiFrameTag[FSI_SLAVE_N2] = FSI_FRAME_TAG_NODE2;
     fsiFrameTag[FSI_SLAVE_N3] = FSI_FRAME_TAG_NODE3;
-    fsiFrameTag[FSI_SLAVE_N4] = FSI_FRAME_TAG_NODE4;
 
     fsiPingTag0 = FSI_FRAME_TAG0;
     fsiPingTag1 = FSI_FRAME_TAG1;

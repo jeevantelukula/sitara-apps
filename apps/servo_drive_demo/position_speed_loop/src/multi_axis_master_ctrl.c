@@ -60,21 +60,23 @@ static inline void switchActiveNode(void)
         case SYS_NODE1:
             sysVars.ctrlNode = SYS_NODE2;
             break;
+            
         case SYS_NODE2:
             sysVars.ctrlNode = SYS_NODE3;
-
             break;
+            
         case SYS_NODE3:
-            sysVars.ctrlNode = SYS_NODE4;
-
+            sysVars.ctrlNode = SYS_NODE1;
             break;
+            
         case SYS_NODE4:
-            sysVars.ctrlNode = SYS_NODEM;
-
+            sysVars.ctrlNode = SYS_NODE1;
             break;
+            
         default:
             sysVars.ctrlNode = SYS_NODE1;
     }
+    
     return;
 }
 
