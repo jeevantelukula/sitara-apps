@@ -407,9 +407,7 @@ void FSI_updateTransmissionData(void)
     */
     fsiTxUserData[fsiNode] = dataCrcTX;
 
-#if FSI_LOOPBACK
     fsiTxUserDataTag = (dataCrcTX << 8) | fsiFrameTag[fsiNode];
-#endif    
 
     for(ni = 0; ni< FSI_TX_WORDS; ni++)
     {
