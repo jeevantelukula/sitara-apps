@@ -57,7 +57,8 @@
 #include "multi_axis_slave_hal.h"
 
 //#define FSI_TX_TIME_WAIT_CNTR       100
-#define FSI_TX_TIME_WAIT_CNTR       10
+//#define FSI_TX_TIME_WAIT_CNTR       10
+#define FSI_TX_TIME_WAIT_CNTR       10000 //Changed by JR
 #define FSI_PING_TIME_OUT_CNTR      0x200000
 #define FSI_TX_TIME_OUT_CNTR        0x200000
 #define FSI_RX_TIME_OUT_CNTR        100000 //Changed by JR

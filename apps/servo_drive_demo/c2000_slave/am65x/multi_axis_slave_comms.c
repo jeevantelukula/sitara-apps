@@ -777,7 +777,8 @@ __interrupt void fsiRxInt1ISR(void)
             fsiTxTimeOutCntr = 0;
         }
 
-//        fsiTxTimeWaitCntr = 0;
+        /* JR: uncomment */
+        fsiTxTimeWaitCntr = 0;
     }
 
     fsiRxInt1Received = FSI_TRx_DONE;
