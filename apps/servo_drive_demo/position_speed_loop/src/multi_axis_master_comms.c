@@ -172,28 +172,55 @@ void FSI_initParams(void)
 void FSI_handshakeLead(uint32_t gFsiTxBase, uint32_t gFsiRxBase)
 {
     extern volatile uint8_t numPingFrames;
+    uint32_t timeout;
 
     /* Allow PING frame event to generate RX INT1 */
     FSI_enableRxInterrupt(gFsiRxBase, FSI_INT1, FSI_RX_EVT_PING_FRAME);
 
-    /* Transmit flush sequence */
-    FSI_executeTxFlushSequence(gFsiTxBase, PRESCALER_VAL);
+    do
+    {
+        numPingFrames = 0;
+        timeout = 0;
 
-    /* Send PING0 frame */
-    FSI_setTxFrameTag(gFsiTxBase, FSI_FRAME_TAG0);
-    FSI_setTxFrameType(gFsiTxBase, FSI_FRAME_TYPE_PING);
-    FSI_startTxTransmit(gFsiTxBase);
+        /* Transmit flush sequence */
+        FSI_executeTxFlushSequence(gFsiTxBase, PRESCALER_VAL);
 
-    /* Wait to receive a PING0 frame */
-    while(numPingFrames == 0);
+        /* Send PING0 frame */
+        FSI_setTxFrameTag(gFsiTxBase, FSI_FRAME_TAG0);
+        FSI_setTxFrameType(gFsiTxBase, FSI_FRAME_TYPE_PING);
+        FSI_startTxTransmit(gFsiTxBase);
 
-    /* Send PING1 frame */
-    FSI_setTxFrameTag(gFsiTxBase, FSI_FRAME_TAG1);
-    FSI_setTxFrameType(gFsiTxBase, FSI_FRAME_TYPE_PING);
-    FSI_startTxTransmit(gFsiTxBase);
+        /* Wait to receive a PING0 frame */
+        while(numPingFrames == 0)
+        {
+            timeout++;
+            if(timeout > 100000)
+            {
+                break;
+            }
+        }
 
-    /* Wait to receive a PING1 frame */
-    while(numPingFrames == 1);
+        if(numPingFrames == 1)
+        {
+            timeout = 0;
+
+            /* Send PING1 frame */
+            FSI_setTxFrameTag(gFsiTxBase, FSI_FRAME_TAG1);
+            FSI_setTxFrameType(gFsiTxBase, FSI_FRAME_TYPE_PING);
+            FSI_startTxTransmit(gFsiTxBase);
+
+            /* Wait to receive a PING1 frame */
+            while(numPingFrames == 1)
+            {
+                timeout++;
+                if(timeout > 100000)
+                {
+                    break;
+                }
+            }
+        }
+
+    } while (numPingFrames != 2);
 
     return;
 }
