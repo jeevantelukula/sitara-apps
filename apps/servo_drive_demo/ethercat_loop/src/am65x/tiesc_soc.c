@@ -643,6 +643,11 @@ static pinmuxPerCfg_t gPru_icssg2_mii_g_fsi0PinCfg[] =
         PIN_GPMC0_AD15, PIN_MODE(7) | \
         ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
     },
+    /* GPIO1_88 -> B22 */
+    {
+        PIN_TIMER_IO0, PIN_MODE(7) | \
+        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
+    },    
     {PINMUX_END}
 };
 
