@@ -81,8 +81,8 @@ Task_Handle hTaskPslCtrl;
 TsObj gTs;
 
 /* MC parameters -- set via JTAG, sent to PSL via IPC */
-volatile int32_t    gVelocityTarget = 0.2*10000;
-volatile int32_t    gPositionTarget = 0*10000;
+volatile int32_t    gVelocityTarget[MAX_NUM_AXES] = {0.2*10000, 0.2*10000, 0.2*10000};
+volatile int32_t    gPositionTarget[MAX_NUM_AXES] = {0*10000, 0*10000, 0*10000};
 /* cia402appl.h:
     CYCLIC_SYNC_POSITION_MODE:  8, Cyclic Synchronous Position mode
     CYCLIC_SYNC_VELOCITY_MODE:  9, Cyclic Synchronous Velocity mode
@@ -92,7 +92,7 @@ volatile int16_t    gModesOfOperation = CYCLIC_SYNC_VELOCITY_MODE;
     STATE_READY_TO_SWITCH_ON:   0x0004, Ready to switch on (mandatory)
     STATE_OPERATION_ENABLED:    0x0010, Operation enabled (mandatory)
 */
-volatile int16_t    gCtrlState = STATE_READY_TO_SWITCH_ON;
+volatile int16_t    gCtrlState[MAX_NUM_AXES] = {STATE_READY_TO_SWITCH_ON, STATE_READY_TO_SWITCH_ON, STATE_READY_TO_SWITCH_ON};
 
 /* Indicates whether to continue sending/receiving IPC data */
 volatile bool gRunState = TRUE;
@@ -114,10 +114,10 @@ void simSync0IrqHandler(uintptr_t arg)
         {
             /* Fill in Tx data */
             txobj = &gAppPslCtrlTxMsgAxes[axisIdx].sendObj;
-            txobj->i32TargetVelocity = gVelocityTarget;
-            txobj->i32TargetPosition = gPositionTarget;
+            txobj->i32TargetVelocity = gVelocityTarget[axisIdx];
+            txobj->i32TargetPosition = gPositionTarget[axisIdx];
             txobj->i16ModesOfOperation = gModesOfOperation;
-            txobj->i16State = gCtrlState;
+            txobj->i16State = gCtrlState[axisIdx];
             txobj->u16AxisIndex = axisIdx;
 
             /* Translate the ATCM local view addr to SoC view addr */
