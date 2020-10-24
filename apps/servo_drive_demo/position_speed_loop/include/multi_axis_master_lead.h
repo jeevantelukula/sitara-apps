@@ -208,11 +208,7 @@ static inline void FSI_readRxFrameData(uint32_t base) // JR: change prototype
 
     fsiRxUserData[fsiSlaveNodeReceived] = FSI_readRxUserData(base);
 
-    fsiTxUserDataTag = ((fsiTxUserData[fsiSlaveNodeActive]<<8) & 0xFF00) +
-                       fsiFrameTag[fsiSlaveNodeActive];
-
     fsiRxDataBufAddr = (uint16_t *)(&fsiRxDataBuf[fsiSlaveNodeReceived][0]);
-    fsiTxDataBufAddr = (uint16_t *)(&fsiTxDataBuf[fsiSlaveNodeActive][0]);
 
     /* Read RX data buffer */
     FSI_readRxDataBuffer(base, fsiRxDataBufAddr, fsiRxDataWords);

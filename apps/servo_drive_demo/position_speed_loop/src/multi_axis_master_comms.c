@@ -416,7 +416,7 @@ void FSI_updateTransmissionData(void)
             break;
     }
 
-    if(fsienableCrcChk == 0)
+    if (fsienableCrcChk == 0)
     {
         dataCrcTX = FSI_USERTAG_CHK - fsiFrameTag[fsiNode];
     }
@@ -432,16 +432,28 @@ void FSI_updateTransmissionData(void)
     /*
     //DINT;          // Disable Global interrupt INTM
     */
+    
+    /* Set transmit user data for active node to calculated Tx CRC */
     fsiTxUserData[fsiNode] = dataCrcTX;
 
+    /* Set transmit user data and tag 
+        user data: calculated Tx CRC
+        frame tag: tag for active node
+    */
     fsiTxUserDataTag = (dataCrcTX << 8) | fsiFrameTag[fsiNode];
 
-    for(ni = 0; ni< FSI_TX_WORDS; ni++)
+    /* Write Tx data from temp buffer to transmit data for active node */
+    for (ni = 0; ni < FSI_TX_WORDS; ni++)
     {
         fsiTxDataBuf[fsiNode][ni] = frameDataTX[ni];
     }
+    
+    /* Set Tx FSI active data buffer pointer */
+    fsiTxDataBufAddr = (uint16_t *)(&fsiTxDataBuf[fsiNode][0]);
+    
     /*
     //EINT;          // Enable Global interrupt INTM
     */
+    
     return;
 }
