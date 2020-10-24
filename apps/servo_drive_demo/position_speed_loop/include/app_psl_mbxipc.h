@@ -47,9 +47,9 @@
 #define APP_PSL_MBXIPC_SERR_REGISR      ( -2 )
 
 /* Axis indices */
-#define ECAT_MC_AXIS_IDX0               ( SYS_NODE1 - 1 )
-#define ECAT_MC_AXIS_IDX1               ( SYS_NODE2 - 1 )
-#define ECAT_MC_AXIS_IDX2               ( SYS_NODE3 - 1 )
+#define ECAT_MC_AXIS_IDX0               ( 0 )
+#define ECAT_MC_AXIS_IDX1               ( 1 )
+#define ECAT_MC_AXIS_IDX2               ( 2 )
 
 /* IPC message object to send motor control parameters */
 typedef struct {

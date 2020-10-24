@@ -262,10 +262,10 @@ void FSI_updateReceivedData(void)
     */
 
     fsiNode = fsiSlaveNodeReceived;
-    ctrlNode = fsiNode + 1;
+    ctrlNode = fsiNode;
     dataCrcRX = fsiRxUserData[fsiNode];
 
-    for(ni = 0; ni< FSI_RX_WORDS; ni++)
+    for (ni = 0; ni < FSI_RX_WORDS; ni++)
     {
         frameDataRX[ni] = fsiRxDataBuf[fsiNode][ni];
     }
@@ -274,12 +274,12 @@ void FSI_updateReceivedData(void)
     //EINT;          // Enable Global interrupt INTM
     */
 
-    if(((frameDataRX[0]>>12) & 0x000F) != fsiFrameTag[fsiNode])
+    if (((frameDataRX[0]>>12) & 0x000F) != fsiFrameTag[fsiNode])
     {
         return;
     }
 
-    if(fsienableCrcChk == 0)
+    if (fsienableCrcChk == 0)
     {
         dataCrcCalc = FSI_USERTAG_CHK - fsiFrameTag[fsiNode];
     }
@@ -292,7 +292,7 @@ void FSI_updateReceivedData(void)
         #endif
     }
 
-    if(dataCrcRX != dataCrcCalc)
+    if (dataCrcRX != dataCrcCalc)
     {
         return;
     }
@@ -371,7 +371,7 @@ void FSI_updateTransmissionData(void)
     uint16_t dataType;
 
     fsiNode = fsiSlaveNodeActive;
-    ctrlNode = fsiNode + 1;
+    ctrlNode = fsiNode;
 
     dataType = FSI_UDATA_IS_REF;
     frameDataTX[0]  = (fsiFrameTag[fsiNode]<<12) & 0xF000;

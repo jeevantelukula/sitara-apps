@@ -55,7 +55,7 @@ void initSysParameters(SYS_Vars_t *pSys)
 
     pSys->fsiNode = SYS_NODE1;
     pSys->fsiNodePrev = SYS_NODE1;
-    pSys->ctrlNode = SYS_NODE1;
+    pSys->ctrlNode = SYS_NODE3;
     pSys->ctrlNodePrev = SYS_NODE1;
     pSys->ctrlStateSet = CTRL_STOP;
     pSys->ctrlModeSet = CTRL_MODE_SPEED;

@@ -117,8 +117,8 @@ int32_t appPositionSpeedLoopInit(void)
     int32_t status;
 
     /* compile-time check for match between IPC & FSI number of motor control axes */
-#if (MAX_NUM_AXES != FSI_NODES)
-    #error "Mismatch between IPC and FSI number of MC axes"    
+#if ((MAX_NUM_AXES != SYS_NODE_NUM) || (MAX_NUM_AXES != FSI_NODES))
+    #error "Mismatch between IPC and FSI number of MC axes"
 #elif (MAX_NUM_AXES != (FSI_NODE_LAST-FSI_NODE_FIRST+1))
     #error "Mismatch between IPC and FSI number of MC axes"
 #endif
@@ -139,7 +139,7 @@ int32_t appPositionSpeedLoopInit(void)
     {
         uint16_t nodes;
 
-        for(nodes = SYS_NODEM; nodes< SYS_NODE_NUM; nodes++)
+        for (nodes = SYS_NODE1; nodes < SYS_NODE_NUM; nodes++)
         {
             /* initialize controller parameters for each motor */
             initCtrlParameters(&ctrlVars[nodes]);
@@ -290,7 +290,7 @@ int32_t appPositionSpeedLoopStart(void)
     /* move to background task */
     while (gRunFlag) {
         /* Continuously loop over all MC axes */
-        sysNodeIdx = (SysNode_e)(FSI_NODE_FIRST+1);
+        sysNodeIdx = SYS_NODE1;
         for (mcAxisIdx = 0; mcAxisIdx < MAX_NUM_AXES; mcAxisIdx++)
         {
             /* Rx MC message from EthCAT */

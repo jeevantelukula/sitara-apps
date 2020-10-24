@@ -45,24 +45,23 @@
 #include "multi_axis_fsi_shared.h"
 
 /* Node number */
-#define SYS_NODE_NUM        FSI_NODE_NUM + 1
+#define SYS_NODE_NUM        FSI_NODE_NUM
 
 #define POS_BUF_NUM         4
 #define POS_PTR_MAX         4
 #define POS_CNTR_MAX        1000
 
-/* Enumeration for controled node */
+/* Enumeration for controlled node */
 typedef enum
 {
-    SYS_NODEM  = 0,
-    SYS_NODE1  = 1,
-    SYS_NODE2  = 2,
-    SYS_NODE3  = 3,
-    SYS_NODE4  = 4,
-    SYS_NODE5  = 5,
-    SYS_NODE6  = 6,
-    SYS_NODE7  = 7,
-    SYS_NODE8  = 8
+    SYS_NODE1  = 0,
+    SYS_NODE2  = 1,
+    SYS_NODE3  = 2,
+    SYS_NODE4  = 3,
+    SYS_NODE5  = 4,
+    SYS_NODE6  = 5,
+    SYS_NODE7  = 6,
+    SYS_NODE8  = 7
 } SysNode_e;
 
 #if(SPD_CNTLR == SPD_PID_CNTLR)
