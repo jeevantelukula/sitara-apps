@@ -34,7 +34,7 @@
 #include <ti/csl/tistdtypes.h>
 #include <ti/csl/soc.h>
 #include <ti/board/board.h>
-#include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
+#include <ti/board/src/am64x_evm/AM64x_pinmux.h>
 
 pinmuxPerCfg_t gFsiPinCfg[] =
 {

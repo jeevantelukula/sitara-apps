@@ -37,7 +37,7 @@
 
 #include <ti/board/board.h>
 #include <ti/board/src/am64x_evm/include/board_internal.h>
-#include <ti/board/src/am64x_evm/AM64xx_pinmux.h>
+#include <ti/board/src/am64x_evm/AM64x_pinmux.h>
 #include <ti/csl/soc.h>
 #include <misc/include/app_misc.h>
 
