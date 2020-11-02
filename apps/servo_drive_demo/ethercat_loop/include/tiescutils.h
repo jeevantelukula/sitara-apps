@@ -50,6 +50,8 @@
 
 #include <ti/osal/CacheP.h>
 
+#define TIESC_REVISION_NUMBER_FULL (0x00000011)
+
 /* Flag to enable TI AM6xx based CiA402 3-axis MC application */
 #define TI_CiA402_3AXIS_MOTOR_CONTROL
 

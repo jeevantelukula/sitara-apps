@@ -104,7 +104,7 @@ PRUICSS_Handle pruIcss0Handle;
 /* ========================================================================== */
 /*                            Global Variables                                */
 /* ========================================================================== */
-
+uint32_t tiesc_revision_number = TIESC_REVISION_NUMBER_FULL;
 
 #if CiA402_DEVICE
 extern UINT16 APPL_GenerateMapping(UINT16 *pInputSize, UINT16 *pOutputSize);
