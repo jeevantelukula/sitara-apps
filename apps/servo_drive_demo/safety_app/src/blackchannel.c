@@ -32,9 +32,15 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
+
+#include <ti/drv/uart/UART.h>
+#include <ti/drv/uart/UART_stdio.h>
+
 #include "blackchannel.h"
 
-/* defined at OCSRAM5 in linker.cmd */
+/* defined at OCSRAM5 in linker.cmd, data is placed
+ * in this location by an R5F running the EtherCAT stack */
 #pragma DATA_SECTION(BlackChannel, ".safedata")
 blackChannel_t BlackChannel;
 
@@ -44,16 +50,15 @@ uint8_t black_channel_get_data()
 
     rcvd_size = BlackChannel.num_bytes;
 
-    /* do not overflow */
+    /* example usage
     if (rcvd_size > CHANNEL_BUFFER_SIZE)
         rcvd_size = CHANNEL_BUFFER_SIZE;
 
-    /* SITSW-231: usage example to be updated
-     * UART_printf("received bytes: %i \n", rcvd_size);
-     * uint8_t i;
-     * for (i = 0; i < rcvd_size; i++)
-     *    UART_printf("data[%d] = %d \n", i, BlackChannel.data[i]);
-     */
+    UART_printf("received bytes: %i \n", rcvd_size);
+
+    for (uint8_t i = 0; i < rcvd_size; i++)
+        UART_printf("    data[%d] = 0x%X\n", i, BlackChannel.data[i]);
+    */
 
     return rcvd_size;
 }

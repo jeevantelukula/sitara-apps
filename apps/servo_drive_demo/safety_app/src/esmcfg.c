@@ -44,7 +44,6 @@
 
 /* ti/csl/soc/am64x/src/cslr_soc_baseaddress.h */
 #define MAIN_ESM_MMR        (CSL_ESM0_CFG_BASE + MCU_RAT_OFFSET6)
-/* ti/csl/soc/am64x/src/cslr_mcu_m4fss0_baseaddress.h */
 #define MCU_ESM_MMR         (CSL_MCU_ESM0_CFG_BASE + MCU_RAT_OFFSET0)
 
 bool configure_esm()

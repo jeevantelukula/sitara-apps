@@ -36,7 +36,7 @@
 
 #include <stdint.h>
 
-#define CHANNEL_BUFFER_SIZE     124U
+#define CHANNEL_BUFFER_SIZE     127U
 
 typedef struct {
     volatile uint8_t num_bytes;

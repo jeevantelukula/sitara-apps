@@ -38,8 +38,14 @@
 #include <ti/csl/soc.h>
 #include <ti/csl/soc/cslr_soc_ctrl_mmr.h>
 #include <ti/csl/arch/csl_arch.h>
-#include <ti/csl/csl_gpio.h>
 #include <ti/csl/csl_mailbox.h>
+#include <ti/csl/csl_timer.h>
+#include <ti/csl/csl_gpio.h>
+/* TI Driver Includes */
+#include <ti/board/board.h>
+#include <ti/drv/uart/UART.h>
+#include <ti/drv/uart/UART_stdio.h>
+#include <ti/osal/osal.h>
 
 #include "app.h"
 #include "esmcfg.h"
@@ -48,21 +54,27 @@
 #include "blackchannel.h"
 
 /* ti/csl/soc/am64x/src/cslr_soc_baseaddress.h */
-#define MAIN_MBOX6_MMR          (CSL_MAILBOX0_REGS6_BASE + MCU_RAT_OFFSET7)
-/* ti/csl/soc/am64x/src/cslr_mcu_m4fss0_baseaddress.h */
+#define MCU_GPIO_MMR            (CSL_MCU_GPIO0_BASE + MCU_RAT_OFFSET0)
 #define MCU_CTRL_MMR_BASE       (CSL_MCU_CTRL_MMR0_CFG0_BASE + MCU_RAT_OFFSET0)
+#define MCU_TIMER2_MMR          (CSL_MCU_TIMER2_CFG_BASE + MCU_RAT_OFFSET0)
+#define MCU_TIMER3_MMR          (CSL_MCU_TIMER3_CFG_BASE + MCU_RAT_OFFSET0)
+#define MAIN_MBOX6_MMR          (CSL_MAILBOX0_REGS6_BASE + MCU_RAT_OFFSET7)
 
 /* required for unlocking MCU CTRL MMR write protected registers */
-#define UNLOCK0_VAL             (uint32_t) 0x68EF3490
-#define UNLOCK1_VAL             (uint32_t) 0xD172BC5A
+#define UNLOCK0_VAL             (0x68EF3490U)
+#define UNLOCK1_VAL             (0xD172BC5AU)
 
 /* ti/csl/soc/am64x/src/cslr_mcu_ctrl_mmr.h */
 #define MCU_RST_ISO_DONE_MASK   CSL_MCU_CTRL_MMR_CFG0_RST_CTRL_MCU_RESET_ISO_DONE_Z_MASK
 #define MCU_DBG_ISO_EN_MASK     CSL_MCU_CTRL_MMR_CFG0_ISO_CTRL_MCU_DBG_ISO_EN_MASK
 #define MCU_RST_ISO_EN_MASK     CSL_MCU_CTRL_MMR_CFG0_ISO_CTRL_MCU_RST_ISO_EN_MASK
-#define MAIN_WARMRST_MASK       (uint32_t) 0xFFFFFFF6
+#define MAIN_WARMRST_MASK       (0xFFFFFFF6U)
 
 /* ti/csl/soc/am64x/src/cslr_intr_mcu_m4fss0_core0.h */
+#define MCU_GPIO6_INTRTR        CSLR_MCU_MCU_GPIOMUX_INTROUTER0_IN_MCU_GPIO0_GPIO_6             // 0 through 29
+#define MCU_GPIOMUX_INT4        CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_MCU_GPIOMUX_INTROUTER0_OUTP_4    // 4 through 7
+#define MCU_TIMER2_INT          CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_TIMER2_INTR_PEND_0               // 0 through 3
+#define MCU_TIMER3_INT          CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_TIMER3_INTR_PEND_0               // 0 through 3
 #define MAIN_WARM_RSTz_INT      CSLR_MCU_M4FSS0_CORE0_NVIC_GLUELOGIC_MAINRESET_REQUEST_GLUE_MAIN_RESETZ_SYNC_STRETCH_0
 #define MAIN_COLD_RSTz_INT      CSLR_MCU_M4FSS0_CORE0_NVIC_GLUELOGIC_MAINRESET_REQUEST_GLUE_MAIN_PORZ_SYNC_STRETCH_0
 #define MCU_ESM_HI_PRI_INT      CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_ESM0_ESM_INT_HI_LVL_0
@@ -72,13 +84,21 @@
 #define MAILBOX0_IPC_INT        CSLR_MCU_M4FSS0_CORE0_NVIC_MAILBOX0_MAILBOX_CLUSTER_6_MAILBOX_CLUSTER_PEND_3
 #define MAILBOX1_IPC_INT        CSLR_MCU_M4FSS0_CORE0_NVIC_MAILBOX0_MAILBOX_CLUSTER_6_MAILBOX_CLUSTER_PEND_3
 
-/* global variables */
-volatile uint32_t reset_received, pru_ack_received, fsoe_data_available;
+/* MCU GPIO 5 (LED), MCU GPIO 6 (button), and
+ * MCU GPIO 7 (safe torque off) are used in this application */
+#define GPIO_LED0           5
+#define GPIO_BUTTON0        6
+#define GPIO_OUTPUT0        7
 
-void configure_nvic()
+/* global variables */
+volatile uint32_t reset_requested, pru_ack_received, fsoe_data_available;
+volatile uint32_t patternPhase, patternState;
+
+void configure_interrupts()
 {
     Intc_Init();
 
+    Intc_IntClrPend(MCU_TIMER3_INT);
     Intc_IntClrPend(MAIN_WARM_RSTz_INT);
     Intc_IntClrPend(MCU_ESM_HI_PRI_INT);
     Intc_IntClrPend(MCU_ESM_LO_PRI_INT);
@@ -87,6 +107,7 @@ void configure_nvic()
     Intc_IntClrPend(MAILBOX0_IPC_INT);
     Intc_IntClrPend(MAILBOX1_IPC_INT);
 
+    Intc_IntRegister(MCU_TIMER3_INT, &ledPattern_isr, NULL);
     Intc_IntRegister(MAIN_WARM_RSTz_INT, &main_warm_rst_req_isr, NULL);
     Intc_IntRegister(MCU_ESM_HI_PRI_INT, &mcu_esm_error_isr, NULL);
     Intc_IntRegister(MCU_ESM_LO_PRI_INT, &mcu_esm_error_isr, NULL);
@@ -95,6 +116,7 @@ void configure_nvic()
     Intc_IntRegister(MAILBOX0_IPC_INT, &mailbox_isr, NULL);
     Intc_IntRegister(MAILBOX1_IPC_INT, &mailbox_isr, NULL);
 
+    Intc_SystemEnable(MCU_TIMER3_INT);
     Intc_SystemEnable(MAIN_WARM_RSTz_INT);
     Intc_SystemEnable(MCU_ESM_HI_PRI_INT);
     Intc_SystemEnable(MCU_ESM_LO_PRI_INT);
@@ -103,7 +125,7 @@ void configure_nvic()
     Intc_SystemEnable(MAILBOX0_IPC_INT);
     Intc_SystemEnable(MAILBOX1_IPC_INT);
 
-    Intc_IntEnable(0);
+    Intc_IntEnable(0U);
 }
 
 void configure_isolation()
@@ -126,36 +148,67 @@ void configure_isolation()
     /* above 2 steps only take effect after setting
         the magic mmr register -- any non-zero value will work */
     MCU_CTRL_MMR->RST_MAGIC_WORD = 0x1234ABCD;
+
+    /* lock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = 0U;
+    MCU_CTRL_MMR->LOCK6_KICK1 = 0U;
+}
+
+bool configure_timer(uint32_t timer_base, uint32_t compareVal)
+{
+    /* return false on success */
+    bool retVal = false;
+
+    /* clear config to default */
+    retVal |= TIMERReset(timer_base);
+
+    /* set initial compare value */
+    retVal |= TIMERCompareSet(timer_base, compareVal);
+
+    /* continuous mode (auto-reload) with compare */
+    retVal |= TIMERModeConfigure(timer_base, TIMER_AUTORLD_CMP_ENABLE);
+
+    /* enable timer compare mode interrupt */
+    retVal |= TIMERIntEnable(timer_base, TIMER_INT_MAT_EN_FLAG);
+
+    /* start timer */
+    retVal |= TIMEREnable(timer_base);
+
+    return retVal;
+}
+
+bool configure_ledPattern()
+{
+    /* return false on success */
+    bool retVal = false;
+    patternState = GPIO_PIN_LOW;
+    patternPhase = 0;
+
+    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_LED0, GPIO_DIRECTION_OUTPUT);
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_LED0, patternState);
+
+    /* configure timer & start with initial compare value */
+    retVal |= configure_timer(MCU_TIMER3_MMR, 5000000);
+
+    return retVal;
 }
 
 void set_EmergencyStop()
 {
-    /* SITSW-229: Add GPIO code to disable C2000 BoosterPack */
-    /* gpio call will be filled in when EVM hardware details finalize */
-    //GPIOPinWrite_v0(gpio_base_address, gpio_pin, GPIO_PIN_LOW);
+    /* gpio call will power OFF the C2000 motor drive boosterpack  */
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_LOW);
 }
 
 void unset_EmergencyStop()
 {
-    /* SITSW-229: Add GPIO code to re-enable C2000 BoosterPack */
-    /* gpio call will be filled in when EVM hardware details finalize */
-    //GPIOPinWrite_v0(gpio_base_address, gpio_pin, GPIO_PIN_HIGH);
+    /* gpio call will power ON the C2000 motor drive boosterpack  */
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_HIGH);
 }
 
 void fsoe_stack_call()
 {
-    /* customer adds fsoe stack call
-        here to feed it latest data */
-
-    /* SITSW-231: update usage example in blackchannel.c */
+    /* add fsoe stack call here to feed it latest data */
     black_channel_get_data();
-}
-
-void trigger_main_warmrst()
-{
-    /* write to CTRL MMR to trigger a warm reset on MAIN domain */
-    CSL_mcu_ctrl_mmr_cfg0Regs * MCU_CTRL_MMR = (CSL_mcu_ctrl_mmr_cfg0Regs *) MCU_CTRL_MMR_BASE;
-    MCU_CTRL_MMR->RST_CTRL &= MAIN_WARMRST_MASK;
 }
 
 void block_main_warmrst()
@@ -172,27 +225,45 @@ void unblock_main_warmrst()
     MCU_CTRL_MMR->RST_CTRL &= ~MCU_RST_ISO_DONE_MASK;
 }
 
+void trigger_main_warmrst()
+{
+    /* write to CTRL MMR to trigger a warm reset on MAIN domain */
+    CSL_mcu_ctrl_mmr_cfg0Regs * MCU_CTRL_MMR = (CSL_mcu_ctrl_mmr_cfg0Regs *) MCU_CTRL_MMR_BASE;
+    MCU_CTRL_MMR->RST_CTRL &= MAIN_WARMRST_MASK;
+}
+
 void main_warm_rst_req_isr()
 {
-    reset_received = 1;
+    Intc_IntDisable();
+    Intc_SystemDisable(MAIN_WARM_RSTz_INT);
 
     /* stop motor immediately on reset signal */
     set_EmergencyStop();
 
-    Intc_IntClrPend(MAIN_WARM_RSTz_INT);
+    reset_requested = 1;
+
+    /* start a timer while waiting for PRU acknowledgement
+     * then reset after timer expires if PRU does not respond */
+    configure_timer(MCU_TIMER2_MMR, 20000000);
+    Intc_IntClrPend(MCU_TIMER2_INT);
+    Intc_IntRegister(MCU_TIMER2_INT, &pru_timeout_isr, NULL);
+    Intc_SystemEnable(MCU_TIMER2_INT);
+    Intc_IntEnable(0U);
 }
 
 void mcu_esm_error_isr()
 {
+    Intc_IntDisable();
     /* stop motor immediately on error signal */
     set_EmergencyStop();
 
-    trigger_main_warmrst();
-
     main_esm_clear_error();
+
+    trigger_main_warmrst();
 
     Intc_IntClrPend(MCU_ESM_HI_PRI_INT);
     Intc_IntClrPend(MCU_ESM_LO_PRI_INT);
+    Intc_IntEnable(0U);
 }
 
 void pru_protocol_ack_isr()
@@ -203,8 +274,21 @@ void pru_protocol_ack_isr()
     Intc_IntClrPend(PRU1_PROTOCOL_ACK);
 }
 
+void pru_timeout_isr()
+{
+    /* this should clear everything */
+    TIMERIntStatusClear(MCU_TIMER2_MMR, TIMER_INT_MAT_IT_FLAG);
+    TIMERResetConfigure(MCU_TIMER2_MMR, TIMER_SFT_RESET_ENABLE);
+
+    Intc_SystemDisable(MCU_TIMER2_INT);
+    Intc_IntClrPend(MCU_TIMER2_INT);
+
+    pru_ack_received = 1;
+}
+
 void mailbox_isr()
 {
+    Intc_IntDisable();
     uint32_t msg_data = 0;
     MailboxGetMessage(MAIN_MBOX6_MMR, MAILBOX_QUEUE_0, &msg_data);
     MailboxClrNewMsgStatus(MAIN_MBOX6_MMR, MAILBOX_M4F_CPUID, MAILBOX_QUEUE_0);
@@ -224,35 +308,65 @@ void mailbox_isr()
 
     Intc_IntClrPend(MAILBOX0_IPC_INT);
     Intc_IntClrPend(MAILBOX1_IPC_INT);
+    Intc_IntEnable(0U);
+}
+
+void ledPattern_isr()
+{
+    Intc_IntDisable();
+    uint32_t compareVal = TIMERCompareGet(MCU_TIMER3_MMR);
+    TIMERIntStatusClear(MCU_TIMER3_MMR, TIMER_INT_MAT_IT_FLAG);
+
+    patternState ^= 1U;
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_LED0, patternState);
+
+    switch (patternPhase++) {
+    case(0):
+        compareVal += 2000000;
+        break;
+    case(1):
+        compareVal += 4000000;
+        break;
+    case(2):
+        compareVal += 4000000;
+        break;
+    case(3):
+        compareVal += 15000000;
+        patternPhase = 0;
+        break;
+    }
+
+    TIMERCompareSet(MCU_TIMER3_MMR, compareVal);
+    Intc_IntClrPend(MCU_TIMER3_INT);
+    Intc_IntEnable(0U);
 }
 
 void application_loop()
 {
-    bool looping = true;
-    uint32_t loopCounter = 0;
-    uint32_t heartbeatState = GPIO_PIN_LOW;
-    reset_received = 0;
+    uint32_t reset_sent = 0;
+    reset_requested = 0;
     pru_ack_received = 0;
 
+    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_DIRECTION_INPUT);
+    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_DIRECTION_OUTPUT);
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_HIGH);
 
-    while(looping) {
-        loopCounter = 10000;    /* adjust so heartbeat LED toggles 1Hz */
+    while(1U) {
+        if (reset_requested == 1 && pru_ack_received == 1) {
+            reset_requested = 0;
+            pru_ack_received = 0;
 
-        while(loopCounter-- > 0) {
-            if (reset_received == 1 && pru_ack_received == 1) {
-                reset_received = 0;
-                pru_ack_received = 0;
-
-                /* all conditions to un-block reset are met */
-                unblock_main_warmrst();
-            }
+            /* all conditions to un-block reset are met */
+            unblock_main_warmrst();
+            reset_sent = 1;
         }
 
-        /* toggle LED via GPIO pin every time loopCounter hits 0 */
-        heartbeatState = heartbeatState == 0 ? GPIO_PIN_HIGH : GPIO_PIN_LOW;
-        /* will be filled in when EVM hardware details finalize */
-        //GPIOPinWrite_v0(gpio_base_address, gpio_pin, heartbeatState);
+        if (reset_sent == 1) {
+            reset_sent = 0;
 
+            Intc_IntClrPend(MAIN_WARM_RSTz_INT);
+            Intc_SystemEnable(MAIN_WARM_RSTz_INT);
+        }
     }
 }
 

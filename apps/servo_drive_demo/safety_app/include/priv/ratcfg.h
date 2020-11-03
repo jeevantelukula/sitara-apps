@@ -37,16 +37,16 @@
 #include <stdbool.h>
 
 /* ti/csl/arch/m4/src/startup.c */
-/* MCU CTRL MMR at 0x04000000, M4F addr 0x64000000 */
+/* MCU Domain Modules at 0x04000000, M4F accesses at 0x64000000 */
 #define MCU_RAT_OFFSET0     (uint32_t) 0x60000000
-/* OC-SRAM at 0x70000000, M4F addr 0x70000000 */
+/* MAIN Domain SRAM at 0x70000000, M4F accesses at 0x70000000 */
 #define MCU_RAT_OFFSET1     (uint32_t) 0x00000000
+/* MAIN Mailbox at 0x29000000, M4F accesses at 0x69000000 */
+#define MCU_RAT_OFFSET7     (uint32_t) 0x40000000
 
 /* defined in configure_rat() */
 /* MAIN ESM at 0x00420000, M4F accesses 0x60420000 */
 #define MCU_RAT_OFFSET6     (uint32_t) 0x60000000
-/* Mailboxes at 0x29000000, M4F accesses at 0x69000000 */
-#define MCU_RAT_OFFSET7     (uint32_t) 0x40000000
 
 bool configure_rat();
 

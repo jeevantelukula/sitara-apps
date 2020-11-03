@@ -34,13 +34,19 @@
 #ifndef APP_H_
 #define APP_H_
 
-void configure_nvic();
+#include <stdint.h>
+#include <stdbool.h>
+
+void configure_interrupts();
 void configure_isolation();
+bool configure_ledPattern();
 
 void main_warm_rst_req_isr();
 void mcu_esm_error_isr();
 void pru_protocol_ack_isr();
+void pru_timeout_isr();
 void mailbox_isr();
+void ledPattern_isr();
 
 void application_loop();
 

@@ -51,19 +51,15 @@ bool configure_rat()
     CSL_ratRegs * MCU_RAT_MMR = (CSL_ratRegs *) MCU_RAT_MMR_BASE;
 
     /* ti/csl/arch/m4/src/startup.c */
-    /* CSL already uses regions 0 - 6 by default */
+    /* CSL already uses regions 0 - 7 by default */
     retVal |= !CSL_ratDisableRegionTranslation(MCU_RAT_MMR, 6);    // re-defining for MAIN ESM
-    retVal |= !CSL_ratDisableRegionTranslation(MCU_RAT_MMR, 7);    // using for MAIN Mailbox
 
     /* sizeInBytes, baseAddress, translatedAddress */
     /* { byte size, 32-bit local M4F memory map, 64-bit SoC memory map */
     CSL_RatTranslationCfgInfo ratCfg6 = { 0x00001000, 
         CSL_ESM0_CFG_BASE + MCU_RAT_OFFSET6, CSL_ESM0_CFG_BASE };  // 4kB for ESM
-    CSL_RatTranslationCfgInfo ratCfg7 = { 0x00080000,
-        CSL_MAILBOX0_REGS0_BASE + MCU_RAT_OFFSET7, CSL_MAILBOX0_REGS0_BASE }; // 512kB for Mailboxes
 
     retVal |= !CSL_ratConfigRegionTranslation(MCU_RAT_MMR, 6, &ratCfg6);
-    retVal |= !CSL_ratConfigRegionTranslation(MCU_RAT_MMR, 7, &ratCfg7);
 
     return retVal;
 }

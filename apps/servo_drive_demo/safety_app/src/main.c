@@ -32,10 +32,15 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* TI CSL Includes */
 #include <ti/csl/soc.h>
 #include <ti/csl/arch/csl_arch.h>
+/* TI Driver Includes */
+#include <ti/board/board.h>
+#include <ti/drv/uart/UART.h>
+#include <ti/drv/uart/UART_stdio.h>
 
 /* Application Functions and Macros */
 #include "app.h"
@@ -44,25 +49,38 @@
 
 int main(void)
 {
-    /* Interrupts in this application: Main Domain Reset, Main & MCU
-        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
-    configure_nvic();
+    /* This will set Control MMR bits for debug and reset isolation. */
+    configure_isolation();
+
+    bool retVal = false;
 
     /* Register Address Translation will re-maps 64-bit
          SoC addresses to M4F's local 32-bit address space */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_rat();
+    retVal = configure_rat();
+    if (retVal) {
+        goto application_exit;
+    }
 
     /* Error Signaling Module aggregates device errors (Clock, ECC) allowing
         software or external hardware (via error pin) to make a response */
-    /* SITSW-231: add UART_printf to make use of return value */
-    configure_esm();
+    retVal = configure_esm();
+    if (retVal) {
+        goto application_exit;
+    }
 
-    /* This will set Control MMR bits for two types of isolation. */
-    configure_isolation();
+    /* This enables a timer with ISR to flash an LED (still alive signal) */
+    retVal = configure_ledPattern();
+    if (retVal) {
+        goto application_exit;
+    }
+
+    /* Interrupts in this application: Main Domain Reset, Main & MCU
+        Error Signaling Module, PRU Protocol Acknowledge, and Mailbox IPC */
+    configure_interrupts();
 
     application_loop();
 
-    return 0;
+application_exit:
+    return retVal;
 }
 
