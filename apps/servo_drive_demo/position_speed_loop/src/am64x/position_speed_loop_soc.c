@@ -243,6 +243,7 @@ void tsIrqHandler(void)
 {
     volatile uint32_t intNum;
     int32_t status;
+    uint8_t fsiTxFlag = 0;
 
     /* Update statistics */
     gTsIsrCnt++;
@@ -254,16 +255,22 @@ void tsIrqHandler(void)
         /* Clear pulse-type interrupt before executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
     
-        buildLevel7();
-        FSI_updateTransmissionData();
+        sysVars.speedLoopCount++;
+        if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
+        {
+            /* Loop count satisfies the defined prescaler, run control loop and trigger FSI TX */
+            buildLevel7_spd_loop();
+        }
 
+        /* Check state to determine if new state is requested or if fault has occurred */
+        buildLevel7_ctrlStateMachine();
+
+        /* Update TX data and send over FSI */
+        FSI_updateTransmissionData();
         FSI_setTxBufferPtr(gFsiTxBase, 0U);
         FSI_setTxFrameType(gFsiTxBase, 0x3);
         FSI_writeTxDataBuffer(gFsiTxBase, fsiTxDataBufAddr, fsiTxDataWords);
-
-        /* Application level function used to avoid RMW for Frame Tag and User Data update */
         FSI_writeTxTagUserData(gFsiTxBase, fsiTxUserDataTag);
-
         FSI_startTxTransmit(gFsiTxBase);
 
         /* Acknowledge interrupt servicing */

@@ -299,8 +299,10 @@ extern void initCtrlParameters(CTRL_Vars_t *pCtrl);
 extern void resetControllerVars(CTRL_Vars_t *pCtrl);
 
 /* Build level function prototypes */
-extern void buildLevel7(void);
-extern void buildLevel8(void);
+extern void buildLevel7_spd_loop(void);
+extern void buildLevel7_ctrlStateMachine(void);
+extern void buildLevel8_pos_loop(void);
+extern void buildLevel8_ctrlStateMachine(void);
 extern void runController(SysNode_e node);
 
 #endif /* end of MULTI_AXIS_MASTER_CTRL_H definition */
