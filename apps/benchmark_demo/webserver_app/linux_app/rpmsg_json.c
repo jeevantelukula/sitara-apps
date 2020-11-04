@@ -55,19 +55,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <linux/rpmsg.h>
+#include <ti_rpmsg_char.h>
 #include "jsmn.h"
 #include "benchmark_stat.h"
-
-struct _payload {
-  unsigned long num;
-  unsigned long size;
-  char data[];
-};
-
-static int charfd = -1, fd = -1, err_cnt;
-
-struct _payload *i_payload;
-struct _payload *r_payload;
 
 #define NUM_R5_CORES 4
 #define NUM_R5_APPS 5
@@ -83,7 +73,7 @@ core_input curR5CoreInput[NUM_R5_CORES] = {
 /* Change BENCHMARK_DEMO_FW_ROOT is required for this program to run */
 /* either provide it via build system or it will be default to the following location */
 #ifndef BENCHMARK_DEMO_FW_ROOT
-#define BENCHMARK_DEMO_FW_ROOT "/lib/firmware/sitara-apps/sitara-benchmark-demo"
+#define BENCHMARK_DEMO_FW_ROOT "/lib/firmware/sitara-apps/benchmark_demo/out/AM65X/R5F/NO_OS/release"
 #endif
 
 /* Change RPMSG_FW_PATHNAME is required for this program to run */
@@ -92,8 +82,8 @@ core_input curR5CoreInput[NUM_R5_CORES] = {
 #define RPMSG_FW_PATHNAME "/lib/firmware/am65x-mcu-r5f%d_%d-fw"
 #endif
 
-char commandBuffer[128];
-char softLinkFormat[NUM_R5_APPS][128] = {
+char commandBuffer[256];
+char softLinkFormat[NUM_R5_APPS][256] = {
 "ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_cfft.out "RPMSG_FW_PATHNAME,
 "ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_fir.out "RPMSG_FW_PATHNAME,
 "ln -nsf "BENCHMARK_DEMO_FW_ROOT"/app_no_os_mcu%d_%d_cmsis_foc.out "RPMSG_FW_PATHNAME,
@@ -108,6 +98,9 @@ long loopCounter = 0;
 #define PAYLOAD_SIZE    12
 #define PAYLOAD_MAX_SIZE    (MAX_RPMSG_BUFF_SIZE - 24)
 #define RPMSG_BUS_SYS "/sys/bus/rpmsg"
+#define REMOTE_ENDPT	14
+#define DEVICE_NAME "rpmsg_chrdev"
+#define FLAGS 0
 
 long diff(struct timespec start, struct timespec end)
 {
@@ -124,154 +117,33 @@ long diff(struct timespec start, struct timespec end)
   return (temp.tv_sec * 1000000UL + temp.tv_nsec / 1000);
 }
 
-static int rpmsg_create_ept(int rpfd, struct rpmsg_endpoint_info *eptinfo)
+int send_msg(int fd, char *msg, int len)
 {
-  int ret;
+	int ret = 0;
 
-  ret = ioctl(rpfd, RPMSG_CREATE_EPT_IOCTL, eptinfo);
-  if (ret)
-    perror("Failed to create endpoint.\n");
-  return ret;
+	ret = write(fd, msg, len);
+	if (ret < 0) {
+		perror("Can't write to rpmsg endpt device\n");
+		return -1;
+	}
+
+	return ret;
 }
 
-static char *get_rpmsg_ept_dev_name(const char *rpmsg_char_name,
-    const char *ept_name,
-    char *ept_dev_name)
+int recv_msg(int fd, int len, char *reply_msg, int *reply_len)
 {
-  char sys_rpmsg_ept_name_path[64];
-  char svc_name[64];
-  char *sys_rpmsg_path = "/sys/class/rpmsg";
-  FILE *fp;
-  int i;
-  int ept_name_len;
+	int ret = 0;
 
-  for (i = 0; i < 128; i++) {
-    sprintf(sys_rpmsg_ept_name_path, "%s/%s/rpmsg%d/name",
-      sys_rpmsg_path, rpmsg_char_name, i);
-    printf("checking %s\n", sys_rpmsg_ept_name_path);
-    if (access(sys_rpmsg_ept_name_path, F_OK) < 0)
-      continue;
-    fp = fopen(sys_rpmsg_ept_name_path, "r");
-    if (!fp) {
-      printf("failed to open %s\n", sys_rpmsg_ept_name_path);
-      break;
-    }
-    fgets(svc_name, sizeof(svc_name), fp);
-    fclose(fp);
-    printf("svc_name: %s.\n",svc_name);
-    ept_name_len = strlen(ept_name);
-    if (ept_name_len > sizeof(svc_name))
-      ept_name_len = sizeof(svc_name);
-    if (!strncmp(svc_name, ept_name, ept_name_len)) {
-      sprintf(ept_dev_name, "rpmsg%d", i);
-      return ept_dev_name;
-    }
-  }
+	/* Note: len should be max length of response expected */
+	ret = read(fd, reply_msg, len);
+	if (ret < 0) {
+		perror("Can't read from rpmsg endpt device\n");
+		return -1;
+	} else {
+		*reply_len = ret;
+	}
 
-  printf("Not able to RPMsg endpoint file for %s:%s.\n",
-    rpmsg_char_name, ept_name);
-  return NULL;
-}
-
-static int bind_rpmsg_chrdev(const char *rpmsg_dev_name)
-{
-  char fpath[256];
-  char *rpmsg_chdrv = "rpmsg_chrdev";
-  int fd;
-  int ret;
-
-  /* rpmsg dev overrides path */
-  sprintf(fpath, "%s/devices/%s/driver_override",
-    RPMSG_BUS_SYS, rpmsg_dev_name);
-  fd = open(fpath, O_WRONLY);
-  if (fd < 0) {
-    fprintf(stderr, "Failed to open %s, %s\n",
-      fpath, strerror(errno));
-      return -EINVAL;
-  }
-  ret = write(fd, rpmsg_chdrv, strlen(rpmsg_chdrv) + 1);
-  if (ret < 0) {
-    fprintf(stderr, "Failed to write %s to %s, %s\n",
-      rpmsg_chdrv, fpath, strerror(errno));
-    return -EINVAL;
-  }
-  close(fd);
-
-  /* bind the rpmsg device to rpmsg char driver */
-  sprintf(fpath, "%s/drivers/%s/bind", RPMSG_BUS_SYS, rpmsg_chdrv);
-  fd = open(fpath, O_WRONLY);
-  if (fd < 0) {
-    fprintf(stderr, "Failed to open %s, %s\n",
-      fpath, strerror(errno));
-    return -EINVAL;
-  }
-  ret = write(fd, rpmsg_dev_name, strlen(rpmsg_dev_name) + 1);
-  if (ret < 0) {
-    fprintf(stderr, "Failed to write %s to %s, %s\n",
-      rpmsg_dev_name, fpath, strerror(errno));
-    return -EINVAL;
-  }
-  close(fd);
-  return 0;
-}
-
-static int unbind_rpmsg_chrdev(const char *rpmsg_dev_name)
-{
-  char fpath[256];
-  char *rpmsg_chdrv = "rpmsg_chrdev";
-  int fd;
-  int ret;
-
-  /* bind the rpmsg device to rpmsg char driver */
-  sprintf(fpath, "%s/drivers/%s/unbind", RPMSG_BUS_SYS, rpmsg_chdrv);
-  fd = open(fpath, O_WRONLY);
-  if (fd < 0) {
-    fprintf(stderr, "Failed to open %s, %s\n", fpath, strerror(errno));
-      return -EINVAL;
-  }
-  ret = write(fd, rpmsg_dev_name, strlen(rpmsg_dev_name) + 1);
-  if (ret < 0) {
-    fprintf(stderr, "Failed to write %s to %s, %s\n",
-      rpmsg_dev_name, fpath, strerror(errno));
-    return -EINVAL;
-  }
-  close(fd);
-  return 0;
-}
-
-static int get_rpmsg_chrdev_fd(const char *rpmsg_dev_name,
-       char *rpmsg_ctrl_name)
-{
-  char dpath[256];
-  char fpath[280];
-  char *rpmsg_ctrl_prefix = "rpmsg_ctrl";
-  DIR *dir;
-  struct dirent *ent;
-  int fd;
-
-  sprintf(dpath, "%s/devices/%s/rpmsg", RPMSG_BUS_SYS, rpmsg_dev_name);
-  dir = opendir(dpath);
-  if (dir == NULL) {
-    fprintf(stderr, "Failed to open dir %s\n", dpath);
-    return -EINVAL;
-  }
-  while ((ent = readdir(dir)) != NULL) {
-    if (!strncmp(ent->d_name, rpmsg_ctrl_prefix, strlen(rpmsg_ctrl_prefix))) {
-      printf("Opening file %s.\n", ent->d_name);
-      sprintf(fpath, "/dev/%s", ent->d_name);
-      fd = open(fpath, O_RDWR | O_NONBLOCK);
-      if (fd < 0) {
-        fprintf(stderr, "Failed to open rpmsg char dev %s,%s\n",
-          fpath, strerror(errno));
-        return fd;
-      }
-      sprintf(rpmsg_ctrl_name, "%s", ent->d_name);
-      return fd;
-    }
-  }
-
-  fprintf(stderr, "No rpmsg char dev file is found\n");
-  return -EINVAL;
+	return 0;
 }
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
@@ -879,23 +751,22 @@ int json_write_fields(char *outBuf, int bufSize, core_stat *coreStat, int num, c
   return index;
 }
 
-char rpmsg_dev[256]="virtio0.ti.ipc4.ping-pong.-1.13";
+char rpmsg_dev[256]="virtio0.rpmsg_chrdev.-1.14";
 int main(int argc, char *argv[])
 {
-  int ret, j, k;
-  int size, bytes_rcvd, bytes_sent;
-  char fpath[256];
+  int j, k;
   char jsonFilePath[256] = "/usr/share/sitara-benchmark-server/app/oob_data.jason";
-  char rpmsg_char_name[16];
-  struct rpmsg_endpoint_info eptinfo;
-  char ept_dev_name[16];
-  char ept_dev_path[32];
   int token_num, bytesRead, bytesWrite, tempSize;
 
   struct timespec start, end;
   long elapsed;
-  int payload_test_size = PAYLOAD_SIZE;
   int *dataPtr;
+
+  int ret = 0;
+  int packet_len;
+  char eptdev_name[32] = { 0 };
+  char packet_buf[512] = { 0 };
+  rpmsg_char_dev_t *rcdev;
 
   printf("\r\n RPMsg_char to JSON test start \r\n");
   
@@ -918,9 +789,15 @@ int main(int argc, char *argv[])
   memset(dataBuf, 0, 4096);
   memset(dataBufNew, 0, 4096);
 
+  /* Use auto-detection for SoC */
+  ret = rpmsg_char_init(NULL);
+  if (ret) {
+	printf("rpmsg_char_init failed, ret = %d\n", ret);
+	return ret;
+  }
+  
   while (1)
   {
-
     /* read the JSON file and update the core stats */
     bytesRead = json_file_read(jsonFilePath, dataBuf, 4096, tokenList, &token_num);
 #ifdef DEBUG_PRINT
@@ -989,142 +866,82 @@ int main(int argc, char *argv[])
         }
       }
 
-      /* update the RPMgs_char device name */
-      sprintf(rpmsg_dev, "virtio%d.ti.ipc4.ping-pong.-1.13", j);
-      /* Binding first RPMsg_char device */
+      /*
+       * Open the remote rpmsg device identified by dev_name and bind the
+       * device to a local end-point used for receiving messages from
+       * remote processor
+      */
+      sprintf(eptdev_name, "rpmsg-char-%d-%d", j, getpid());
+      rcdev = rpmsg_char_open(j, DEVICE_NAME, REMOTE_ENDPT,
+				eptdev_name, FLAGS);
+      if (!rcdev) {
+		perror("Can't create an endpoint device");
+		return -1;
+      }
+
 #ifdef DEBUG_PRINT
-      printf("\r\n Open rpmsg dev %s! \r\n", rpmsg_dev);
+      printf("Created endpt device %s, fd = %d port = %d\n", eptdev_name,
+		rcdev->fd, rcdev->endpt);      /* update the RPMgs_char device name */
 #endif
-      sprintf(fpath, "%s/devices/%s", RPMSG_BUS_SYS, rpmsg_dev);
-      if (access(fpath, F_OK)) {
-        fprintf(stderr, "Not able to access rpmsg device %s, %s\n",
-          fpath, strerror(errno));
-        return -EINVAL;
-      }
-
-      ret = bind_rpmsg_chrdev(rpmsg_dev);
-      if (ret < 0)
-        return ret;
-      charfd = get_rpmsg_chrdev_fd(rpmsg_dev, rpmsg_char_name);
-      if (charfd < 0)
-        return charfd;
-
-      /* Create endpoint from rpmsg char driver */
-      strcpy(eptinfo.name, "rpmsg-openamp-demo-channel");
-      eptinfo.src = 0;
-      eptinfo.dst = 0xFFFFFFFF;
-      ret = rpmsg_create_ept(charfd, &eptinfo);
-      if (ret) {
-        printf("failed to create RPMsg endpoint.\n");
-        return -EINVAL;
-      }
-      if (!get_rpmsg_ept_dev_name(rpmsg_char_name, eptinfo.name, ept_dev_name))
-        return -EINVAL;
-      sprintf(ept_dev_path, "/dev/%s", ept_dev_name);
-      fd = open(ept_dev_path, O_RDWR | O_NONBLOCK);
-      if (fd < 0) {
-        perror("Failed to open rpmsg device.");
-        close(charfd);
-        return -1;
-      }
-
-      i_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
-      r_payload = (struct _payload *)malloc(2 * sizeof(unsigned long) + PAYLOAD_MAX_SIZE);
-
-      if (i_payload == 0 || r_payload == 0) {
-        printf("ERROR: Failed to allocate memory for payload.\n");
-        return -1;
-      }
-
-      i_payload->num = 0;
-      i_payload->size = payload_test_size;
 
       /* Copy the curR5CoreInput[j].input into the sending data buffer. */
-      memcpy(&(i_payload->data[0]), &curR5CoreInput[j].app, payload_test_size);
-
-#ifdef DEBUG_PRINT
-      printf("\r\n sending payload number");
-      printf(" %ld of size %ld\r\n", i_payload->num,
-        (2 * sizeof(unsigned long)) + payload_test_size);
-#endif
-
+      packet_len = PAYLOAD_SIZE;
+	  memcpy((char *)packet_buf, &curR5CoreInput[j].app, packet_len);
+      
       clock_gettime(CLOCK_REALTIME, &start);
 
-      bytes_sent = write(fd, i_payload,
-        (2 * sizeof(unsigned long)) + payload_test_size);
-
-      if (bytes_sent <= 0) {
-        printf("\r\n Error sending data");
-        printf(" .. \r\n");
-        break;
-      }
-
-      r_payload->num = 0;
-      bytes_rcvd = read(fd, r_payload,
-        (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
-      while (bytes_rcvd <= 0) {
-          bytes_rcvd = read(fd, r_payload,
-            (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
-      }
-      clock_gettime(CLOCK_REALTIME, &end);
-      elapsed = diff(start, end);
-
+      ret = send_msg(rcdev->fd, (char *)packet_buf, packet_len);
+      if (ret < 0) {
+		printf("send_msg failed, ret = %d\n", ret);
+		return -1;
+	  }
+	  if (ret != packet_len) {
+		printf("bytes written does not match send request, ret = %d, packet_len = %d\n",
+				ret, packet_len);
+		return -1;
+	  }
+	  
 #ifdef DEBUG_PRINT
+	  printf("Sent message to core%d: size=%d\n", j, packet_len);
       /* print out sent data size */
-      printf(" sent payload number ");
-      printf("%ld of size %ld\r\n", i_payload->num, i_payload->size);
-      /* print out sent data buffer */
-      printf("\n");
-      dataPtr = (int *)(&R5CoreStat[j].input.app);
-      for (k = 0; k < i_payload->size/sizeof(int); k++) {
-        printf("0x%08x\n", *dataPtr++);
-      }
-      printf("\n");
-      dataPtr = (int *)(&i_payload->data[0]);
-      for (k = 0; k < i_payload->size/sizeof(int); k++) {
-        printf("0x%08x\n", *dataPtr++);
-      }
-      printf("\n");
-
-      /* print out received data size */
-      printf(" received payload number ");
-      printf("%ld of size %ld\r\n", r_payload->num, r_payload->size);
-      /* print out received ata buffer */
-      printf("\n");
-      dataPtr = (int *)(&r_payload->data[0]);
-      for (k = 0; k < r_payload->size/sizeof(int); k++) {
-        printf("0x%08x\n", *dataPtr++);
+      dataPtr = (int *)packet_buf;
+      for (k = 0; k < packet_len/sizeof(int); k++) {
+        printf("to_%d_%d->0x%08x\n", j, k, *dataPtr++);
       }
       printf("\n");
 #endif
 
+	  ret = recv_msg(rcdev->fd, 256, (char *)packet_buf, &packet_len);
+	  if (ret < 0) {
+		printf("recv_msg failed for iteration %d, ret = %d\n", ret);
+		return -1;
+	  }
+
+#ifdef DEBUG_PRINT
+	  printf("Receided message from core%d: size=%d\n", j, packet_len);
+      /* print out received data size */
+      dataPtr = (int *)packet_buf;
+      for (k = 0; k < packet_len/sizeof(int); k++) {
+        printf("from_%d_%d->0x%08x\n", j, k, *dataPtr++);
+      }
+      printf("\n");
+#endif
+
+	  clock_gettime(CLOCK_REALTIME, &end);
+      elapsed = diff(start, end);
+
       /* save the RPMsg data in R5CoreStat[] */
-      R5CoreStat[j].payload_num = r_payload->num;
-      tempSize = (r_payload->size>sizeof(core_stat) ? sizeof(core_stat):r_payload->size);
-      R5CoreStat[j].payload_size = tempSize;
-      memcpy(&R5CoreStat[j].input, r_payload->data, tempSize);
-
-      bytes_rcvd = read(fd, r_payload,
-        (2 * sizeof(unsigned long)) + PAYLOAD_MAX_SIZE);
-
+      memcpy(&R5CoreStat[j], (char *)packet_buf, packet_len);
+	  	  
       printf("Avg round trip time: %ld usecs\n", elapsed);
-      printf("\r\n **********************************");
-      printf("****\r\n");
 
-      free(i_payload);
-      free(r_payload);
-
-      close(fd);
-      if (charfd >= 0)
-        close(charfd);
-
-      /* Unbind chardev to be able to run this program again since it will
-      /* attempt to rebind and fail otherwise */
-      ret = unbind_rpmsg_chrdev(rpmsg_dev);
-      if (ret < 0)
-        return ret;
+	  ret = rpmsg_char_close(rcdev);
+	  if (ret < 0) {
+        printf("rpmsg_char_close() failed\n");
+		return -1;
+	  }
     }
-  
+
     /* Generate JSON file using the core stats */
     bytesRead = json_write_fields(dataBufNew, 4096, R5CoreStat, NUM_R5_CORES, &A53CoreStat);
     bytesWrite = json_file_write(jsonFilePath, dataBufNew, bytesRead);

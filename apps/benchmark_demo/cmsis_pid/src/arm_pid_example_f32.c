@@ -144,8 +144,7 @@
 ** Macro Defines
 ** ------------------------------------------------------------------- */
 
-#define NUM_ITERATION 10
-#define NUM_PID_LOOP 1000
+#define NUM_PID_LOOP 100
 
 /* -------------------------------------------------------------------
  * The input signal and reference output (computed with MATLAB)
@@ -224,8 +223,6 @@ void pidLoop(uint16_t loopCnt)
   }
   gCountPerLoopAve = ((uint64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
   /* populate the core stat */
-  gCoreStat.payload_num = 0;
-  gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(uint64_t));
   gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
   /* get Group and CPU ID */
   CSL_armR5GetCpuID(&cpuInfo);
@@ -304,7 +301,7 @@ int32_t main(void)
 #ifdef ENABLE_IPC_RPMSG_CHAR
      /* Check for new RPMsg arriving */
      gCoreStatRcvSize = 0;
-     ipc_rpmsg_receive((char *)&gCoreStatRcv.payload_num, &gCoreStatRcvSize);
+     ipc_rpmsg_receive((char *)&gCoreStatRcv, &gCoreStatRcvSize);
      if (gCoreStatRcvSize>0)
      {
        /* has to match the PID */

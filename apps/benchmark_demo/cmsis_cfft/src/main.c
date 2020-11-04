@@ -99,7 +99,7 @@ void main(void)
 #ifdef ENABLE_IPC_RPMSG_CHAR
       /* Check for new RPMsg arriving */
       gCoreStatRcvSize = 0;
-      ipc_rpmsg_receive((char *)&gCoreStatRcv.payload_num, &gCoreStatRcvSize);
+      ipc_rpmsg_receive((char *)&gCoreStatRcv, &gCoreStatRcvSize);
       if (gCoreStatRcvSize>0)
       {
          /* has to match the CFFT */

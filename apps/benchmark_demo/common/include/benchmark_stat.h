@@ -147,16 +147,12 @@ typedef struct
 
 typedef struct
 {
-    int64_t payload_num; /* rpmsg payload number */
-    int64_t payload_size;/* rpmsg payload size */
     core_input input;    /* core input parameters */
     core_output output;  /* core input parameters */
 } core_stat;
 
 typedef struct
 {
-    int64_t payload_num; /* rpmsg payload number */
-    int64_t payload_size;/* rpmsg payload size */
     core_input input;    /* core input parameters */
 } core_stat_rcv;
 

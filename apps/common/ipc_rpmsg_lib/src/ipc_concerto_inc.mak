@@ -15,7 +15,7 @@ APPDIR := $(abspath $(SDIR)/..)
 IDIRS+=$(APPDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/include
 
-CSOURCES    := ./ipc_rpmsg_baremetal.c ./ipc_trace.c ./ipcapp_baremetal.c
+CSOURCES    := ./ipc_rpmsg_baremetal.c ./ipc_trace.c
 
 endif
 endif

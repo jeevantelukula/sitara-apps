@@ -69,8 +69,10 @@
 #define SERVICE  "ti.ipc4.ping-pong"
 /* End point number to be used for IPC communication */
 #define ENDPT1   13U
-#define NUMMSGS  10000 /* number of message sent by the sender function */
-                       /* Note: The sender function is not active in this example */
+/* Service name to be registered for chrdev end point */
+#define SERVICE_CHRDEV "rpmsg_chrdev"
+/* End point number to be used for chrdev end point */
+#define ENDPT_CHRDEV   14U
 
 uint32_t rpmsgDataSize = RPMSG_DATA_SIZE;
 
@@ -102,6 +104,7 @@ uint32_t rpmsgDataSize = RPMSG_DATA_SIZE;
 uint8_t  gCntrlBuf[RPMSG_DATA_SIZE] __attribute__ ((section("ipc_data_buffer"), aligned (8)));
 uint8_t  gSysVqBuf[VQ_BUF_SIZE]  __attribute__ ((section ("ipc_data_buffer"), aligned (8)));
 uint8_t  gRspBuf[RPMSG_DATA_SIZE]  __attribute__ ((section ("ipc_data_buffer"), aligned (8)));
+uint8_t  gRspBufChar[RPMSG_DATA_SIZE]  __attribute__ ((section ("ipc_data_buffer"), aligned (8)));
 
 volatile uint32_t gMessagesReceived = 0;
 volatile uint32_t gMessagesReceivedPrev = 0;
@@ -109,8 +112,11 @@ volatile uint32_t gMessagesReceivedPrev = 0;
 uint32_t		  myEndPt = 0;
 uint32_t		  remoteEndPt;
 uint32_t		  remoteProcId =0xFFFFFFFF;
+RPMessage_Handle  *responseHandle = NULL;
 RPMessage_Handle  handleIpcRPMsg;
 RPMessage_Params  paramsIpcRPMsg;
+RPMessage_Handle handleIpcRPMsgChar;
+RPMessage_Params  paramsIpcRPMsgChar;
 
 #ifdef BUILD_MPU1_0
 #define NUM_CHRDEV_SERVICES (1)
@@ -120,6 +126,8 @@ uint32_t remoteProc[] =
 {
     IPC_MCU1_0,
     IPC_MCU1_1,
+	IPC_MCU2_0,
+	IPC_MCU2_1,
 };
 #elif defined(BUILD_MCU1_0)
 uint32_t selfProcId = IPC_MCU1_0;
@@ -130,6 +138,20 @@ uint32_t remoteProc[] =
 #elif defined(BUILD_MCU1_1)
 /* NOTE: all other cores are not used in this test, but must be built as part of full PDK build */
 uint32_t selfProcId = IPC_MCU1_1;
+uint32_t remoteProc[] =
+{
+    IPC_MPU1_0
+};
+#elif defined(BUILD_MCU2_0)
+/* NOTE: all other cores are not used in this test, but must be built as part of full PDK build */
+uint32_t selfProcId = IPC_MCU2_0;
+uint32_t remoteProc[] =
+{
+    IPC_MPU1_0
+};
+#elif defined(BUILD_MCU2_1)
+/* NOTE: all other cores are not used in this test, but must be built as part of full PDK build */
+uint32_t selfProcId = IPC_MCU2_1;
 uint32_t remoteProc[] =
 {
     IPC_MPU1_0
@@ -172,18 +194,35 @@ void ipc_rpmsg_receive(char *msg, uint16_t *msg_size)
          function RPMessage_recv in later implementations */
       status = RPMessage_recvNb(handleIpcRPMsg,
          (Ptr)msg, msg_size, &remoteEndPt, &remoteProcId);
-      if(status != IPC_SOK)
-      {
-         System_printf("ipc_rpmsg_receive: failed with code %d\n", status);
-      } else 
+      if(status == IPC_SOK)
       {
          gMessagesReceivedPrev++;
 
          /* NULL terminated string */
          msg[*msg_size] = '\0';
-         System_printf("ipc_rpmsg_receive: Revcvd msg \"%s\" len %d from %s\n",
+         System_printf("ipc_rpmsg_receive 1: Revcvd msg \"%s\" len %d from %s\n",
             msg, *msg_size, Ipc_mpGetName(remoteProcId));
-      }
+ 	     responseHandle = &handleIpcRPMsg;
+      } else
+	  {
+         /* NOTE: The following function may need to be replaced by a blocking
+            function RPMessage_recv in later implementations */
+         status = RPMessage_recvNb(handleIpcRPMsgChar,
+            (Ptr)msg, msg_size, &remoteEndPt, &remoteProcId);
+         if(status != IPC_SOK)
+         {
+            System_printf("ipc_rpmsg_receive 2: failed with code %d\n", status);
+         } else 
+         {
+            gMessagesReceivedPrev++;
+
+            /* NULL terminated string */
+            msg[*msg_size] = '\0';
+            System_printf("ipc_rpmsg_receive 2: Revcvd msg \"%s\" len %d from %s\n",
+               msg, *msg_size, Ipc_mpGetName(remoteProcId));
+         }
+	     responseHandle = &handleIpcRPMsgChar;
+	  }
    }
 }
 
@@ -197,7 +236,7 @@ void ipc_rpmsg_send(char *msg, uint16_t msg_size)
    /* Got the remote Proc ID and endpoint */
    if (remoteProcId!=0xFFFFFFFF)
    {
-      status = RPMessage_send(handleIpcRPMsg, remoteProcId, remoteEndPt, myEndPt, msg, msg_size);
+      status = RPMessage_send(*responseHandle, remoteProcId, remoteEndPt, myEndPt, msg, msg_size);
       if (status != IPC_SOK)
       {
          System_printf("RecvTask: Sending msg \"%s\" len %d from %s to %s failed!!!\n",
@@ -206,28 +245,6 @@ void ipc_rpmsg_send(char *msg, uint16_t msg_size)
    }
 }
 
-#define INTRTR_CFG_MAIN_DOMAIN_MBX_CLST0_USR1_OUT_INT_NO  (17U)
-#define INTRTR_CFG_START_LEVEL_INT_NUMBER \
-            (CSL_MCU0_INTR_MAIN2MCU_LVL_INTR0_OUTL_0)
-#define CDD_IPC_CORE_MPU1_0            (0u)
-#define APP_SCICLIENT_TIMEOUT          (SCICLIENT_SERVICE_WAIT_FOREVER)
-/*
- * This function calls the Ipc lld ISR handler to service the interrupt
- */
-void IpcAppBaremetalIrqMbxFromMpu_10(void)
-{
-    Ipc_newMessageIsr(CDD_IPC_CORE_MPU1_0);
-    return;
-}
-/*
- * This function needs to be registered as an interrupt
- * handler for IPC mailbox events
- */
-void IpcAppBaremetalAppMsgFromMpu10Isr(uintptr_t notUsed)
-{
-    /* Invoke MPU 10 Isr handler */
-    IpcAppBaremetalIrqMbxFromMpu_10();
-}
 /*
  * This function is the callback function the ipc lld library calls when a
  * message is received.
@@ -239,113 +256,16 @@ static void IpcAppBaremetalNewMsgCb(uint32_t srcEndPt, uint32_t procId)
     return;
 }
 
-/*
- * This function registers the interrupt handlers
- * NOTE: This code may change and may be abstracted into the lld code 
- *       or a seperate osal file in a future release.
- */
-int32_t IpcAppConfigureInterruptHandlers(void)
+uint32_t IpcAppVirtToPhyFxn(const void *virtAddr)
 {
-    OsalRegisterIntrParams_t    intrPrms;
-    OsalInterruptRetCode_e      osalRetVal;
-    HwiP_Handle hwiHandle;
-    struct tisci_msg_rm_irq_set_req     rmIrqReq;
-    struct tisci_msg_rm_irq_set_resp    rmIrqResp;
-    struct tisci_msg_rm_irq_release_req rmIrqRel;
-    int32_t retVal;
+    return ((uint32_t) virtAddr);
+}
 
-#if defined(BUILD_MCU1_0)
-    rmIrqReq.valid_params           = TISCI_MSG_VALUE_RM_DST_ID_VALID;
-    rmIrqReq.valid_params          |= TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID;
-    rmIrqReq.src_id                 = TISCI_DEV_NAVSS0_MAILBOX0_CLUSTER0;
-    rmIrqReq.global_event           = 0U;
-    rmIrqReq.src_index              = 1U; /* 0 for User 0, 1 for user 1... */
-    rmIrqReq.dst_id                 = TISCI_DEV_MCU_ARMSS0_CPU0;
-    rmIrqReq.dst_host_irq           =
-                        (INTRTR_CFG_MAIN_DOMAIN_MBX_CLST0_USR1_OUT_INT_NO +
-                         INTRTR_CFG_START_LEVEL_INT_NUMBER);
+void *IpcAppPhyToVirtFxn(uint32_t phyAddr)
+{
+    uint32_t temp = phyAddr;
 
-    rmIrqReq.ia_id                  = 0U;
-    rmIrqReq.vint                   = 0U;
-    rmIrqReq.vint_status_bit_index  = 0U;
-    rmIrqReq.secondary_host         = TISCI_MSG_VALUE_RM_UNUSED_SECONDARY_HOST;
-#elif defined(BUILD_MCU1_1)
-    rmIrqReq.valid_params           = TISCI_MSG_VALUE_RM_DST_ID_VALID;
-    rmIrqReq.valid_params          |= TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID;
-    rmIrqReq.src_id                 = TISCI_DEV_NAVSS0_MAILBOX0_CLUSTER1;
-    rmIrqReq.global_event           = 0U;
-    rmIrqReq.src_index              = 1U; /* 0 for User 0, 1 for user 1... */
-    rmIrqReq.dst_id                 = TISCI_DEV_MCU_ARMSS0_CPU1;
-    rmIrqReq.dst_host_irq           =
-                        (INTRTR_CFG_MAIN_DOMAIN_MBX_CLST0_USR1_OUT_INT_NO +
-                         INTRTR_CFG_START_LEVEL_INT_NUMBER + 32); /* add 32 to put it in the range allocated for MCU1_1 */
-
-    rmIrqReq.ia_id                  = 0U;
-    rmIrqReq.vint                   = 0U;
-    rmIrqReq.vint_status_bit_index  = 0U;
-    rmIrqReq.secondary_host         = TISCI_MSG_VALUE_RM_UNUSED_SECONDARY_HOST;
-#else
-#error BUILD CORE is not defined
-#endif
-
-    /* release what we plan to request */
-	rmIrqRel.ia_id                  = 0U;
-    rmIrqRel.vint                   = 0U;
-    rmIrqRel.global_event           = 0U;
-    rmIrqRel.vint_status_bit_index  = 0U;
-
-    rmIrqRel.valid_params   = TISCI_MSG_VALUE_RM_DST_ID_VALID |
-                              TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID;
-    rmIrqRel.src_id         = rmIrqReq.src_id;
-    rmIrqRel.src_index      = rmIrqReq.src_index;
-    rmIrqRel.dst_id         = (uint16_t)rmIrqReq.dst_id;
-    rmIrqRel.dst_host_irq   = (uint16_t)rmIrqReq.dst_host_irq;
-    rmIrqRel.secondary_host = (uint8_t)TISCI_MSG_VALUE_RM_UNUSED_SECONDARY_HOST;
-
-    retVal = Sciclient_rmIrqRelease(
-                 &rmIrqRel, IPC_SCICLIENT_TIMEOUT);
-    System_printf("Sciclient_rmIrqRelease is done\n");
-
-    /* request what we plan to request */
-    retVal = Sciclient_rmIrqSet(
-                 &rmIrqReq, &rmIrqResp, APP_SCICLIENT_TIMEOUT);
-    if(CSL_PASS != retVal)
-    {
-        System_printf(": Error in SciClient Interrupt Params Configuration!!!\n");
-        return -1;
-    }
-    System_printf("Sciclient_rmIrqSet is done\n");
-
-    /* Interrupt hook up */
-    Osal_RegisterInterrupt_initParams(&intrPrms);
-    intrPrms.corepacConfig.arg          = (uintptr_t)NULL;
-    intrPrms.corepacConfig.isrRoutine   = &IpcAppBaremetalAppMsgFromMpu10Isr;
-    intrPrms.corepacConfig.priority     = 1U;
-    intrPrms.corepacConfig.corepacEventNum = 0U;
-#if defined(BUILD_MCU1_0)
-    intrPrms.corepacConfig.intVecNum    =
-        (INTRTR_CFG_MAIN_DOMAIN_MBX_CLST0_USR1_OUT_INT_NO +
-         INTRTR_CFG_START_LEVEL_INT_NUMBER);
-#elif defined(BUILD_MCU1_1)
-    intrPrms.corepacConfig.intVecNum    =
-        (INTRTR_CFG_MAIN_DOMAIN_MBX_CLST0_USR1_OUT_INT_NO +
-         INTRTR_CFG_START_LEVEL_INT_NUMBER + 32);
-#else
-#error BUILD CORE is not defined
-#endif
-    osalRetVal = Osal_RegisterInterrupt(&intrPrms, &hwiHandle);
-
-    if(OSAL_INT_SUCCESS != osalRetVal)
-    {
-        System_printf( ": Error Could not register ISR to receive"
-                         " from MCU 1 1 !!!\n");
-        return -1;
-    }
-    System_printf("Osal_RegisterInterrupt is done\n");
-    Osal_EnableInterrupt(0, intrPrms.corepacConfig.intVecNum);
-    System_printf("Osal_EnableInterrupt is done\n");
-    return 0;
-
+    return ((void *) temp);
 }
 
 /*
@@ -369,24 +289,12 @@ int32_t ipc_rpmsg_init(void)
         System_printf("ipc_rpmsg_func (core : %s) .....\r\n%s\r\n",
                 Ipc_mpGetSelfName(), IPC_DRV_VERSION_STR);
 
-        initPrms.instId = 0U;
-        initPrms.osalPrms.disableAllIntr = &IpcAppBaremetalCriticalSectionIntEnter;
-        initPrms.osalPrms.restoreAllIntr = &IpcAppBaremetalCriticalSectionIntExit;
-
-        initPrms.osalPrms.createHIsr     = &IpcAppBaremetalHIsrCreate;
-        initPrms.osalPrms.deleteHIsr     = &IpcAppBaremetalHIsrDelete;
-        initPrms.osalPrms.postHIsr       = &IpcAppBaremetalHIsrPost;
-        initPrms.osalPrms.createHIsrGate = &IpcAppBaremetalHIsrGateCreate;
-        initPrms.osalPrms.deleteHIsrGate = &IpcAppBaremetalHIsrGateDelete;
-        initPrms.osalPrms.lockHIsrGate   = &IpcAppBaremetalHIsrGateEnter;
-        initPrms.osalPrms.unLockHIsrGate = &IpcAppBaremetalHIsrGateExit;
-
-        initPrms.osalPrms.createMutex    = (Ipc_OsalMutexCreateFxn) NULL_PTR;
-        initPrms.osalPrms.deleteMutex    = (Ipc_OsalMutexDeleteFxn) NULL_PTR;
-        initPrms.osalPrms.lockMutex      = (Ipc_OsalMutexLockFxn) NULL_PTR;
-        initPrms.osalPrms.unlockMutex    = (Ipc_OsalMutexUnlockFxn) NULL_PTR;
+        /* Initialize params with defaults */
+        IpcInitPrms_init(0U, &initPrms);
 
         initPrms.newMsgFxn = &IpcAppBaremetalNewMsgCb;
+        initPrms.virtToPhyFxn = &IpcAppVirtToPhyFxn;
+        initPrms.phyToVirtFxn = &IpcAppPhyToVirtFxn;
 
         if (IPC_SOK != Ipc_init(&initPrms))
         {
@@ -441,16 +349,7 @@ int32_t ipc_rpmsg_init(void)
     cntrlParam.stackBuffer = NULL;
     cntrlParam.stackSize   = 0U;
     RPMessage_init(&cntrlParam);
-    System_printf("\nRPMessage_init is done\n");
-
-    /* Step 4: Setup IPC interrupt handling for baremetal */
-    if(IpcAppConfigureInterruptHandlers() != 0)
-    {
-        System_printf("IpcAppConfigureInterruptHandlers Failed!!!\n");
-        return -1;
-    }
-
-    System_printf("\nSetup IPC interrupt handling is done\n");
+    System_printf("\nRPMessage_init 1 is done\n");
 
     buf = gRspBuf;
     if(buf == NULL)
@@ -469,24 +368,49 @@ int32_t ipc_rpmsg_init(void)
     handleIpcRPMsg = RPMessage_create(&paramsIpcRPMsg, &myEndPt);
     if(!handleIpcRPMsg)
     {
-        System_printf("Failed to create endpoint\n");
+        System_printf("RPMessage_create 1 is failed\n");
         return -3;
     }
-    System_printf("RPMessage_create is done\n");
-
-    for (t = 0; t < gNumRemoteProc; t++)
-    {
-        Ipc_mailboxEnableNewMsgInt(selfProcId, t);
-    }
-    System_printf("Ipc_mailboxEnableNewMsgInt is done\n");
+    System_printf("RPMessage_create 1 is done\n");
 
     status = RPMessage_announce(RPMESSAGE_ALL, myEndPt, SERVICE);
     if(status != IPC_SOK)
     {
-        System_printf("RPMessage_announce() failed\n");
+        System_printf("RPMessage_announce 1 failed\n");
         return -4;
     }
-    System_printf("RPMessage_announce is done\n");
+    System_printf("RPMessage_announce 1 is done\n");
+
+    buf = gRspBufChar;
+    if(buf == NULL)
+    {
+        System_printf("Buffer allocation failed\n");
+        return -2;
+    }
+    RPMessageParams_init(&paramsIpcRPMsgChar);
+    System_printf("\nRPMessage_init 2 is done\n");
+
+
+    paramsIpcRPMsgChar.requestedEndpt = ENDPT_CHRDEV;
+
+    paramsIpcRPMsgChar.buf = buf;
+    paramsIpcRPMsgChar.bufSize = bufSize;
+
+    handleIpcRPMsgChar = RPMessage_create(&paramsIpcRPMsgChar, &myEndPt);
+    if(!handleIpcRPMsgChar)
+    {
+        System_printf("RPMessage_create 2 is failed\n");
+        return -3;
+    }
+    System_printf("RPMessage_create 2 is done\n");
+
+    status = RPMessage_announce(RPMESSAGE_ALL, myEndPt, SERVICE_CHRDEV);
+    if(status != IPC_SOK)
+    {
+        System_printf("RPMessage_announce 2 failed\n");
+        return -4;
+    }
+    System_printf("RPMessage_announce 2 is done\n");
 
     return 0;
 }

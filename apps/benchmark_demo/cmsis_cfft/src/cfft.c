@@ -140,8 +140,6 @@ int32_t cfft_bench(int32_t fftSize)
     }
     gCountPerLoopAve = ((int64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
     /* populate the core stat */
-    gCoreStat.payload_num = 0;
-    gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(int64_t));
     gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
     /* get Group and CPU ID */
     CSL_armR5GetCpuID(&cpuInfo);

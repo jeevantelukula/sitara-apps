@@ -307,8 +307,6 @@ void focLoop(uint16_t loopCnt)
     }
     gCountPerLoopAve = ((uint64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
     /* populate the core stat */
-    gCoreStat.payload_num = 0;
-    gCoreStat.payload_size = (sizeof(gCoreStat)-2*sizeof(uint64_t));
     gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
     /* get Group and CPU ID */
     CSL_armR5GetCpuID(&cpuInfo);

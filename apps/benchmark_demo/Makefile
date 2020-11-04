@@ -24,7 +24,7 @@ endif
 
 ifeq ($(TARGET_PLATFORM),AM64X)
 # Recursively find all concerco.mak in the following directory list.
-DIRECTORIES = $(HOST_ROOT)
+DIRECTORIES = $(HOST_ROOT) $(RPMSG_DIR)
 
 # Targe combos supported in this demo
 TARGET_COMBOS ?= AM64X:NO_OS:R5F:4:release:TIARMCGT
@@ -72,7 +72,7 @@ IMG2=mcu1_1,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no
 IMG3=
 IMG4=
 HLOS_BIN_PATH=$(PSDK_PATH)/linux/prebuilt-images
-ATF_IMG=mpu1_0,$(HLOS_BIN_PATH)/bl31.bin,0x70000000,0x70000000
+ATF_IMG=mpu1_0,$(HLOS_BIN_PATH)/bl31.bin,0x70020000,0x70020000
 OPTEE_IMG=load_only,$(HLOS_BIN_PATH)/bl32.bin,0x9e800000
 HLOS_BOOT="optimized"
 

@@ -14,7 +14,13 @@ BUILD_PLATFORM :=
 DIRECTORIES = $(HOST_ROOT)
 
 # Targe combos supported in this demo
+ifeq ($(TARGET_PLATFORM),AM65X)
 TARGET_COMBOS ?= AM65X:NO_OS:R5F:2:release:TIARMCGT
+endif
+
+ifeq ($(TARGET_PLATFORM),AM64X)
+TARGET_COMBOS ?= AM64X:NO_OS:R5F:4:release:TIARMCGT
+endif
 
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
