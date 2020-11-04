@@ -385,7 +385,7 @@ void FSI_updateTransmissionData(void)
             tempData = FSI_convertFloatToPU(ctrlVars[ctrlNode].IqRef);
 #if FSI_LOOPBACK
             /* if LOOPBACK just send the target speed reference to get looped back as actual */
-            tempData = FSI_floatToPU(ctrlVars[ctrlNode].speedSet);
+            tempData = FSI_convertFloatToPU(ctrlVars[ctrlNode].speedSet);
 #endif
             frameDataTX[1] = (uint16_t)((tempData>>16) & 0x0000FFFF);
             frameDataTX[2] = (uint16_t)(tempData & 0x0000FFFF);
@@ -393,7 +393,7 @@ void FSI_updateTransmissionData(void)
             tempData = FSI_convertFloatToPU(ctrlVars[ctrlNode].IdRef);
 #if FSI_LOOPBACK
             /* if LOOPBACK just send the target position reference to get looped back as actual */
-            tempData = FSI_floatToPU(ctrlVars[ctrlNode].positionSet);
+            tempData = FSI_convertFloatToPU(ctrlVars[ctrlNode].positionSet);
 #endif
             frameDataTX[3] = (uint16_t)((tempData>>16) & 0x0000FFFF);
             frameDataTX[4] = (uint16_t)(tempData & 0x0000FFFF);

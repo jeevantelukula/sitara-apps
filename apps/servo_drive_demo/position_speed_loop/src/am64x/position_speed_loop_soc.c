@@ -46,10 +46,7 @@
 #include "position_speed_loop_if.h"
 
 /* If FSI only pull speed and command for all slaves from the sysVars (CTRL_SYN_ENABLE) */
-//#define _CTRL_SYN_ENABLE
-
-/* Time Sync interrupt */
-uint32_t gTsIsrCnt=0;
+/*#define _CTRL_SYN_ENABLE */
 
 /* 
  * PRU IRQ handlers
@@ -75,10 +72,18 @@ __attribute__((interrupt("IRQ")))   void tsIrqHandler(void);
 #pragma CODE_STATE (tsIrqHandler,32)
 
 /* FSI interrupt statistics counters */
-uint32_t gFsiRxInt1IsrCnt=0;
-uint32_t gFsiRxInt2IsrCnt=0;
-uint32_t gFsiTxInt1IsrCnt=0;
-uint32_t gFsiTxInt2IsrCnt=0;
+volatile uint32_t gFsiRxInt1IsrCnt=0;   /* FSI Rx INT1 ISR count */
+volatile uint32_t gFsiRxInt2IsrCnt=0;   /* FSI Rx INT2 ISR count */
+volatile uint32_t gFsiTxInt1IsrCnt=0;   /* FSI Tx INT1 ISR count */
+volatile uint32_t gFsiTxInt2IsrCnt=0;   /* FSI Tx INT2 ISR count */
+volatile uint32_t gFsiRxInt1ErrCnt=0;   /* FSI Rx INT1 ISR error count */
+volatile uint32_t gFsiRxInt2ErrCnt=0;   /* FSI Rx INT2 ISR error count */
+volatile uint32_t gFsiTxInt1ErrCnt=0;   /* FSI Tx INT1 ISR error count */
+volatile uint32_t gFsiTxInt2ErrCnt=0;   /* FSI Tx INT2 ISR error count */
+
+/* Time Sync interrupt statistics counters */
+volatile uint32_t gTsIsrCnt=0;          /* Time Sync ISR count */
+volatile uint32_t gTsIntErrCnt=0;       /* Time Sync ISR error count */
 
 /* ------------------------------------------------------------------------- *
  *                                Globals                                    *
@@ -97,6 +102,13 @@ int32_t appPositionSpeedLoopInit(void)
     McuIntrRegPrms mcuIntrRegPrms;
     int32_t status;
 
+/* compile-time check for match between IPC & FSI number of motor control axes */
+#if ((MAX_NUM_AXES != SYS_NODE_NUM) || (MAX_NUM_AXES != FSI_NODES))
+    #error "Mismatch between IPC and FSI number of MC axes"
+#elif (MAX_NUM_AXES != (FSI_NODE_LAST-FSI_NODE_FIRST+1))
+    #error "Mismatch between IPC and FSI number of MC axes"
+#endif
+
     // initialize system parameters
 #if (BUILDLEVEL >= FCL_LEVEL5 && BUILDLEVEL <= FCL_LEVEL9)
 #ifndef _CTRL_SYN_ENABLE
@@ -113,7 +125,7 @@ int32_t appPositionSpeedLoopInit(void)
     {
         uint16_t nodes;
 
-        for(nodes = SYS_NODEM; nodes< SYS_NODE_NUM; nodes++)
+        for (nodes = SYS_NODE1; nodes < SYS_NODE_NUM; nodes++)
         {
             // initialize controller parameters for each motor
             initCtrlParameters(&ctrlVars[nodes]);
@@ -195,43 +207,44 @@ int32_t appPositionSpeedLoopInit(void)
     /* Enable Host interrupts for events from PRU */
     McuIntc_enableIntr(MCU_INTR_IDX(0), true);
     McuIntc_enableIntr(MCU_INTR_IDX(1), true);
-    McuIntc_enableIntr(MCU_INTR_IDX(2), true);
-    McuIntc_enableIntr(MCU_INTR_IDX(3), true);
+    McuIntc_enableIntr(MCU_INTR_IDX(2), false); /* FSI Tx INT1 currently unused */
+    McuIntc_enableIntr(MCU_INTR_IDX(3), false); /* FSI Tx INT2 currently unused */
 
     return POSITION_SPEED_LOOP_SOK;
 }
 
+volatile uint8_t gRunFlag = 1;
 /* Entry point function */
 int32_t appPositionSpeedLoopStart(void)
 {
-    SysNode_e nodeIdx;
-    volatile uint8_t run_flag = 1;
-
-    appLogPrintf("APP: Position Speed Loop demo started !!!\n");
+    SysNode_e sysNodeIdx;   /* SYSTEM MC node index:    FSI_NODE_FIRST+1...FSI_NODE_LAST+1 */
+    uint16_t mcAxisIdx;     /* IPC MC axis index:       0...MAX_NUM_AXES-1 */
 
     FSI_handshakeLead(gFsiTxBase, gFsiRxBase);
 
-    appLogPrintf("APP: FSI Handshake Done !!!\n");
-
     FSI_setupTRxFrameData(gFsiTxBase, gFsiRxBase);
 
+    /* Clear pending Time Sync interrupts */
     /* Enable Time Sync Interrupts */
+    CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, TS_INT_NUM );
     McuIntc_enableIntr(MCU_INTR_IDX(4), true);
 
-    appLogPrintf("APP: Time Sync started !!!\n");
-
     /* move to background task */
-    while (run_flag) {
-        for (nodeIdx = SYS_NODE1; nodeIdx <= SYS_NODE4; nodeIdx++)
+    while (gRunFlag) {
+        /* Continuously loop over all MC axes */
+        sysNodeIdx = SYS_NODE1;
+        for (mcAxisIdx = 0; mcAxisIdx < MAX_NUM_AXES; mcAxisIdx++)
         {
             /* Rx MC message from EthCAT */
-            appPslMbxIpcRxMsg(nodeIdx);
+            appPslMbxIpcRxMsg(mcAxisIdx, sysNodeIdx);
             
             /* Run controller */
-            runController(nodeIdx);
+            runController(sysNodeIdx);
             
             /* Tx MC message to EthCAT */
-            appPslMbxIpcTxMsg(nodeIdx);
+            appPslMbxIpcTxMsg(mcAxisIdx, sysNodeIdx);
+            
+            sysNodeIdx++;
         }
     }
     
@@ -243,14 +256,13 @@ void tsIrqHandler(void)
 {
     volatile uint32_t intNum;
     int32_t status;
-    uint8_t fsiTxFlag = 0;
 
     /* Update statistics */
     gTsIsrCnt++;
     
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if (status == CSL_PASS && intNum == TS_INT_NUM)
     {
         /* Clear pulse-type interrupt before executing ISR code */
         CSL_vimClrIntrPending( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, intNum );
@@ -274,7 +286,11 @@ void tsIrqHandler(void)
         FSI_startTxTransmit(gFsiTxBase);
 
         /* Acknowledge interrupt servicing */
-        CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );
+        CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, TS_INT_MAP );
+    }
+    else 
+    {
+        gTsIntErrCnt++;
     }
 }
 
@@ -290,7 +306,7 @@ void fsiRxInt1IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_RX_INT1_INT_NUM))
     {
         FSI_getRxEventStatus(gFsiRxBase, &fsiRxStatus);
 
@@ -316,6 +332,10 @@ void fsiRxInt1IrqHandler(void)
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT1_INT_MAP );
     }
+    else 
+    {
+        gFsiRxInt1ErrCnt++;
+    }
 }
 
 /* IRQ handler, FSI RX INT2 */
@@ -330,7 +350,7 @@ void fsiRxInt2IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_RX_INT2_INT_NUM))
     {
         FSI_getRxEventStatus(gFsiRxBase, &fsiRxStatus);
 
@@ -342,6 +362,10 @@ void fsiRxInt2IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_RX_INT2_INT_MAP );
+    }
+    else 
+    {
+        gFsiRxInt2ErrCnt++;
     }
 }
 
@@ -357,7 +381,7 @@ void fsiTxInt1IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_TX_INT1_INT_NUM))
     {
         FSI_getTxEventStatus(gFsiTxBase, &fsiTxStatus);
 
@@ -369,6 +393,10 @@ void fsiTxInt1IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_TX_INT1_INT_MAP );
+    }
+    else 
+    {
+        gFsiTxInt1ErrCnt++;
     }
 }
 
@@ -384,7 +412,7 @@ void fsiTxInt2IrqHandler(void)
 
     status = CSL_vimGetActivePendingIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, 
         CSL_VIM_INTR_MAP_IRQ, (uint32_t *)&intNum, (uint32_t *)0 );
-    if (status == CSL_PASS)
+    if ((status == CSL_PASS) && (intNum == FSI_TX_INT2_INT_NUM))
     {
         FSI_getTxEventStatus(gFsiTxBase, &fsiTxStatus);
 
@@ -396,6 +424,10 @@ void fsiTxInt2IrqHandler(void)
 
         /* Acknowledge interrupt servicing */
         CSL_vimAckIntr( (CSL_vimRegs *)(uintptr_t)gVimRegsBaseAddr, FSI_TX_INT2_INT_MAP );
+    }
+    else 
+    {
+        gFsiTxInt2ErrCnt++;
     }
 }
 
