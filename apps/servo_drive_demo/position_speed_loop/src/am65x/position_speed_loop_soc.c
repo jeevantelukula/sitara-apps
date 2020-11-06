@@ -331,7 +331,7 @@ void tsIrqHandler(void)
         if(sysVars.speedLoopCount >= sysVars.speedLoopPrescaler)
         {
             /* Loop count satisfies the defined prescaler, run control loop and trigger FSI TX */
-            buildLevel7_spd_loop();
+            buildLevel7_speedLoop();
         }
 
         /* Check state to determine if new state is requested or if fault has occurred */

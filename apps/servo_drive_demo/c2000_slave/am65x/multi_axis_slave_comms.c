@@ -777,7 +777,7 @@ __interrupt void fsiRxInt1ISR(void)
             fsiTxTimeOutCntr = 0;
         }
 
-        /* JR: uncomment */
+        /* Set the TX timeout wait counter to 0 in order to trigger an FSI transmission */
         fsiTxTimeWaitCntr = 0;
     }
 

@@ -98,16 +98,13 @@
 #define FSI_SLAVE_N7        6
 #define FSI_SLAVE_N8        7
 
-#define FSI_NODES           3               // Slave Nodes = 3 // FL: update #nodes=3
-//#define FSI_NODES           4               // Slave Nodes = 4
-//#define FSI_NODES           8               // Maximum Slave Nodes = 8
+#define FSI_NODES           3               // Slave Nodes = 3
 
 #define FSI_NODE_NUM        FSI_NODES       // Node Tag Array Number
 
 #define FSI_NODE_FIRST      FSI_SLAVE_N1
 
-#define FSI_NODE_LAST       FSI_SLAVE_N3    // FL: update #nodes=3
-//#define FSI_NODE_LAST       FSI_SLAVE_N4
+#define FSI_NODE_LAST       FSI_SLAVE_N3    // Last node is Node 3
 
 #define FSI_USERTAG_CHK     0xAE
 

@@ -56,12 +56,13 @@
 #include "multi_axis_fsi_shared.h"
 #include "multi_axis_slave_hal.h"
 
-//#define FSI_TX_TIME_WAIT_CNTR       100
-//#define FSI_TX_TIME_WAIT_CNTR       10
-#define FSI_TX_TIME_WAIT_CNTR       10000 //Changed by JR
+/* #define FSI_TX_TIME_WAIT_CNTR       10 */
+/* Increased timeout so that it should not normally occur.
+ * FSI transmit will be triggered based on an FSI frame reception */
+#define FSI_TX_TIME_WAIT_CNTR       10000
 #define FSI_PING_TIME_OUT_CNTR      0x200000
 #define FSI_TX_TIME_OUT_CNTR        0x200000
-#define FSI_RX_TIME_OUT_CNTR        100000 //Changed by JR
+#define FSI_RX_TIME_OUT_CNTR        100000
 
 //
 // Global variables for FSI

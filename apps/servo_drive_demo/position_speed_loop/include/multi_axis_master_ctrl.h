@@ -299,9 +299,9 @@ extern void initCtrlParameters(CTRL_Vars_t *pCtrl);
 extern void resetControllerVars(CTRL_Vars_t *pCtrl);
 
 /* Build level function prototypes */
-extern void buildLevel7_spd_loop(void);
+extern void buildLevel7_speedLoop(void);
 extern void buildLevel7_ctrlStateMachine(void);
-extern void buildLevel8_pos_loop(void);
+extern void buildLevel8_positionLoop(void);
 extern void buildLevel8_ctrlStateMachine(void);
 extern void runController(SysNode_e node);
 

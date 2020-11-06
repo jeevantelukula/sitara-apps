@@ -66,7 +66,7 @@ static inline void switchActiveNode(void)
 /* INCRBUILD 7                                                              */
 /****************************************************************************/
 #if((BUILDLEVEL == FCL_LEVEL7))
-inline void buildLevel7_spd_loop(void)
+inline void buildLevel7_speedLoop(void)
 {
     switchActiveNode();
 
@@ -194,7 +194,7 @@ inline void buildLevel7_ctrlStateMachine(void)
 /* INCRBUILD 8                                                              */
 /****************************************************************************/
 #if(BUILDLEVEL == FCL_LEVEL8)
-void buildLevel8_pos_loop(void)
+void buildLevel8_positionLoop(void)
 {
     switchActiveNode();
 
