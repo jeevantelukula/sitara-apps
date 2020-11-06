@@ -16,9 +16,7 @@ TARGETTYPE  := exe
 DEFS+=__COMPILER_BARRIER
 DEFS+=BUILD_MCU$(MCUNUM)
 DEFS+=BAREMETAL
-ifeq ($(TARGET_PLATFORM),AM65X)
 DEFS+=ENABLE_IPC_RPMSG_CHAR
-endif
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
@@ -55,9 +53,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 # dependencies
 STATIC_LIBS += profile
 STATIC_LIBS += benchmark_timer_interrupt
-ifeq ($(TARGET_PLATFORM),AM65X)
 STATIC_LIBS += ipc_rpmsg_lib_mcu$(MCUNUM)
-endif
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
@@ -68,6 +64,9 @@ ADDITIONAL_STATIC_LIBS += sciclient.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 ADDITIONAL_STATIC_LIBS += ipc_baremetal.aer5f
 ADDITIONAL_STATIC_LIBS += ti_math_Cortex_R5_lspf.lib
+ifeq ($(TARGET_PLATFORM),AM64X)
+ADDITIONAL_STATIC_LIBS += mailbox.aer5f
+endif
 
 # Add run-time libraries from toolchain
 SYS_STATIC_LIBS += rtsv7R4_T_le_v3D16_eabi

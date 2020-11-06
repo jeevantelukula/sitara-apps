@@ -97,15 +97,25 @@ endif
 ifneq ($(RTOS_ONLY_BUILD),1)
 app_img_build:
 	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
-#Create Servo Drive Demo SD Card Image
+#Create Benchmark Demo SD Card Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/app)"
+ifeq ($(TARGET_PLATFORM),AM64X)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
+endif
+ifeq ($(TARGET_PLATFORM),AM65X)
+	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
+endif
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/sysfw.bin)"
-#Create Servo Drive Demo OSPI Image
+#Create Benchmark Demo OSPI Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/app)"
+ifeq ($(TARGET_PLATFORM),AM64X)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
+endif
+ifeq ($(TARGET_PLATFORM),AM65X)
+	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
+endif
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/sysfw.bin)"
 	
 app_img_build_clean:
