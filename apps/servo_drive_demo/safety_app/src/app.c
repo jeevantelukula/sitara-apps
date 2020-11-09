@@ -177,6 +177,21 @@ bool configure_timer(uint32_t timer_base, uint32_t compareVal)
     return retVal;
 }
 
+bool stop_timer(uint32_t timer_base, uint32_t timer_int)
+{
+    /* return false on success */
+    bool retVal = false;
+
+    /* this should clear everything */
+    retVal |= TIMERIntStatusClear(timer_base, TIMER_INT_MAT_IT_FLAG);
+    retVal |= TIMERResetConfigure(timer_base, TIMER_SFT_RESET_ENABLE);
+
+    Intc_SystemDisable(timer_int);
+    Intc_IntClrPend(timer_int);
+
+    return retVal;
+}
+
 bool configure_ledPattern()
 {
     /* return false on success */
@@ -212,24 +227,51 @@ void fsoe_stack_call()
 }
 
 void block_main_warmrst()
-{    
-    /* enable MAIN domain reset blocking */
+{
     CSL_mcu_ctrl_mmr_cfg0Regs * MCU_CTRL_MMR = (CSL_mcu_ctrl_mmr_cfg0Regs *) MCU_CTRL_MMR_BASE;
+
+    /* unlock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = UNLOCK0_VAL;
+    MCU_CTRL_MMR->LOCK6_KICK1 = UNLOCK1_VAL;
+
+    /* enable MAIN domain reset blocking */
     MCU_CTRL_MMR->RST_CTRL |= MCU_RST_ISO_DONE_MASK;
+
+    /* lock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = 0U;
+    MCU_CTRL_MMR->LOCK6_KICK1 = 0U;
 }
 
 void unblock_main_warmrst()
-{    
-    /* enable MAIN domain reset blocking */
+{
     CSL_mcu_ctrl_mmr_cfg0Regs * MCU_CTRL_MMR = (CSL_mcu_ctrl_mmr_cfg0Regs *) MCU_CTRL_MMR_BASE;
+
+    /* unlock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = UNLOCK0_VAL;
+    MCU_CTRL_MMR->LOCK6_KICK1 = UNLOCK1_VAL;
+
+    /* enable MAIN domain reset blocking */
     MCU_CTRL_MMR->RST_CTRL &= ~MCU_RST_ISO_DONE_MASK;
+
+    /* lock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = 0U;
+    MCU_CTRL_MMR->LOCK6_KICK1 = 0U;
 }
 
 void trigger_main_warmrst()
 {
-    /* write to CTRL MMR to trigger a warm reset on MAIN domain */
     CSL_mcu_ctrl_mmr_cfg0Regs * MCU_CTRL_MMR = (CSL_mcu_ctrl_mmr_cfg0Regs *) MCU_CTRL_MMR_BASE;
+
+    /* unlock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = UNLOCK0_VAL;
+    MCU_CTRL_MMR->LOCK6_KICK1 = UNLOCK1_VAL;
+
+    /* write to CTRL MMR to trigger a warm reset on MAIN domain */
     MCU_CTRL_MMR->RST_CTRL &= MAIN_WARMRST_MASK;
+
+    /* lock control mmr p6 */
+    MCU_CTRL_MMR->LOCK6_KICK0 = 0U;
+    MCU_CTRL_MMR->LOCK6_KICK1 = 0U;
 }
 
 void main_warm_rst_req_isr()
@@ -237,17 +279,22 @@ void main_warm_rst_req_isr()
     Intc_IntDisable();
     Intc_SystemDisable(MAIN_WARM_RSTz_INT);
 
-    /* stop motor immediately on reset signal */
-    set_EmergencyStop();
+    /* we may get this ISR more than once
+     * so only react on first event */
+    reset_requested++;
 
-    reset_requested = 1;
+    if (reset_requested == 1) {
+        /* stop motor immediately on reset signal */
+        set_EmergencyStop();
 
-    /* start a timer while waiting for PRU acknowledgement
-     * then reset after timer expires if PRU does not respond */
-    configure_timer(MCU_TIMER2_MMR, 20000000);
-    Intc_IntClrPend(MCU_TIMER2_INT);
-    Intc_IntRegister(MCU_TIMER2_INT, &pru_timeout_isr, NULL);
-    Intc_SystemEnable(MCU_TIMER2_INT);
+        /* start a timer while waiting for PRU acknowledgement
+         * then reset after timer expires if PRU does not respond */
+        configure_timer(MCU_TIMER2_MMR, 20000000);
+        Intc_IntClrPend(MCU_TIMER2_INT);
+        Intc_IntRegister(MCU_TIMER2_INT, &pru_timeout_isr, NULL);
+        Intc_SystemEnable(MCU_TIMER2_INT);
+    }
+
     Intc_IntEnable(0U);
 }
 
@@ -277,11 +324,7 @@ void pru_protocol_ack_isr()
 void pru_timeout_isr()
 {
     /* this should clear everything */
-    TIMERIntStatusClear(MCU_TIMER2_MMR, TIMER_INT_MAT_IT_FLAG);
-    TIMERResetConfigure(MCU_TIMER2_MMR, TIMER_SFT_RESET_ENABLE);
-
-    Intc_SystemDisable(MCU_TIMER2_INT);
-    Intc_IntClrPend(MCU_TIMER2_INT);
+    stop_timer(MCU_TIMER2_MMR, MCU_TIMER2_INT);
 
     pru_ack_received = 1;
 }
@@ -296,6 +339,11 @@ void mailbox_isr()
     /* integrating Black Channel communication and Safe Torque Off demo */
     if (msg_data == CMD_MAILBOX_MSG_BOOT_COMPLETE) {
         block_main_warmrst();
+
+        /* Only enable Reset ISR when boot is complete */
+        Intc_IntClrPend(MAIN_WARM_RSTz_INT);
+        Intc_SystemEnable(MAIN_WARM_RSTz_INT);
+
         configure_esm();
         unset_EmergencyStop();
     }
@@ -343,7 +391,6 @@ void ledPattern_isr()
 
 void application_loop()
 {
-    uint32_t reset_sent = 0;
     reset_requested = 0;
     pru_ack_received = 0;
 
@@ -352,20 +399,15 @@ void application_loop()
     GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_HIGH);
 
     while(1U) {
-        if (reset_requested == 1 && pru_ack_received == 1) {
+        if (reset_requested > 0 && pru_ack_received == 1) {
             reset_requested = 0;
             pru_ack_received = 0;
 
+            /* stop the PRU time-out timer if it has not yet expired */
+            stop_timer(MCU_TIMER2_MMR, MCU_TIMER2_INT);
+
             /* all conditions to un-block reset are met */
             unblock_main_warmrst();
-            reset_sent = 1;
-        }
-
-        if (reset_sent == 1) {
-            reset_sent = 0;
-
-            Intc_IntClrPend(MAIN_WARM_RSTz_INT);
-            Intc_SystemEnable(MAIN_WARM_RSTz_INT);
         }
     }
 }
