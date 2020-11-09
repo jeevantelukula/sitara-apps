@@ -40,11 +40,10 @@ ifeq ($(HOST_OS),Windows_NT)
 BUILD_LINUX_APPS = 0
 endif
 
-# Quick fix to support a RTOS/BM only (non-Linux) benchmark demo build
-# Linux images will not be available in this build flow
+# Build variable to support a RTOS/BM only (non-Linux) demo build
+# Linux images will not be available in RTOS build flow
 # By default, set for RTOS + Linux build
-# But set RTOS_ONLY_BUILD=1 from console for RTOS only build
-# This needs to be revisited to move app_img_build in to packaging build flow
+# Set RTOS_ONLY_BUILD=1 from console for RTOS only build
 RTOS_ONLY_BUILD ?= 0
 
 ifeq ($(BUILD_LINUX_APPS),1)
@@ -122,4 +121,8 @@ app_img_build_clean:
 	$(CLEANDIR) $(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/)
 	$(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage)
 	$(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage)
+else
+#TBD - app_img_build & clean with RTOS alone images
+app_img_build:
+app_img_build_clean:
 endif

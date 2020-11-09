@@ -39,6 +39,12 @@ ifeq ($(HOST_OS),Windows_NT)
 BUILD_LINUX_APPS = 0
 endif
 
+# Build variable to support a RTOS/BM only (non-Linux) demo build
+# Linux images will not be available in RTOS build flow
+# By default, set for RTOS + Linux build
+# Set RTOS_ONLY_BUILD=1 from console for RTOS only build
+RTOS_ONLY_BUILD ?= 1
+
 #Build Servo Drive Demo Combined App Image
 RTOS_BIN_PATH1=$(HOST_ROOT)/$(BUILD_OUTPUT)
 #Dummy parameter should be passed to the script
@@ -60,7 +66,12 @@ SYSFWVERSION=V3
 SYSFWFILE=sysfw-zebu.bin
 endif
 
-combinedapp_img_build:
+ifneq ($(RTOS_ONLY_BUILD),1)
+#TBD - app_img_build & clean with RTOS_Linux images
+app_img_build:
+app_img_build_clean:
+else
+app_img_build:
 			  $(MAKE) -C $(call PATH_CONV, $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage) IMG1=$(IMG1) IMG2=$(IMG2) IMG3=$(IMG3) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC) HLOS_BOOT=$(HLOS_BOOT)
 #Create Servo Drive Demo SD Card Image
 			  $(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/SDCardImage)
@@ -72,20 +83,18 @@ combinedapp_img_build:
 			  $(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage/app)"
 			  $(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
 			  $(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage/sysfw.bin)"
-combinedapp_img_build_clean:
+app_img_build_clean:
 			  $(CLEANDIR) $(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/)
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/SDCardImage)
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage)
-
-all:  combinedapp_img_build
-clean::  combinedapp_img_build_clean
+endif
 
 ifeq ($(BUILD_LINUX_APPS),1)
 # Add targets for Linux cmake app
-all: opc_ua_app
-clean:: opc_ua_app_clean
+all: opc_ua_app app_img_build
+clean:: opc_ua_app_clean app_img_build_clean
 scrub:: opc_ua_app_scrub
-
+.PHONY: opc_ua_app app_img_build
 OC_UA_APP_BUILDDIR = $(BUILD_OUTPUT)/opc_ua_app
 
 opc_ua_app_builddir:
@@ -109,5 +118,8 @@ opc_ua_app_clean: opc_ua_app_config
 
 opc_ua_app_scrub:
 	$(CLEANDIR) $(OC_UA_APP_BUILDDIR)
-
+else
+all:  app_img_build
+clean::  app_img_build_clean
+.PHONY: app_img_build
 endif
