@@ -27,7 +27,9 @@ TARGET      := app_no_os_$(PDK_CORE_ID)_servo_drive_pscontrol
 TARGETTYPE  := exe
 
 ifeq ($(TARGET_PLATFORM),AM64X)
+ifeq ($(FSI_LOOPBACK),1)
 CFLAGS +=-D=FSI_LOOPBACK
+endif
 endif
 
 # common "config" dependencies
