@@ -43,22 +43,13 @@
 #define POWER_ON_DELAY_MASTER     1000000L
 #define POWER_ON_DELAY_DRIVE      2000000L
 
-/*****************************************************************************
- * Defines for setting FSI clock speeds in normal FSI mode (SPI_MODE == 0)
- *****************************************************************************
- * TXCLKIN = INPUT_CLOCK / PRESCALE_VAL 
- * TXCLK (in FSI mode) = TXCLKIN / 2
- * TXCLK (in SPI mode) = TXCLKIN
- *
- * Below assumes INPUT_CLOCK == 200 MHz (PLLRAWCLK, SEL_PLLCLK == 1)
- ****************************************************************************/
-#define FSI_PRESCALE_50MHZ          2U
-#define FSI_PRESCALE_25MHZ          4U
-#define FSI_PRESCALE_12_5MHZ        8U
-#define FSI_PRESCALE_10MHZ          10U
-#define FSI_PRESCALE_5MHZ           20U
+#define FSI_PRESCALE_50MHZ          5U
+#define FSI_PRESCALE_25MHZ          10U
+#define FSI_PRESCALE_12_5MHZ        20U
+#define FSI_PRESCALE_10MHZ          25U
+#define FSI_PRESCALE_5MHZ           50U
 
-#define PRESCALER_VAL   	FSI_PRESCALE_50MHZ
+#define PRESCALER_VAL   	FSI_PRESCALE_12_5MHZ
 
 #define FSI_TX_WORDS        5
 #define FSI_RX_WORDS        5
