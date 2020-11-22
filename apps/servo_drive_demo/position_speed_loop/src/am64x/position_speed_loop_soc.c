@@ -36,6 +36,10 @@
 #include <ti/csl/csl_fsi_tx.h>
 #include <ti/csl/csl_fsi_rx.h>
 #include <ti/osal/osal.h>
+#include <ti/board/board.h>
+#include <ti/drv/i2c/I2C.h>
+#include <ti/drv/i2c/soc/I2C_soc.h>
+#include <board_i2c_io_exp.h>
 #include <logs/include/app_log.h>
 #include "motor_ctrl_settings.h"
 #include "multi_axis_master_lead.h"
@@ -99,8 +103,26 @@ volatile uint32_t numDataFrames = 0;
 /* Initialization function */
 int32_t appPositionSpeedLoopInit(void)
 {
+    Board_I2cInitCfg_t i2cCfg;
     McuIntrRegPrms mcuIntrRegPrms;
     int32_t status;
+
+    i2cCfg.i2cInst   = BOARD_I2C_IOEXP_DEVICE1_INSTANCE;
+    i2cCfg.socDomain = BOARD_SOC_DOMAIN_MAIN;
+    Board_setI2cInitConfig(&i2cCfg);
+
+    Board_i2cIoExpInit();
+    Board_i2cIoExpSetPinDirection(BOARD_I2C_IOEXP_DEVICE1_ADDR,
+                                      THREE_PORT_IOEXP,
+                                      PORTNUM_0,
+                                      PIN_NUM_7,
+                                      PIN_DIRECTION_OUTPUT);
+
+    Board_i2cIoExpPinLevelSet(BOARD_I2C_IOEXP_DEVICE1_ADDR,
+                                  THREE_PORT_IOEXP,
+                                  PORTNUM_0,
+                                  PIN_NUM_7,
+                                  GPIO_SIGNAL_LEVEL_HIGH);
 
 /* compile-time check for match between IPC & FSI number of motor control axes */
 #if ((MAX_NUM_AXES != SYS_NODE_NUM) || (MAX_NUM_AXES != FSI_NODES))
