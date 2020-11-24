@@ -50,13 +50,6 @@
 #define APP_PSLCTRL_TS_SERR_START_TS            ( -7 )  /* start TS error */
 #define APP_PSLCTRL_TS_SERR_INIT                ( -8 )  /* initialize TS error */ 
 
-/* ICSSG functional clock source selection options,
-   CTRLMMR_ICSSGn_CLKSEL:CORE_CLKSEL */
-#define APP_PSLCTRL_TS_CORE_CLKSEL_PER1HSDIV_CLKOUT1 \
-    ( 0 )   /* ICSSG functional clock source PER1HSDIV_CLKOUT1 */
-#define APP_PSLCTRL_TS_CORE_CLKSEL_CPSWHSDIV_CLKOUT2 \
-    ( 1 )   /* ICSSG functional clock source PER1HSDIV_CLKOUT1 */
-
 /* Bits for TS CMP configuration mask */
 #define TS_CFG_CMP7                     ( 1<<0 )
 #define TS_CFG_CMP8                     ( 1<<1 )
@@ -118,7 +111,8 @@ int32_t getPruId(
 /* Configure ICSSG clock selection */
 int32_t cfgIcssgClkSel(
     PRUICSS_MaxInstances icssInstId,
-    uint8_t source
+    uint8_t coreClkSource, 
+    uint8_t iepClkSource
 );
 
 /* Initialize ICSSG */

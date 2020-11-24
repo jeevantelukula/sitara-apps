@@ -42,10 +42,16 @@
 #include "timesyncDrv_api.h"    /* TS driver utilities */
 #include "app_pslctrl_cfg_mcu_intr.h"
 #include "app_pslctrl_timesync.h"
+#include "app_pslctrl_timesync_soc.h"
 
 
 /* Time Sync ICSSG default pin mux setting */
 #define TS_PRUICSS_PINMUX_DEF           ( 0x0 )
+
+/** \brief Kick0 protection register unlock value. */
+#define KICK0_UNLOCK_VAL    ( 0x68EF3490 )
+/** \brief Kick1 protection register unlock value. */
+#define KICK1_UNLOCK_VAL    ( 0xD172BC5A )
 
 /* Time Sync PRUSS DRV handle */
 PRUICSS_Handle gTsPruIcssHandle;
@@ -131,29 +137,58 @@ int32_t getPruId(
 /* Configure ICSSG clock selection */
 int32_t cfgIcssgClkSel(
     PRUICSS_MaxInstances icssInstId,
-    uint8_t source
+    uint8_t coreClkSource, 
+    uint8_t iepClkSource
 )
 {
-    CSL_main_ctrl_mmr_cfg0Regs *pCtrlMmrCfg0Regs = (CSL_main_ctrl_mmr_cfg0Regs *)CSL_CTRL_MMR0_CFG0_BASE;
+    CSL_main_ctrl_mmr_cfg0Regs *pMainCtrlMmrCfg0Regs;
     uint32_t regVal;
+    uint8_t unlock = 0;
+    int32_t retVal = APP_PSLCTRL_TS_SOK;
+
+    pMainCtrlMmrCfg0Regs = (CSL_main_ctrl_mmr_cfg0Regs *)CSL_CTRL_MMR0_CFG0_BASE;
+    
+    regVal = HW_RD_REG32(&pMainCtrlMmrCfg0Regs->LOCK2_KICK0);
+    if (!(regVal & 0x1))
+    {
+        /* Unlock CTLR_MMR0 registers */
+        HW_WR_REG32(&pMainCtrlMmrCfg0Regs->LOCK2_KICK0, KICK0_UNLOCK_VAL);
+        HW_WR_REG32(&pMainCtrlMmrCfg0Regs->LOCK2_KICK1, KICK1_UNLOCK_VAL);
+        do {
+            regVal = HW_RD_REG32(&pMainCtrlMmrCfg0Regs->LOCK2_KICK0);
+        } while (!(regVal & 0x1));
+        
+        unlock = 1;
+    }
 
     if (icssInstId == PRUICSS_INSTANCE_ONE) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG0_CLKSEL);
+        regVal = HW_RD_REG32(&pMainCtrlMmrCfg0Regs->ICSSG0_CLKSEL);
         regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG0_CLKSEL, regVal);
+        regVal |= (coreClkSource << CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_CORE_CLKSEL_SHIFT) & CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_CORE_CLKSEL_MASK;
+        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_IEP_CLKSEL_MASK;
+        regVal |= (iepClkSource << CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_IEP_CLKSEL_SHIFT) & CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL_IEP_CLKSEL_MASK;
+        HW_WR_REG32(&pMainCtrlMmrCfg0Regs->ICSSG0_CLKSEL, regVal);
     }
     else if (icssInstId == PRUICSS_INSTANCE_TWO) {
-        regVal = HW_RD_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL);
+        regVal = HW_RD_REG32(&pMainCtrlMmrCfg0Regs->ICSSG1_CLKSEL);
         regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_CORE_CLKSEL_MASK;
-        regVal |= source & 0x1;
-        HW_WR_REG32(&pCtrlMmrCfg0Regs->ICSSG1_CLKSEL, regVal);
+        regVal |= (coreClkSource << CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_CORE_CLKSEL_SHIFT) & CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_CORE_CLKSEL_MASK;
+        regVal &= ~CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_IEP_CLKSEL_MASK;
+        regVal |= (iepClkSource << CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_IEP_CLKSEL_SHIFT) & CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL_IEP_CLKSEL_MASK;
+        HW_WR_REG32(&pMainCtrlMmrCfg0Regs->ICSSG1_CLKSEL, regVal);
     }
     else {
-        return APP_PSLCTRL_TS_SERR_CFG_ICSSG_CLKSEL;
+        retVal = APP_PSLCTRL_TS_SERR_CFG_ICSSG_CLKSEL;
+    }
+    
+    if (unlock == 1) {
+        /* Lock CTLR_MMR0 registers */
+        /* write any value other than unlock value to lock */
+        HW_WR_REG32(&pMainCtrlMmrCfg0Regs->LOCK2_KICK0, 0);
+        HW_WR_REG32(&pMainCtrlMmrCfg0Regs->LOCK2_KICK1, 0);
     }
 
-    return APP_PSLCTRL_TS_SOK;
+    return retVal;
 }
 
 /*
@@ -375,7 +410,7 @@ int32_t appPslCtrlTsInit(
     int32_t status;
 
     /* Configure ICSSG clock selection */
-    status = cfgIcssgClkSel(pTsPrms->icssInstId, APP_PSLCTRL_TS_CORE_CLKSEL_PER1HSDIV_CLKOUT1);
+    status = cfgIcssgClkSel(pTsPrms->icssInstId, APP_PSLCTRL_TS_CORE_CLKSEL, APP_PSLCTRL_TS_IEP_CLKSEL);
     if (status != APP_PSLCTRL_TS_SOK) {
         appLogPrintf("appPslCtrlTsInit: cfgIcssgClkSel() failed.\n");
         return APP_PSLCTRL_TS_SERR_INIT;
