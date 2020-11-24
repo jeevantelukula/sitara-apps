@@ -59,18 +59,21 @@
 #define TASK_SYSINIT_PRI                ( 3 )
 
 /* Test TS CMP periods */
-/* IEP frequency = 200 MHz, TS frequency = 32 kHz */
-#define TEST_PRD_COUNT0         ( 200000000u/1000u   )    /* 1ms     (1KHz) - sim sync0 */
-#define TEST_PRD_COUNT1         ( 200000000u/100000u )    /* 10us    (100Khz) (CMP7)    */
-#define TEST_PRD_COUNT2         ( 200000000u/32000u  )    /* 31.25us (32Khz)  (CMP8)    */
-#define TEST_PRD_COUNT3         ( 200000000u/8000u   )    /* 125us   (8Khz)   (CMP9)    */
-#define TEST_PRD_COUNT4         ( 200000000u/1000u   )    /* 1ms     (1Khz)   (CMP10)   */
+/* IEP frequency = 200 MHz, time factor = 5, TS frequency = 32 kHz */
+/* Note: 
+ * When using an IEP frequency of 250 MHz or 333 MHz
+ * use a time factor of 4 or 3 respectively */
+#define TEST_PRD_COUNT0         ( 5*200000000u/1000u   )    /* 1ms     (1KHz) - sim sync0 */
+#define TEST_PRD_COUNT1         ( 5*200000000u/100000u )    /* 10us    (100Khz) (CMP7)    */
+#define TEST_PRD_COUNT2         ( 5*200000000u/32000u  )    /* 31.25us (32Khz)  (CMP8)    */
+#define TEST_PRD_COUNT3         ( 5*200000000u/8000u   )    /* 125us   (8Khz)   (CMP9)    */
+#define TEST_PRD_COUNT4         ( 5*200000000u/1000u   )    /* 1ms     (1Khz)   (CMP10)   */
 
 /* Test TS CMP offsets */
-#define TEST_PRD_OFFSET1        (     0 )  /* No offset */
-#define TEST_PRD_OFFSET2        (     0 )  /* No offset */
-#define TEST_PRD_OFFSET3        ( -2000 )  /* 10us before sync0 */
-#define TEST_PRD_OFFSET4        (  4000 )  /* 20us after sync0 */
+#define TEST_PRD_OFFSET1        (      0 )  	/* No offset */
+#define TEST_PRD_OFFSET2        (      0 )  	/* No offset */
+#define TEST_PRD_OFFSET3        ( -10000 )  	/* 10us before sync0 */
+#define TEST_PRD_OFFSET4        (  20000 )  	/* 20us after sync0 */
 
 /* PRU TS IRQ handler */
 void pruTsIrqHandler(
