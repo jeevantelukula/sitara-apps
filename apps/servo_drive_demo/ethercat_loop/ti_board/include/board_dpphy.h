@@ -43,6 +43,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include  <ti/csl/src/ip/mdio/V5/csl_mdio.h>
+
 #define DPPHY_BMCR_REG          0x00
 #define DPPHY_BMSR_REG          0x01
 #define DPPHY_ID1_REG           0x02
@@ -56,6 +58,7 @@
 #define DPPHY_LEDCR2_REG        0x19
 #define DPPHY_LEDCR3_REG        0x1A
 #define DPPHY_CFG3_REG          0x1E
+#define DPPHY_GEN_CTRL          0x1F
 #define DPPHY_FLD_CFG_REG       0x2D
 #define DPPHY_RGMIICTL          0x32
 #define DPPHY_100CR_REG         0x43
@@ -150,7 +153,48 @@
 #define PHY_POWERMODE_ACTIVE_SLEEP 2u
 #define PHY_POWERMODE_PASSIVE_SLEEP 3u
 
+#define DPPHY_SOFT_RESET    (1u<<14)
 
+#ifdef INCLUDE_DPPHY_WORKAROUND
+
+#define MDIX_FIX_TASKSLEEP_TICK (2500)
+#define MDIO_MAX_PHYNUM         (32)
+
+/**Structure to pass to the MDIX workaround task*/
+typedef struct dpphyMDIXTaskParam
+{
+    uint32_t mdioBaseAddress;
+    uint8_t numPorts;
+    uint8_t phyAddress[MDIO_MAX_PHYNUM];
+} dpphyMDIXTaskParam_t;
+
+/**
+* @brief Initializes the workarounds for DPPHY issues. This API should be called to make the DP PHY
+*           work in Forced Mode.
+*
+*       This API implements the DPPHY specific workarounds.
+*       1) AutoMDIX workaround
+*        A task is created which will constantly check whether the PHY is in forced mode, In this case
+*        the AutoMDIX is disabled and Software MDI/X is done.
+*
+*        MDIO init shall be done before using this function
+*
+* @param mdioBaseAddress    [IN] MDIO Base Address
+*
+*  @retval none
+*/
+void Board_phyMDIXFixInit(dpphyMDIXTaskParam_t *params);
+/**
+* @brief Shutdown the DPPHY issue workaround
+*
+*       Deletes the DPPHY issue workaround task
+*
+*
+*  @retval none
+*/
+void Board_phyMDIXFixDeInit();
+
+#endif
 
 /** @addtogroup PHY_VENDOR_SPECIFIC_FUNCTIONS
  @{ */
@@ -439,6 +483,14 @@ extern void Board_setEthPhySpeed(uint32_t mdioBaseAddress, uint32_t phyNum,
 
 extern void Board_setAdv100M_FD(uint32_t mdioBaseAddress, uint32_t phyNum);
 
+/**
+* @brief Function to configure PHY in MII mode
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+
+* @retval none
+*/
 extern void Board_enablePhyMII(uint32_t mdioBaseAddress, uint32_t phyNum);
 
 extern void MDIO_phyExtRegRead(uint32_t mdioBaseAddress, uint32_t phyNum,
@@ -446,5 +498,17 @@ extern void MDIO_phyExtRegRead(uint32_t mdioBaseAddress, uint32_t phyNum,
 
 extern void MDIO_phyExtRegWrite(uint32_t mdioBaseAddress, uint32_t phyNum,
                          uint32_t regNum, uint16_t phyregval);
+
+/**
+* @brief Function to perform a soft restart of PHY
+*
+*        Restarts the PHY without affecting registers
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+
+* @retval none
+*/
+extern void Board_phySoftRestart(uint32_t mdioBaseAddress, uint32_t phyNum);
 
 #endif

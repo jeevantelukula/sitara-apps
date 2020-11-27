@@ -45,7 +45,7 @@
  * @def INTERRUPT_ROUTE_ERROR
  *  Error code for failure of interrupt routing
  */
-#define INTERRUPT_ROUTE_ERROR       (0xD0D0D0D0)
+#define INTERRUPT_ROUTE_ERROR       (-1)
 
 /**
  * @def ICSSG_INTERRUPT_SRC_INDEX
@@ -89,10 +89,11 @@
  * This function routes all the 8 events of ICSS to R5F.
  *
  * @param[in] icss_instance     ICSS instance for which the interrupts need to be routed
- * @param[out] interrupt_offset The interrupt index to be used by application for the first interrupt
+ * @retval    interrupt_offset  The interrupt number to be used by application for the first interrupt
+ *                              Returns INTERRUPT_ROUTE_ERROR on failure
  *
  */
-extern uint32_t route_icss_interrupts_to_r5f(uint32_t icss_instance);
+extern int32_t route_icss_interrupts_to_r5f(uint32_t icss_instance);
 
 /**
  * @brief  Function to route I2C interrupt to R5F using interrupt mux
@@ -105,9 +106,38 @@ extern uint32_t route_icss_interrupts_to_r5f(uint32_t icss_instance);
  *
  * This function routes the I2C interrupt to R5F.
  *
- * @param[out] interrupt_offset The interrupt index to be used by application for the I2C interrupt
+ * @retval interrupt_offset    The interrupt number to be used by application for the I2C interrupt.
+ *                             Returns INTERRUPT_ROUTE_ERROR on failure */
+extern int32_t route_i2c_interrupts_to_r5f();
+
+/**
+ * @brief  Function to unroute ICSS events to R5F using interrupt mux
+ *
+ * NOTE: Only supported for AM65xx
+ *
+ * This function unsets the routes set up by route_icss_interrupts_to_r5f()
+ * for all the 8 events of ICSS to R5F.
+ *
+ * @param[in] icss_instance     ICSS instance for which the interrupts need to be routed
+ * @param[in] interrupt_offset  The interrupt number of the first ICSS interrupt
+ *
+ * @retval    status            0 on success, INTERRUPT_ROUTE_ERROR on failure
+ */
+extern int32_t unroute_icss_interrupts_to_r5f(uint32_t icss_instance, int32_t interrupt_offset);
+
+/**
+ * @brief  Function to unroute I2C interrupt to R5F using interrupt mux
+ *
+ * NOTE: Only supported for AM65xx
+ *
+ * This function unsets the route set up by route_icss_interrupts_to_r5f()
+ * for I2C interrupt to R5F.
+ *
+ * @param[in] interrupt_offset  I2C interrupt number
+ *
+ * @retval    status            0 on success, INTERRUPT_ROUTE_ERROR on failure
  *
  */
-extern uint32_t route_i2c_interrupts_to_r5f();
+extern int32_t unroute_i2c_interrupts_to_r5f(int32_t interrupt_offset);
 
 #endif /*INTERRUPTROUTE_H_*/

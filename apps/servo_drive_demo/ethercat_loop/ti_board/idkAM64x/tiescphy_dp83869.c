@@ -34,7 +34,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-
 #include <tiescbsp.h>
 #include <board_dpphy.h>
 #include <board_spi.h>
@@ -44,11 +43,13 @@
 void bsp_ethphy_init(PRUICSS_Handle pruIcssHandle, uint8_t phy0addr,
                      uint8_t phy1addr, uint8_t enhancedlink_enable)
 {
+#ifndef TIESC_EMULATION_PLATFORM
     if(TIESC_MDIO_RX_LINK_ENABLE == enhancedlink_enable)
     {
         Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
         Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
     }
+#endif
 
     while(!Board_getPhyIdentifyStat((((PRUICSS_HwAttrs *)(
                                           pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr))
@@ -86,7 +87,7 @@ void bsp_ethphy_init(PRUICSS_Handle pruIcssHandle, uint8_t phy0addr,
     // of 32 RX Error occurrences in a 10us interval is reached, the link will be dropped
     // Bit0: Drop the link based on Signal/Energy loss indication, when the Energy detector
     //indicates Energy Loss, the link will be dropped. Typical reaction time is 10us.
-
+#ifndef TIESC_EMULATION_PLATFORM
     /* PHY pin LED_0 as link for fast link detection */
     Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
     Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
@@ -109,6 +110,7 @@ void bsp_ethphy_init(PRUICSS_Handle pruIcssHandle, uint8_t phy0addr,
     Board_phyLedBlinkConfig((((PRUICSS_HwAttrs *)(
                                   pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, LED_BLINK_200);
 
+#endif /* TIESC_EMULATION_PLATFORM */
 
     Board_phyFastLinkDownDetEnable((((PRUICSS_HwAttrs *)(
                                          pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr,
@@ -117,3 +119,4 @@ void bsp_ethphy_init(PRUICSS_Handle pruIcssHandle, uint8_t phy0addr,
                                          pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr,
                                    FAST_LINKDOWN_SIGENERGY | FAST_LINKDOWN_RXERR);
 }
+

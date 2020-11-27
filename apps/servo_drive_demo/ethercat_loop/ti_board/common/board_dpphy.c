@@ -46,6 +46,158 @@
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/knl/Semaphore.h>
 
+#ifdef INCLUDE_DPPHY_WORKAROUND
+#include <TaskP.h>
+
+/**Task Handle for the DPPHY thread which swaps MDI/MDI-X bits for link*/
+void *dpphyTask;
+
+/**
+* @internal
+* @brief API to Swap the MDIO/MDIX setting if Link is down and Phy is in forced mode
+*
+*       This API is used by DPPHY Task to do Software MDI/X. This Function checks for Link status.Incase down,it checks for
+*       Autonegotiation status. If the PHY is in forced mode, MDI/X configuration of the PHY is swapped until
+*       link is detected
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum PHY Address of the Port
+*
+* @retval none
+*/
+void Board_dpphyMDIXSwap(uint32_t mdioBaseAddress, uint32_t phyNum);
+/**
+* @internal
+* @brief Main Task which implements MDI/MDI-X for the PHY in Software
+*
+*       This Task Does the software MDI/X for the DP PHY. Once created the task  will constantly
+*       Check for Link UP. Incase Link is down, the taks will check whether the PHY is in forced mode.
+*       If in Forced mode, the AutoMDIX is disabled and  Software MDI/X is done. It will continuosuly swap
+*       MDI/MDIX bit until the Link is established.
+*
+* @param a0     [IN] Argument passed (MDIO Base Address)
+* @param a1     [IN] Argument passed (None)
+*
+*  @retval none
+*/
+void Board_dpphyMDIXTask(UArg a0, UArg a1);
+/* ========================================================================== */
+/*                          Function Definitions                              */
+/* ========================================================================== */
+
+/**
+* @internal
+* @brief API to Swap the MDIO/MDIX setting if Link is down and Phy is in forced mode
+*
+*       This API is used by DP Task to do Software MDI/X. This Function checks for Link status.Incase down,it checks for
+*       Autonegotiation status. If the PHY is in forced mode, MDI/X configuration of the PHY is swapped until
+*       link is detected
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum PHY Address of the Port
+*
+* @retval none
+*/
+void Board_dpphyMDIXSwap(uint32_t mdioBaseAddress, uint32_t phyNum)
+{
+    if(!CSL_MDIO_phyLinkStatus(mdioBaseAddress, phyNum))
+    {
+        if(!Board_getAutoNegStat(mdioBaseAddress, phyNum))
+        {
+            if(PHY_ENABLE_FORCE_MDIX == Board_getPhyMDIXStat(mdioBaseAddress, phyNum))
+            {
+                Board_setPhyMDIX(mdioBaseAddress, phyNum, PHY_ENABLE_FORCE_MDI);
+            }
+
+            else if(PHY_ENABLE_FORCE_MDI == Board_getPhyMDIXStat(mdioBaseAddress, phyNum))
+            {
+                Board_setPhyMDIX(mdioBaseAddress, phyNum, PHY_ENABLE_FORCE_MDIX);
+            }
+
+            else
+            {
+                Board_setPhyMDIX(mdioBaseAddress, phyNum, PHY_ENABLE_FORCE_MDI);
+            }
+        }
+    }
+}
+
+/**
+* @internal
+* @brief Main Task which implements MDI/MDI-X for the DP PHY in Software
+*
+*       This Task Does the software MDI/X for the DP PHY. Once created the task  will constantly
+*       Check for LInk UP. In case link is down, the task will check whether the PHY is in forced mode.
+*       In this case the AutoMDIX is disabled and  Software MDI/X is done. It will continuously swap
+*       MDI/MDIX bit until the Link is established.
+*
+*       The NLP Fix is also enabled in the task
+*
+* @param a0     [IN] Argument passed (MDIO Base Address)
+* @param a1     [IN] Argument passed (None)
+*
+*  @retval none
+*/
+void Board_dpphyMDIXTask(UArg a0, UArg a1)
+{
+    uint32_t i = 0;
+    dpphyMDIXTaskParam_t params;
+    memcpy((void *)&params, (void *)a0, sizeof(dpphyMDIXTaskParam_t));
+
+    TaskP_sleep(MDIX_FIX_TASKSLEEP_TICK);
+
+    while(1)
+    {
+        for(i = 0; i < (params.numPorts); i++)
+        {
+            Board_dpphyMDIXSwap(params.mdioBaseAddress, (uint32_t)(params.phyAddress[i]));
+            TaskP_sleep(MDIX_FIX_TASKSLEEP_TICK);
+        }
+    }
+}
+
+/**
+* @brief Initializes the workarounds for DP PHY issues. This API should be called to make the DP PHY
+*           work in Forced Mode.
+*
+*       This API implements the DP PHY specific workarounds.
+*       1) AutoMDIX workaround
+*        A task is created which will constantly check whether the PHY is in forced mode, In this case
+*        the AutoMDIX is disabled and Software MDI/X is done.
+*
+*        MDIO init shall be done before using this function
+*
+* @param mdioBaseAddress    [IN] MDIO Base Address
+*
+*  @retval none
+*/
+void Board_phyMDIXFixInit(dpphyMDIXTaskParam_t *params)
+{
+    TaskP_Params taskParams;
+
+    uint8_t taskname[] = "dpphyMDIXTask";
+    TaskP_Params_init(&taskParams);
+    taskParams.priority = 3;
+    taskParams.stacksize = 0x1000;
+    taskParams.name = (uint8_t *)taskname;
+    taskParams.arg0 = (void *)params;
+
+    dpphyTask = TaskP_create(Board_dpphyMDIXTask, &taskParams);
+}
+/**
+* @brief Shut down the DP PHY issue workaround
+*
+*       Deletes the DP PHY issue workaround task
+*
+*
+*  @retval none
+*/
+void Board_phyMDIXFixDeInit()
+{
+    TaskP_delete((TaskP_Handle *)&dpphyTask);
+}
+
+#endif
 void MDIO_phyExtRegRead(uint32_t mdioBaseAddress, uint32_t phyNum,
                         uint32_t regNum, uint16_t *phyregval)
 {
@@ -85,12 +237,6 @@ void Board_enablePhyAutoMDIX(uint32_t mdioBaseAddress, uint32_t phyNum)
     phyregval |= DPPHY_AUTOMDIX_ENABLE;
     CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_PHYCR_REG, phyregval);
 }
-
-void Board_enablePhyMII(uint32_t mdioBaseAddress, uint32_t phyNum)
-{
-    //MII enabled by default. RMII not supported
-}
-
 
 uint8_t Board_getPhyMDIXStat(uint32_t mdioBaseAddress, uint32_t phyNum)
 {
@@ -425,4 +571,13 @@ void Board_setAdv100M_FD(uint32_t mdioBaseAddress, uint32_t phyNum)
     CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_BMCR_REG, regData);
 
     return;
+}
+
+void Board_phySoftRestart(uint32_t mdioBaseAddress, uint32_t phyNum)
+{
+    uint16_t regData = 0;
+
+    CSL_MDIO_phyRegRead(mdioBaseAddress, phyNum, DPPHY_GEN_CTRL, &regData);
+    regData |= DPPHY_SOFT_RESET;
+    CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_GEN_CTRL, regData);
 }

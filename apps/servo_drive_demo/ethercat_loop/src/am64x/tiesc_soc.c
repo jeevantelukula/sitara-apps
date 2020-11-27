@@ -33,8 +33,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-#include <tiesc_soc.h>
-
 #include <tiescbsp.h>
 #include <tiesc_soc.h>
 
@@ -55,17 +53,19 @@
 #include <ti/drv/gpio/GPIO.h>
 #include <board_gpioLed.h>
 #endif
+
 #include <board_misc.h>
+#include <board_eeprom.h>
+#include <board_phy.h>
+#include <board_dpphy.h>
+#include <delay_us.h>
 
 #ifndef TIESC_EMULATION_PLATFORM
 #include <board_spi.h>
-#include <board_phy.h>
-#include <board_dpphy.h>
 #include <board_rotary_switch.h>
-
-#include <delay_us.h>
 #include <board_i2cLed.h>
 #endif
+
 #include <version.h>
 
 #ifndef TIESC_EMULATION_PLATFORM
@@ -96,15 +96,11 @@
 
 #define CSL_SEMAPHORE_REG_OFFSET(n)        (0x100 + ((n) * 0x04))
 
-#ifndef TIESC_EMULATION_PLATFORM
-SPI_Handle handle;                   /* SPI handle */
-#endif
+extern I2C_Handle i2c0Handle;
+I2C_Handle eepromFlashHandle = NULL;
 
 extern PRUICSS_Handle pruIcss1Handle;
 extern PRUICSS_Config pruss_config[2 + 1];
-
-/* Board specific definitions */
-#define MCSPI_INSTANCE         (0U)
 
 void tiesc_mii_pinmuxConfig (void);
 void tiesc_icssg_route_interrupts (void);
@@ -162,11 +158,11 @@ void Send_BootComplete_Message_To_Partner(void)
 uint8_t isEtherCATDevice(void)
 {
     volatile uint32_t temp;
-#if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
-    temp = *((uint32_t *)(CSL_PRU_ICSSG0_PR1_CFG_SLV_BASE + CSL_ICSSCFG_HWDIS));
-#elif (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
-    temp = *((uint32_t *)(CSL_PRU_ICSSG1_PR1_CFG_SLV_BASE + CSL_ICSSCFG_HWDIS));
-#endif
+    if(PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
+        temp = *((uint32_t *)(CSL_PRU_ICSSG0_PR1_CFG_SLV_BASE + CSL_ICSSCFG_HWDIS));
+    else if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
+        temp = *((uint32_t *)(CSL_PRU_ICSSG1_PR1_CFG_SLV_BASE + CSL_ICSSCFG_HWDIS));
+
     temp = (temp && 0x01);
     if(0x00 == temp)
     {
@@ -180,13 +176,10 @@ uint8_t isEtherCATDevice(void)
 
 int16_t getARMInterruptOffset()
 {
-#if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
-    return ARM_INTERRUPT_OFFSET_ICSS0;
-#elif (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
-    return ARM_INTERRUPT_OFFSET_ICSS1;
-#else
-    return ARM_INTERRUPT_OFFSET_ICSS2;
-#endif
+    if(PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
+        return ARM_INTERRUPT_OFFSET_ICSS0;
+    else if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
+        return ARM_INTERRUPT_OFFSET_ICSS1;
 }
 
 void initSpinlock()
@@ -212,13 +205,56 @@ uint32_t getSpinlockLockReg0Offset()
 
 void bsp_soft_reset()
 {
-    //Device Reset not supported on AM654x
+    //Device Reset not supported on AM64x
     return;
 }
 
+void tiesc_eeprom_init()
+{
+    int32_t ret;
+    ret = Board_i2cEepromInit();
+    if (BOARD_SOK != ret)
+    {
+        UART_printf("Board_i2cEepromInit returned error = %d\n", ret);
+    }
+    eepromFlashHandle = i2c0Handle;
+}
+
+int32_t tiesc_eeprom_read(uint32_t  offset,
+                      uint8_t  *buf,
+                      uint32_t  len)
+{
+    int32_t ret;
+
+    ret = Board_i2cEepromRead(eepromFlashHandle, offset, buf, len, BOARD_I2C_EEPROM_ADDR);
+
+    if (BOARD_SOK != ret)
+    {
+        UART_printf("Board_i2cEepromRead returned error = %d\n", ret);
+    }
+
+    return ret;
+}
+
+int32_t tiesc_eeprom_write(uint32_t  offset,
+                       uint8_t  *buf,
+                       uint32_t  len)
+{
+    int32_t ret;
+
+    ret = Board_i2cEepromWrite(eepromFlashHandle, offset, buf, len, BOARD_I2C_EEPROM_ADDR);
+
+    if (BOARD_SOK != ret)
+    {
+        UART_printf("Board_i2cEepromWrite returned error = %d\n", ret);
+    }
+
+    return ret;
+}
 
 void bsp_soc_evm_init()
 {
+    int8_t phy_addr1, phy_addr2;
 
 #ifndef TIESC_EMULATION_PLATFORM
 
@@ -233,22 +269,15 @@ void bsp_soc_evm_init()
 
     if(icssgResetIsolated==FALSE)
     {
-		/*This configuration is required only after poweron reset. Is not required after a warm reset.*/
-		Board_init(BOARD_INIT_ICSS_ETH_PHY);
+	/*This configuration is required only after poweron reset. Is not required after a warm reset.*/
+        Board_init(BOARD_INIT_ICSS_ETH_PHY | BOARD_INIT_UNLOCK_MMR);
     }
-    delay_us(100);
 
-    /* FIXME: Remove this when it is being done in the board library*/
-#ifdef TIESC_EMULATION_PLATFORM
-
-    (*((volatile uint32_t *)(CSL_CTRL_MMR0_CFG0_BASE + CSL_MAIN_CTRL_MMR_CFG0_LOCK2_KICK0))) = 0x68EF3490;
-    (*((volatile uint32_t *)(CSL_CTRL_MMR0_CFG0_BASE + CSL_MAIN_CTRL_MMR_CFG0_LOCK2_KICK1))) = 0xD172BC5A;
-
+    /* FIXME: Following pinmux setting will be available by passing a flag in Board_init.
+     * Remove this, when available in board library*/
+#ifndef ECAT_RGMII
+    tiesc_mii_pinmuxConfig();
 #endif
-
-    //Making the clock for ICSSG core and IEP same
-    (*((volatile uint32_t *)(CSL_CTRL_MMR0_CFG0_BASE + CSL_MAIN_CTRL_MMR_CFG0_ICSSG0_CLKSEL))) |= 0x01;
-    (*((volatile uint32_t *)(CSL_CTRL_MMR0_CFG0_BASE + CSL_MAIN_CTRL_MMR_CFG0_ICSSG1_CLKSEL))) |= 0x01;
 
     pruIcss1Handle = PRUICSS_create(pruss_config, PRUICSS_INSTANCE);
 
@@ -275,18 +304,24 @@ void bsp_soc_evm_init()
 #endif
 #else
 
-#ifndef TIESC_EMULATION_PLATFORM
-		/* Setting up RX_ER/GPIO pin on the PHY as RX_ERR pin and COL/GPIO pin as LED_3 */
-		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_GPIO_MUX_CTRL2, 0x60);
-		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_GPIO_MUX_CTRL2, 0x60);
+		phy_addr1 = Board_getPhyAddress(PRUICSS_INSTANCE, 1);
+		phy_addr2 = Board_getPhyAddress(PRUICSS_INSTANCE, 2);
 
-		/* Disable RGMII interface */
-		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 1), DPPHY_RGMIICTL, 0x50);
-		MDIO_phyExtRegWrite((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), Board_getPhyAddress(PRUICSS_INSTANCE, 2), DPPHY_RGMIICTL, 0x50);
+#ifndef ECAT_RGMII
+		/* Select MII mode */
+		Board_enablePhyMII((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), phy_addr1);
+		Board_enablePhyMII((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), phy_addr2);
 #endif
 
-#endif
+		/* Disable 1G advertisement */
+		Board_phyAutoNeg1000AdvDisable((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), phy_addr1);
+		Board_phyAutoNeg1000AdvDisable((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), phy_addr2);
 
+		/* Soft-reset PHY */
+		Board_phySoftRestart((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), phy_addr1);
+		Board_phySoftRestart((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussMiiMdioRegBase), phy_addr2);
+
+#endif
 
 		PRUICSS_pinMuxConfig(pruIcss1Handle, 0x0);   // PRUSS pinmuxing
 		//Disable PRUs - This is to ensure PRUs are not running when application is not initialized
@@ -295,26 +330,25 @@ void bsp_soc_evm_init()
     }
 
 #if !defined (__aarch64__) && !defined(TIESC_EMULATION_PLATFORM)
-    /* Route I2C0 interrupts to R5F */
-    /* Main Domain I2C0 events are mapped to MAIN2MCU_INTRTR_LVL_IN_100 */
-    /* Since 176 is used as I2C interrupt number, MAIN2MCU_INTRTR_LVL_IN_100 should be written to 0xA10044. */
-    /* If 177 is used as I2C interrupt number, MAIN2MCU_INTRTR_LVL_IN_100 should be written to 0xA10048. */
-    HW_WR_REG8_RAW(0xA10044, 100);
 
     if(icssgResetIsolated==FALSE)
     {
         /* Route ICSS Interrupts to R5F. */
         tiesc_icssg_route_interrupts();
     }
+#ifndef TIESC_EMULATION_PLATFORM
     /* LED's and Rotary Switch are connected to Main Domain I2C0. Reconfigure I2C to use I2C0 of main domain. */
     /* Get the default I2C init configurations */
     I2C_socGetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
 
     i2c_cfg.baseAddr = CSL_I2C0_CFG_BASE;
+    /*FIXME: Can not use the following hard-coded value*/
     /*Use MCU_R5_CORE0_INT_IN_176, MAIN2MCU_LVL_INTRTR0 host interrupt 16.*/
     i2c_cfg.intNum = CSL_MCU0_INTR_MAIN2MCU_LVL_INTR0_OUTL_16;
 
     I2C_socSetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
+#endif
+
 #endif
 
 #ifndef TIESC_EMULATION_PLATFORM
@@ -324,27 +358,30 @@ void bsp_soc_evm_init()
 
     /* Rotary Switch Init */
     Board_initRotarySwitch();
-
-    QSPI_init();
 #endif
 
-#if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
-    tiesc_setPLLClk(TISCI_DEV_PRU_ICSSG0, TISCI_DEV_PRU_ICSSG0_CORE_CLK_PARENT_POSTDIV4_16FF_MAIN_0_HSDIVOUT9_CLK, 200000000);
-#elif (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
-    tiesc_setPLLClk(TISCI_DEV_PRU_ICSSG1, TISCI_DEV_PRU_ICSSG1_CORE_CLK_PARENT_POSTDIV4_16FF_MAIN_0_HSDIVOUT9_CLK, 200000000);
-#endif
+    /* Initialize flash handle for i2c eeprom */
+    tiesc_eeprom_init();
+
+    if(PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
+        tiesc_setPLLClk(TISCI_DEV_PRU_ICSSG0, TISCI_DEV_PRU_ICSSG0_CORE_CLK, 200000000);
+    else if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
+        tiesc_setPLLClk(TISCI_DEV_PRU_ICSSG1, TISCI_DEV_PRU_ICSSG1_CORE_CLK, 200000000);
+
+    //Making the clock for ICSSG core and IEP same
+    (*((volatile uint32_t *)((((PRUICSS_HwAttrs *)(pruIcss1Handle->hwAttrs))->prussCfgRegBase) + CSL_ICSSCFG_IEPCLK))) |= CSL_ICSSCFG_IEPCLK_OCP_EN_MASK;
 
 }
 
 
 void display_esc_version(uint16_t revision, uint16_t build)
 {
-
+#ifndef DISABLE_UART_PRINT
     UART_printf("\n\rRevision/Type : x%04X", revision);
     UART_printf(" Build : x%04X", build);
     UART_printf("\n\rFirmware Version : %d.%d.%d\n\r", (revision >> 8),
                 (build >> 8), (build & 0xFF));
-
+#endif
 }
 
 void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes)
@@ -376,322 +413,6 @@ void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes)
     ASSERT_DSB();
     return dst;
 }
-
-#ifndef TIESC_EMULATION_PLATFORM
-
-static pinmuxPerCfg_t gPru_icssg0_mii_g_rt0PinCfg[] =
-{
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii_mt0_clk -> AC24 */
-    {
-        PIN_PRG0_PRU1_GPO16, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_txen -> AE27 */
-    {
-        PIN_PRG0_PRU1_GPO15, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_txd3 -> AD24 */
-    {
-        PIN_PRG0_PRU1_GPO14, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_txd2 -> AD25 */
-    {
-        PIN_PRG0_PRU1_GPO13, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_txd1 -> AC25 */
-    {
-        PIN_PRG0_PRU1_GPO12, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_txd0 -> AB24 */
-    {
-        PIN_PRG0_PRU1_GPO11, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxdv -> Y24 */
-    {
-        PIN_PRG0_PRU0_GPO4, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii_mr0_clk -> Y25 */
-    {
-        PIN_PRG0_PRU0_GPO6, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxd3 -> AA27 */
-    {
-        PIN_PRG0_PRU0_GPO3, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxd2 -> W24 */
-    {
-        PIN_PRG0_PRU0_GPO2, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxer -> V28 */
-    {
-        PIN_PRG0_PRU0_GPO5, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxd1 -> W25 */
-    {
-        PIN_PRG0_PRU0_GPO1, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxd0 -> V24 */
-    {
-        PIN_PRG0_PRU0_GPO0, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii0_rxlink -> V27 */
-    {
-        PIN_PRG0_PRU0_GPO8, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii_mt1_clk -> AD28 */
-    {
-        PIN_PRG0_PRU0_GPO16, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_txen -> AA24 */
-    {
-        PIN_PRG0_PRU0_GPO15, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_txd3 -> AD26 */
-    {
-        PIN_PRG0_PRU0_GPO14, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_txd2 -> AC26 */
-    {
-        PIN_PRG0_PRU0_GPO13, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_txd1 -> AD27 */
-    {
-        PIN_PRG0_PRU0_GPO12, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_txd0 -> AB25 */
-    {
-        PIN_PRG0_PRU0_GPO11, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxdv -> AA25 */
-    {
-        PIN_PRG0_PRU1_GPO4, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii_mr1_clk -> AB27 */
-    {
-        PIN_PRG0_PRU1_GPO6, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxd3 -> AB26 */
-    {
-        PIN_PRG0_PRU1_GPO3, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxd2 -> AC27 */
-    {
-        PIN_PRG0_PRU1_GPO2, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxer -> U23 */
-    {
-        PIN_PRG0_PRU1_GPO5, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxd1 -> AC28 */
-    {
-        PIN_PRG0_PRU1_GPO1, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxd0 -> AB28 */
-    {
-        PIN_PRG0_PRU1_GPO0, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG0_MII_G_RT1 -> pr0_mii1_rxlink -> W27 */
-    {
-        PIN_PRG0_PRU1_GPO8, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    {PINMUX_END}
-};
-
-static pinmuxModuleCfg_t gPru_icssg0_mii_g_rtPinCfg[] =
-{
-    {0, TRUE, gPru_icssg0_mii_g_rt0PinCfg},
-    {PINMUX_END}
-};
-
-
-static pinmuxPerCfg_t gPru_icssg1_mii_g_rt0PinCfg[] =
-{
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii_mt0_clk -> AE19 */
-    {
-        PIN_PRG1_PRU1_GPO16, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_txen -> AG19 */
-    {
-        PIN_PRG1_PRU1_GPO15, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_txd3 -> AH19 */
-    {
-        PIN_PRG1_PRU1_GPO14, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_txd2 -> AF19 */
-    {
-        PIN_PRG1_PRU1_GPO13, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_txd1 -> AE20 */
-    {
-        PIN_PRG1_PRU1_GPO12, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_txd0 -> AC20 */
-    {
-        PIN_PRG1_PRU1_GPO11, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxdv -> AG23 */
-    {
-        PIN_PRG1_PRU0_GPO4, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii_mr0_clk -> AF22 */
-    {
-        PIN_PRG1_PRU0_GPO6, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxd3 -> AD21 */
-    {
-        PIN_PRG1_PRU0_GPO3, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxd2 -> AF23 */
-    {
-        PIN_PRG1_PRU0_GPO2, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxer -> AF27 */
-    {
-        PIN_PRG1_PRU0_GPO5, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxd1 -> AG24 */
-    {
-        PIN_PRG1_PRU0_GPO1, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxd0 -> AE22 */
-    {
-        PIN_PRG1_PRU0_GPO0, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii0_rxlink -> AF28 */
-    {
-        PIN_PRG1_PRU0_GPO8, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii_mt1_clk -> AD20 */
-    {
-        PIN_PRG1_PRU0_GPO16, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_txen -> AD19 */
-    {
-        PIN_PRG1_PRU0_GPO15, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_txd3 -> AG20 */
-    {
-        PIN_PRG1_PRU0_GPO14, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_txd2 -> AH21 */
-    {
-        PIN_PRG1_PRU0_GPO13, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_txd1 -> AH20 */
-    {
-        PIN_PRG1_PRU0_GPO12, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_txd0 -> AF21 */
-    {
-        PIN_PRG1_PRU0_GPO11, PIN_MODE(0) | \
-        ((PIN_PULL_DISABLE) & (~PIN_PULL_DIRECTION & ~PIN_INPUT_ENABLE))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxdv -> AE21 */
-    {
-        PIN_PRG1_PRU1_GPO4, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii_mr1_clk -> AG22 */
-    {
-        PIN_PRG1_PRU1_GPO6, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxd3 -> AH22 */
-    {
-        PIN_PRG1_PRU1_GPO3, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxd2 -> AG21 */
-    {
-        PIN_PRG1_PRU1_GPO2, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxer -> AC22 */
-    {
-        PIN_PRG1_PRU1_GPO5, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxd1 -> AH23 */
-    {
-        PIN_PRG1_PRU1_GPO1, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxd0 -> AH24 */
-    {
-        PIN_PRG1_PRU1_GPO0, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    /* MyPRU_ICSSG1_MII_G_RT1 -> pr1_mii1_rxlink -> AE24 */
-    {
-        PIN_PRG1_PRU1_GPO8, PIN_MODE(1) | \
-        ((PIN_PULL_DISABLE | PIN_INPUT_ENABLE) & (~PIN_PULL_DIRECTION))
-    },
-    {PINMUX_END}
-};
-
-static pinmuxModuleCfg_t gPru_icssg1_mii_g_rtPinCfg[] =
-{
-    {0, TRUE, gPru_icssg1_mii_g_rt0PinCfg},
-    {PINMUX_END}
-};
-
-pinmuxBoardCfg_t gAM65xxMIIPinmuxData[] =
-{
-    {0, gPru_icssg0_mii_g_rtPinCfg},
-    {1, gPru_icssg1_mii_g_rtPinCfg},
-    {PINMUX_END}
-};
-
-
-#endif
-
 
 void tiesc_icssg_route_interrupts (void)
 {
@@ -841,6 +562,44 @@ pinmux_t PINMUX_MAIN_ICSSG0_MII1_APP2_array [] = {
 {PINMUX_MAIN_REG_BASE, 0x01F0, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}  //PAD ->PRG0_PRU1GPO16 ; PIN ->PRG0_MII1_TXC ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG124
 };
 
+pinmux_t PINMUX_MAIN_ICSSG1_MII0_APP2_array [] = {
+//pinmux reg base,  Reg offset, Muxmode,  PUPD,    DRIVE_STRENGTH,    RX,  TX
+
+    {PINMUX_MAIN_REG_BASE, 0x00B8, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO0 ; PIN ->PRG1_MII0_RD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG46
+    {PINMUX_MAIN_REG_BASE, 0x00BC, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO1 ; PIN ->PRG1_MII0_RD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG47
+    {PINMUX_MAIN_REG_BASE, 0x00C0, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO2 ; PIN ->PRG1_MII0_RD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG48
+    {PINMUX_MAIN_REG_BASE, 0x00C4, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO3 ; PIN ->PRG1_MII0_RD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG49
+    {PINMUX_MAIN_REG_BASE, 0x00C8, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO4 ; PIN ->PRG1_MII0_RX_CTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG50
+    {PINMUX_MAIN_REG_BASE, 0x00CC, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO5 ; PIN ->PRG1_MII0_RXER ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG51
+    {PINMUX_MAIN_REG_BASE, 0x00D0, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO6 ; PIN ->PRG1_MII0_RXC ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG52
+    {PINMUX_MAIN_REG_BASE, 0x00D8, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO8 ; PIN ->PRG1_MII0_RXLINK ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG54
+    {PINMUX_MAIN_REG_BASE, 0x00E4, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO11 ; PIN ->PRG1_MII0_TD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG57
+    {PINMUX_MAIN_REG_BASE, 0x00E8, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO12 ; PIN ->PRG1_MII0_TD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG58
+    {PINMUX_MAIN_REG_BASE, 0x00EC, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO13 ; PIN ->PRG1_MII0_TD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG59
+    {PINMUX_MAIN_REG_BASE, 0x00F0, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO14 ; PIN ->PRG1_MII0_TD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG60
+    {PINMUX_MAIN_REG_BASE, 0x00F4, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO15 ; PIN ->PRG1_MII0_TX_CTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG61
+    {PINMUX_MAIN_REG_BASE, 0x00F8, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}  //PAD ->PRG1_PRU0GPO16 ; PIN ->PRG1_MII0_TXC ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG62
+};
+
+pinmux_t PINMUX_MAIN_ICSSG1_MII1_APP2_array [] = {
+//pinmux reg base,  Reg offset, Muxmode,  PUPD,    DRIVE_STRENGTH,    RX,  TX
+
+    {PINMUX_MAIN_REG_BASE, 0x0108, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE},  //PAD ->PRG1_PRU1GPO0 ; PIN ->PRG1_MII1_RD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG66
+    {PINMUX_MAIN_REG_BASE, 0x010C, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO1 ; PIN ->PRG1_MII1_RD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG67
+    {PINMUX_MAIN_REG_BASE, 0x0110, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO2 ; PIN ->PRG1_MII1_RD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG68
+    {PINMUX_MAIN_REG_BASE, 0x0114, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO3 ; PIN ->PRG1_MII1_RD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG69
+    {PINMUX_MAIN_REG_BASE, 0x0118, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO4 ; PIN ->PRG1_MII1_RX_CTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MOdE_1, PADCONFIG70
+    {PINMUX_MAIN_REG_BASE, 0x011C, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO5 ; PIN ->PRG1_MII1_RXER ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG71
+    {PINMUX_MAIN_REG_BASE, 0x0120, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO6 ; PIN ->PRG1_MII1_RXC ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG72
+    {PINMUX_MAIN_REG_BASE, 0x0128, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO8 ; PIN ->PRG1_MII1_RXLINK ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG74
+    {PINMUX_MAIN_REG_BASE, 0x0134, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO11 ; PIN ->PRG1_MII1_TD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG77
+    {PINMUX_MAIN_REG_BASE, 0x0138, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO12 ; PIN ->PRG1_MII1_TD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG78
+    {PINMUX_MAIN_REG_BASE, 0x013C, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO13 ; PIN ->PRG1_MII1_TD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG79
+    {PINMUX_MAIN_REG_BASE, 0x0140, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO14 ; PIN ->PRG1_MII1_TD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG80
+    {PINMUX_MAIN_REG_BASE, 0x0144, PINMUX_MUX_MODE_0, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO15 ; PIN ->PRG1_MII1_TX_CTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_0, PADCONFIG81
+    {PINMUX_MAIN_REG_BASE, 0x0148, PINMUX_MUX_MODE_1, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}  //PAD ->PRG1_PRU1GPO16 ; PIN ->PRG1_MII1_TXC ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_1, PADCONFIG82
+};
+
 #else
 
 pinmux_t PINMUX_MAIN_ICSSG0_RGMII1_APP2_array [] = {
@@ -876,6 +635,40 @@ pinmux_t PINMUX_MAIN_ICSSG0_RGMII2_APP2_array [] = {
 {PINMUX_MAIN_REG_BASE, 0x01EC, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG0_PRU1GPO15 ; PIN ->PRG0_RGMII2_TX_CTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
 {PINMUX_MAIN_REG_BASE, 0x01F0, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE } //PAD ->PRG0_PRU1GPO16 ; PIN ->PRG0_RGMII2_TXC ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
 };
+
+// pinmux_t PINMUX_MAIN_ICSSG1_RGMII1_APP2_array [] = {
+// //pinmux reg base,  Reg offset, Muxmode,  PUPD,    DRIVE_STRENGTH,    RX,  TX
+
+// {PINMUX_MAIN_REG_BASE, 0x0004, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO0 ; PIN ->PRG1_RGMII1_RD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0008, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO1 ; PIN ->PRG1_RGMII1_RD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x000C, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO2 ; PIN ->PRG1_RGMII1_RD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0010, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO3 ; PIN ->PRG1_RGMII1_RD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0014, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO4 ; PIN ->PRG1_RGMII1_RCTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x001C, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU0GPO5 ; PIN ->PRG1_RGMII1_RCLK ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0030, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO6 ; PIN ->PRG1_RGMII1_TCLK ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0034, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO7 ; PIN ->PRG1_RGMII1_TD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0038, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO8 ; PIN ->PRG1_RGMII1_TD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x003C, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO9 ; PIN ->PRG1_RGMII1_TD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0040, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU0GPO10 ; PIN ->PRG1_RGMII1_TD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0044, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE } //PAD ->PRG1_PRU0GPO11 ; PIN ->PRG1_RGMII1_TCTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// };
+
+// pinmux_t PINMUX_MAIN_ICSSG1_RGMII2_APP2_array [] = {
+// //pinmux reg base,  Reg offset, Muxmode,  PUPD,    DRIVE_STRENGTH,    RX,  TX
+
+// {PINMUX_MAIN_REG_BASE, 0x0058, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO0 ; PIN ->PRG1_RGMII2_RD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x005C, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO1 ; PIN ->PRG1_RGMII2_RD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0060, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO2 ; PIN ->PRG1_RGMII2_RD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0064, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO3 ; PIN ->PRG1_RGMII2_RD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0068, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO4 ; PIN ->PRG1_RGMII2_RCTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0070, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_ACTIVE , PINMUX_TX_DISABLE}, //PAD ->PRG1_PRU1GPO5 ; PIN ->PRG1_RGMII2_RCLK ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0084, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO6 ; PIN ->PRG1_RGMII2_TCLK ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0088, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO7 ; PIN ->PRG1_RGMII2_TD3 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x008C, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO8 ; PIN ->PRG1_RGMII2_TD2 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0090, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO9 ; PIN ->PRG1_RGMII2_TD1 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0094, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE }, //PAD ->PRG1_PRU1GPO10 ; PIN ->PRG1_RGMII2_TD0 ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// {PINMUX_MAIN_REG_BASE, 0x0098, PINMUX_MUX_MODE_2, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_RX_DISABLE, PINMUX_TX_ACTIVE } //PAD ->PRG1_PRU1GPO11 ; PIN ->PRG1_RGMII2_TCTL ; PINMUX_MUX_MODE_ ->PINMUX_MUX_MODE_2
+// };
 
 #endif
 
@@ -945,9 +738,21 @@ void set_pinmux(pinmux_t *Array, uint8_t arraysize){
 
 void tiesc_mii_pinmuxConfig (void)
 {
+    /* TODO: Remove following, when available in board library*/
+
 #if !defined(ECAT_RGMII)
-            set_pinmux(PINMUX_MAIN_ICSSG0_MII0_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_MII0_APP2_array)/sizeof(pinmux_t)));
-            set_pinmux(PINMUX_MAIN_ICSSG0_MII1_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_MII1_APP2_array)/sizeof(pinmux_t)));
+    HWREG(0xf5008) = 0x68EF3490;
+    HWREG(0xf500c) = 0xD172BC5A;
+    if(PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
+    {
+        set_pinmux(PINMUX_MAIN_ICSSG0_MII0_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_MII0_APP2_array)/sizeof(pinmux_t)));
+        set_pinmux(PINMUX_MAIN_ICSSG0_MII1_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_MII1_APP2_array)/sizeof(pinmux_t)));
+    }
+    else if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_TWO)
+    {
+        set_pinmux(PINMUX_MAIN_ICSSG1_MII0_APP2_array, (sizeof(PINMUX_MAIN_ICSSG1_MII0_APP2_array)/sizeof(pinmux_t)));
+        set_pinmux(PINMUX_MAIN_ICSSG1_MII1_APP2_array, (sizeof(PINMUX_MAIN_ICSSG1_MII1_APP2_array)/sizeof(pinmux_t)));
+    }
 #else
             set_pinmux(PINMUX_MAIN_ICSSG0_RGMII1_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_RGMII1_APP2_array)/sizeof(pinmux_t)));
             set_pinmux(PINMUX_MAIN_ICSSG0_RGMII2_APP2_array, (sizeof(PINMUX_MAIN_ICSSG0_RGMII2_APP2_array)/sizeof(pinmux_t)));
@@ -1077,4 +882,25 @@ int32_t tiesc_setPLLClk(uint32_t modId, uint32_t clkId, uint64_t clkRate)
     }
 
     return status;
+}
+
+void tiesc_boardConfig(void)
+{
+    Board_IDInfo_v2 boardInfo;
+    Board_STATUS status;
+
+#ifndef DISABLE_UART_PRINT
+    memset(&boardInfo, 0, sizeof(Board_IDInfo_v2));
+    status = Board_getIDInfo_v2(&boardInfo, BOARD_I2C_EEPROM_ADDR);
+    if(status != BOARD_SOK)
+    {
+        UART_printf("Board_getIDInfo_v2 returned error = %d",status);
+    }
+
+    UART_printf("\nBoard name \t: ");
+    UART_printf(boardInfo.boardInfo.boardName);
+
+    UART_printf("\nBoard Revision \t: ");
+    UART_dataWrite((char *)&boardInfo.boardInfo.designRev, BOARD_DESIGN_REV_LEN);
+#endif
 }

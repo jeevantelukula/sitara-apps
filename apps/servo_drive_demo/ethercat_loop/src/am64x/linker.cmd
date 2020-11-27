@@ -45,7 +45,7 @@ SECTIONS
 {
     .vecs       : {
          *(.vecs)
-    } palign(8) > MCU0_R5F0_BTCM
+    } palign(256) > MCU0_R5F0_BTCM
     .text_boot {
         *boot.aer5f*<*boot.o*>(.text)
      }  palign(8)   > MCU0_R5F0_BTCM

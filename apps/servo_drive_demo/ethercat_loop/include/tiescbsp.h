@@ -90,7 +90,7 @@ application)or equivalent 3P stack \n
  * protocols\ethercat_slave\firmware\v2.0 : (AM437/AMIC120) \n
  * protocols\ethercat_slave\firmware\v2.1 : (AM57x) \n
  * protocols\ethercat_slave\firmware\v2.2 : (K2G) \n
- * protocols\ethercat_slave\firmware\g_v1.0 : (AM65xx) \n
+ * protocols\ethercat_slave\firmware\g_v1.0 : (AM65xx/AM64x) \n
  *
  * \section install_sec Installation
  *
@@ -153,62 +153,11 @@ application)or equivalent 3P stack \n
 #include <tiesc_pruss_intc_mapping.h>
 #include <ti/drv/pruss/pruicss.h>
 #include <ti/drv/pruss/soc/pruicss_v1.h>
-
-#if defined(ECAT_LIMITED_DEMO) || defined(TIESC_SPI_SLAVE_MODE)
-//Stack related defines
-
-#ifndef TIESC_APPLICATION
-/*TIESC_APPLICATION: Should be set if the Slave Sample Code runs on an ICE/IDK EVM. */
-#define TIESC_APPLICATION                         1
-#endif
-
-#ifndef AL_EVENT_ENABLED
-#define AL_EVENT_ENABLED                          1
-#endif
-
-#ifndef ESC_EEPROM_SIZE
-#define ESC_EEPROM_SIZE                           0x800
-#endif
-
-#ifndef MEM_ADDR
-#define MEM_ADDR                                  uint8_t
-#endif
-
-#ifndef EEPROM_READ_SIZE
-#define EEPROM_READ_SIZE                          0x8
-#endif
-
-#ifndef EEPROM_WRITE_SIZE
-#define EEPROM_WRITE_SIZE                         0x2
-#endif
-
-#ifndef ESC_EEPROM_EMULATION
-#define ESC_EEPROM_EMULATION                      1
-#endif
-
-#define ESC_SYSTEMTIME_OFFSET                   0x0910
-#define ESC_DC_SYNC_ACTIVATION_OFFSET           0x0981
-#define ESC_DC_SYNC0_CYCLETIME_OFFSET           0x09A0
-#define ESC_DC_SYNC1_CYCLETIME_OFFSET           0x09A4
-
-#define ESC_EEPROM_CONTROL_OFFSET               0x0502
-#define ESC_EEPROM_BUSY_MASK                    0x8000
-#define ESC_EEPROM_CMD_MASK                     0x0700
-#define ESC_EEPROM_ADDRESS_OFFSET               0x0504
-#define ESC_EEPROM_DATA_OFFSET                  0x0508
-
-#define     STATE_INIT                        0x01
-#define     STATE_PREOP                       0x02
-#define     STATE_BOOT                        0x03
-#define     STATE_SAFEOP                      0x04
-#define     STATE_OP                          0x08
-
-#endif
+#include <tiesc_def.h>
 
 #ifdef TIESC_SPI_MASTER_MODE
 #define ESC_EEPROM_EMULATION                      0
 #endif
-
 
 /*Single datagram accessing contiguous multiple FMMU mapped areas in  a single slave for process data
 is supported now by TI ESC firmware.
@@ -217,9 +166,14 @@ For specific use cases (4SM with 3 FMMUs or multiple FMMUs (in a given ESC) are 
 process path latency improvement can be achieved by disabling below define */
 #define ENABLE_MULTIPLE_SM_ACCESS_IN_SINGLE_DATAGRAM     0
 
-#if !defined(CiA402_DEVICE) && !defined(_JAILHOUSE_INMATE) && !defined(TIESC_EMULATION_PLATFORM)
+#if !defined(CiA402_DEVICE) && !defined(_JAILHOUSE_INMATE)
+#if defined(SOC_AM64X)
+#define EEPROM_I2C /*Comment this to enable volatile EEPROM support for debug*/
+#else
 #define EEPROM_SPI /*Comment this to enable volatile EEPROM support for debug*/
 #endif
+#endif
+
 
 /** @brief PRU 0 firmware binary file location in SPI flash - at an offset
    of 480 KB from starting location */

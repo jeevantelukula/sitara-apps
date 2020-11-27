@@ -37,10 +37,9 @@
 
 #include <TaskP.h>
 #include <ti/osal/HwiP.h>
-#include <ti/osal/CacheP.h>
 #include <OSP.h>
+#include <ti/osal/CacheP.h>
 #include <ti/csl/cslr_psc.h>
-
 #include <app_sciclient.h>
 #include <tiescipc.h>
 
@@ -56,11 +55,12 @@
 #include <ti/drv/uart/UART_stdio.h>
 #endif
 #include <ti/board/board.h>
-#include <ti/osal/HwiP.h>
 
+#ifndef TIESC_EMULATION_PLATFORM
 #include <board_gpioLed.h>
 #include <board_i2cLed.h>
 #include <board_spi.h>
+#endif
 
 /* Please note: Baremetal mode is not validated on AM6xx devices */
 #ifdef BARE_METAL
@@ -86,7 +86,6 @@ uint32_t mainloop_delta, mainloop_max, pdi_delta, pdi_max, sync_delta, sync_max;
 /* Time Sync */
 #include "app_ts.h"
 #include "tiesctscfg.h"
-
 
 /* ========================================================================== */
 /*                           Macros & Typedefs                                */
@@ -159,14 +158,7 @@ uint8_t task1_init()
     UART_printf("\nVersion - ");
     UART_printf(IND_PKG_VERSION);
 
-    Board_IDInfo boardInfo;
-    Board_getIDInfo(&boardInfo);
-
-    UART_printf("\nBoard name \t: ");
-    UART_printf(boardInfo.boardName);
-
-    UART_printf("\nBoard Revision \t: ");
-    UART_printf(boardInfo.version);
+    tiesc_boardConfig();
 
     if(isEtherCATDevice())
     {
@@ -177,6 +169,8 @@ uint8_t task1_init()
     {
         UART_printf("\n\rNon-EtherCAT Device");
     }
+
+    UART_printf("\n\rSYS/BIOS EtherCAT Internal application ");
 #endif
 
     /* initialize the Hardware and the EtherCAT Slave Controller */
@@ -293,10 +287,6 @@ void task1(uint32_t arg0, uint32_t arg1)
         while (u8Err);
     }
 
-    /* Start Time Sync */
-    //u8Err |= appTs_startTs(&gTs);
-    //while (u8Err);
-    
     bRunApplication = TRUE;
 #ifndef BARE_METAL
         do
@@ -519,6 +509,7 @@ void LEDtask(uint32_t arg0, uint32_t arg1)
         if((reset_reg_val == TI_ESC_RST_CMD_U) ||
                 (reset_reg_val == TI_ESC_RST_CMD_L))
         {
+            /*Write 0x0 to 0xE14, else application will request reset continuously.*/
             bsp_write_dword(pruIcss1Handle, (uint32_t)0x0, ESC_ADDR_TI_ESC_RESET);
 			ASSERT_DMB();
 			ASSERT_DSB();			
@@ -590,9 +581,6 @@ void Sync0task(uint32_t arg1, uint32_t arg2)
 
 void Sync1task(uint32_t arg1, uint32_t arg2)
 {
-#ifdef PROFILE_ECAT_STACK
-    uint32_t sync_start, sync_stop;
-#endif
 #ifndef DISABLE_UART_PRINT
     UART_printf("SYNC1 task started\n\r");
 #endif
@@ -641,6 +629,9 @@ void common_main()
 {
     TaskP_Params taskParams;
 	
+    /* This is for debug purpose - see the description of function header */
+    StartupEmulatorWaitFxn();
+
     if(((PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE) &&
     /*Read a known value from ICSS to know if it's reset isolated. */
     ((*((volatile uint32_t *)ICSS0_RESET_ISOLATION_MEMORYREAD_ADDRESS)) == ICSS_RESET_ISOLATION_VALUE))
@@ -660,9 +651,6 @@ void common_main()
 	/*Enable ICSSG0 Reset Isolation by setting RESETISO and BLKCHIP1RST bits in PSC0_MDCTL31 register. */
 	(*((volatile uint32_t *)(CSL_PSC0_BASE+CSL_PSC_MDCTL(31)))) |= (CSL_PSC_MDCTL_BLKCHIP1RST_MASK | CSL_PSC_MDCTL_RSTISO_MASK);
 #endif
-	
-    /* This is for debug purpose - see the description of function header */
-    StartupEmulatorWaitFxn();
 
     Board_init( BOARD_INIT_MODULE_CLOCK |
                BOARD_INIT_UART_STDIO );
@@ -670,7 +658,7 @@ void common_main()
     if(icssgResetIsolated==FALSE)
     {
         /*These initializations are not required after a warm reset, as pinmux does not change for a warm reset. */
-		Board_init(BOARD_INIT_ICSS_PINMUX | BOARD_INIT_PINMUX_CONFIG);
+        Board_init(BOARD_INIT_ICSS_PINMUX | BOARD_INIT_PINMUX_CONFIG);
     }
 
     TaskP_Params_init(&taskParams);

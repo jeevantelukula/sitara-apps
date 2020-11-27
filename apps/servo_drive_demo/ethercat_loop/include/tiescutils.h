@@ -51,6 +51,7 @@
 #include <ti/osal/CacheP.h>
 
 #define TIESC_REVISION_NUMBER_FULL (0x00000011)
+#define TIESC_REVISION_NUMBER_DEMO (0x00000001)
 
 /* Flag to enable TI AM6xx based CiA402 3-axis MC application */
 #define TI_CiA402_3AXIS_MOTOR_CONTROL
@@ -69,13 +70,13 @@ void LEDtask(uint32_t arg0, uint32_t arg1);
 void Sync0task(uint32_t arg1, uint32_t arg2);
 #endif
 
+void common_main();
+
 #ifdef TI_CiA402_3AXIS_MOTOR_CONTROL
 void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis);
 #endif
 
-void CiA402_DummyMotionControl(TCiA402Axis *pCiA402Axis);
-
-void common_main();
+void tiesc_boardConfig(void);
 
 #ifdef ENABLE_ONLINE_FIRMWARE_UPGRADE
 void relocate_reload_code();

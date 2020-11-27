@@ -67,6 +67,17 @@ typedef struct TypesP_FreqHz_s
     // least significant 32-bits of frequency
 } TypesP_FreqHz;
 
+/*!
+ *  @brief    64-bit Timestamp value structure
+ *
+ */
+typedef struct TypesP_Timestamp64_s
+{
+    uint32_t hi;
+    // most significant 32-bits of timestamp
+    uint32_t lo;
+    // least significant 32-bits of timestamp
+} TypesP_Timestamp64;
 
 /*!
  *  @brief  Function to get system timestamp
@@ -74,6 +85,13 @@ typedef struct TypesP_FreqHz_s
  *  @return 32-bit system cycle counter value
  */
 extern uint32_t OSAL_Timestamp_get32(void);
+
+/*!
+ *  @brief  Function to get system timestamp
+ *
+ *  @param timestamp Pointer to the struct where timestamp is to be stored
+ */
+extern void OSAL_Timestamp_get64(TypesP_Timestamp64 *timestamp);
 
 /*!
  *  @brief  Function to get CPU clock frequency

@@ -2,6 +2,7 @@
  *  \file   tiesc_soc.h
  *
  */
+
 /*
  * Copyright (c) 2015-2020, Texas Instruments Incorporated
  * All rights reserved.
@@ -33,9 +34,12 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
- 
-#ifndef TIESC_SOC
-#define TIESC_SOC
+
+#ifndef _TIESC_SOC_H_
+#define _TIESC_SOC_H_
+
+#include <ti/drv/pruss/soc/pruicss_soc.h>
+#include <ti/drv/pruss/pruicss_ver.h>
 
 #include <appmbox.h>
 #include <blackchannel.h>
@@ -45,37 +49,32 @@
 #include <ti/csl/csl_mailbox.h>
 #include <ti/csl/csl_rat.h>
 #include <ti/drv/pruss/pruicss.h>
-
 #include <ti/csl/soc/am64x/src/cslr_soc_baseaddress.h>
 
-#define OCSRAM_SIZE_INBYTES 		0x00200000U /*2MB*/
-#define OCSRAM_BASE_ADDRESS 		0x70000000U
-#define OCSRAM_TRANSLATE_ADDRESS 	0x70000000U
+#define OCSRAM_SIZE_INBYTES         0x00200000U /*2MB*/
+#define OCSRAM_BASE_ADDRESS         0x70000000U
+#define OCSRAM_TRANSLATE_ADDRESS    0x70000000U
 
 #define MAILBOX_BASE_ADDRESS        CSL_MAILBOX0_REGS6_BASE
 #define MAILBOX_USER                1U
 
-#define PRUICSS_INSTANCE_ONE   (PRUICSS_INSTANCE_ONE)
-#define PRUICSS_INSTANCE_TWO   (PRUICSS_INSTANCE_TWO)
-
-#if defined(SOC_AM64X)
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
-#define TIESC_TASK_STACK_SIZE_MUL          2
+/* The PRUSS drivers before version 1.0.0.16 have a typo in macro names*/
+#if (PRUICSS_DRV_VERSION_ID < 0x01000010)
+#define PRUICSS_INSTANCE_ONE   (PRUICCSS_INSTANCE_ONE)
+#define PRUICSS_INSTANCE_TWO   (PRUICCSS_INSTANCE_TWO)
+#define PRUICSS_INSTANCE_THREE (PRUICCSS_INSTANCE_THREE)
 #endif
+
+/* EEPROM data offset in I2C EEPROM Flash */
+#define I2C_EEPROM_DATA_OFFSET      (0x8000)
+#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
+#define TIESC_TASK_STACK_SIZE_MUL   2
 
 /* Change this define to switch between PRUICSS for AM571x */
 #define PRUICSS_INSTANCE        DEFAULT_PRUICSS_INSTANCE
 
-#if defined(SOC_AM64X)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
-#ifndef TIESC_EMULATION_PLATFORM
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#else
+#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
 #define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#endif
-#endif
 
 #define SPINLOCK_GRANTED       0
 #define SPINLOCK_UNLOCK        0
@@ -99,16 +98,14 @@ void display_esc_version(uint16_t revision, uint16_t build);
 
 void initSpinlock();
 
-#if defined (SOC_AM64X)
+int32_t tiesc_eeprom_read(uint32_t  offset, uint8_t  *buf, uint32_t  len);
+int32_t tiesc_eeprom_write(uint32_t  offset, uint8_t  *buf, uint32_t  len);
+
 void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes);
 void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
-#else
-#define tiesc_memcpy    memcpy
-#define tiesc_memset    memset
-#endif
 
 void Configure_Rat(void);
 void Configure_Mbox(void);
 void Send_BootComplete_Message_To_Partner(void);
 
-#endif /* TIESC_SOC */
+#endif /* _TIESC_SOC_H_ */

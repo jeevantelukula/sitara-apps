@@ -40,20 +40,23 @@
 #include <ti/drv/i2c/I2C.h>
 #include <ti/board/src/am65xx_idk/include/board_cfg.h>
 
-
-I2C_Handle i2cLedhandle = NULL;
+/* Common handle for I2C 0 instance */
+I2C_Handle i2c0Handle = NULL;
 static I2C_Transaction i2cLedTransaction;
 static char i2cLedtxBuf[2] = {0x44 , 0x00};
 
 void Board_i2cLedInit()
 {
+    if(i2c0Handle == NULL)
+    {
     /*I2C Init */
     I2C_Params i2cParams;
 
     I2C_init();
     I2C_Params_init(&i2cParams);
     //    i2cParams.bitRate = I2C_400kHz;
-    i2cLedhandle = I2C_open(BOARD_I2C_IOEXP_INSTANCE, &i2cParams);
+        i2c0Handle = I2C_open(BOARD_I2C_IOEXP_INSTANCE, &i2cParams);
+    }
 
     i2cLedTransaction.slaveAddress = BOARD_I2C_IOEXP_DEVICE3_ADDR;
     i2cLedTransaction.writeBuf = (uint8_t *)&i2cLedtxBuf[0];
@@ -63,5 +66,5 @@ void Board_i2cLedInit()
 void Board_setDigOutput(uint8_t ledData)
 {
     i2cLedtxBuf[1] = ledData;
-    I2C_transfer(i2cLedhandle, &i2cLedTransaction);
+    I2C_transfer(i2c0Handle, &i2cLedTransaction);
 }

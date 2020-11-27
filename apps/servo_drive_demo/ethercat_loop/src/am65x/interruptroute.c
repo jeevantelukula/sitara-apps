@@ -36,7 +36,7 @@
 
 #include <interruptroute.h>
 
-uint32_t route_icss_interrupts_to_r5f(uint32_t icss_instance)
+int32_t route_icss_interrupts_to_r5f(uint32_t icss_instance)
 {
     /* Route ICSS Interrupts to R5F. */
     int32_t retVal = CSL_PASS;
@@ -122,14 +122,14 @@ uint32_t route_icss_interrupts_to_r5f(uint32_t icss_instance)
     else
     {
         retVal = INTERRUPT_ROUTE_ERROR;
-        UART_printf("Error in mapping ICSS interrupts to R5F");
+        UART_printf("Error in mapping ICSS interrupts to R5F\n");
     }
 
     return retVal;
 }
 
 
-uint32_t route_i2c_interrupts_to_r5f()
+int32_t route_i2c_interrupts_to_r5f()
 {
     /* Route I2C Interrupts to R5F. */
     int32_t retVal;
@@ -183,7 +183,87 @@ uint32_t route_i2c_interrupts_to_r5f()
     else
     {
         retVal = INTERRUPT_ROUTE_ERROR;
-        UART_printf("Error in mapping I2C interrupts to R5F");
+        UART_printf("Error in mapping I2C interrupt to R5F\n");
+    }
+
+    return retVal;
+}
+
+int32_t unroute_icss_interrupts_to_r5f(uint32_t icss_instance, int32_t interrupt_offset)
+{
+    int32_t retVal;
+    uint32_t i;
+    struct tisci_msg_rm_irq_release_req req;
+
+    req.dst_id                 = TISCI_DEV_MCU_ARMSS0_CPU0;
+    req.secondary_host         = TISCI_HOST_ID_R5_0;
+    req.ia_id                  = 0U;
+    req.vint                   = 0U;
+    req.global_event           = 0U;
+    req.vint_status_bit_index  = 0U;
+
+    req.valid_params           = TISCI_MSG_VALUE_RM_DST_ID_VALID
+                                      | TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID
+                                      | TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID;
+    if (icss_instance == ICSS_INSTANCE_ONE)
+    {
+        req.src_id             = TISCI_DEV_PRU_ICSSG0;
+    }
+    else if (icss_instance == ICSS_INSTANCE_TWO)
+    {
+        req.src_id             = TISCI_DEV_PRU_ICSSG1;
+    }
+    else if (icss_instance == ICSS_INSTANCE_THREE)
+    {
+        req.src_id             = TISCI_DEV_PRU_ICSSG2;
+    }
+
+    for(i = 0; NUM_ICSS_INTERRUPTS != i; i++)
+    {
+        req.src_index      = ICSSG_INTERRUPT_SRC_INDEX + i;
+        req.dst_host_irq   = interrupt_offset + i;
+
+        retVal =  Sciclient_rmIrqRelease(&req, SCICLIENT_SERVICE_WAIT_FOREVER);
+        if ( CSL_PASS != retVal )
+        {
+           break;
+        }
+    }
+
+    if(CSL_PASS != retVal)
+    {
+        retVal = INTERRUPT_ROUTE_ERROR;
+        UART_printf("Error in releasing ICSS interrupt routes to R5F\n");
+    }
+
+
+    return retVal;
+}
+
+int32_t unroute_i2c_interrupts_to_r5f(int32_t interrupt_offset)
+{
+    int32_t retVal;
+    struct tisci_msg_rm_irq_release_req req;
+
+    req.dst_id         = TISCI_DEV_MCU_ARMSS0_CPU0;
+    req.secondary_host = TISCI_HOST_ID_R5_0;
+    req.ia_id                  = 0U;
+    req.vint                   = 0U;
+    req.global_event           = 0U;
+    req.vint_status_bit_index  = 0U;
+    req.valid_params   = TISCI_MSG_VALUE_RM_DST_ID_VALID
+                              | TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID
+                              | TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID;
+    req.src_id         = TISCI_DEV_I2C0;
+    req.src_index      = I2C0_INTERRUPT_SRC_INDEX;
+    req.dst_host_irq   = interrupt_offset;
+
+    retVal =  Sciclient_rmIrqRelease(&req, SCICLIENT_SERVICE_WAIT_FOREVER);
+
+    if(CSL_PASS != retVal)
+    {
+        retVal = INTERRUPT_ROUTE_ERROR;
+        UART_printf("Error in releasing I2C interrupt route to R5F\n");
     }
 
     return retVal;

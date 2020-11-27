@@ -1,7 +1,7 @@
 /**
  *  \file   board_i2cLed.c
  *
- *  \brief  AM64xx IDK i2cLed APIs
+ *  \brief  AM64x IDK i2cLed APIs
  *
  */
 
@@ -36,3 +36,36 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
+
+#ifndef TIESC_EMULATION_PLATFORM
+
+#include <ti/drv/i2c/I2C.h>
+#include <ti/board/src/am64x_evm/include/board_cfg.h>
+
+
+I2C_Handle i2cLedhandle = NULL;
+static I2C_Transaction i2cLedTransaction;
+static char i2cLedtxBuf[2] = {0x44 , 0x00};
+
+void Board_i2cLedInit()
+{
+    /*I2C Init */
+    I2C_Params i2cParams;
+
+    I2C_init();
+    I2C_Params_init(&i2cParams);
+    //    i2cParams.bitRate = I2C_400kHz;
+    i2cLedhandle = I2C_open(BOARD_I2C_IOEXP_INSTANCE, &i2cParams);
+
+    i2cLedTransaction.slaveAddress = BOARD_I2C_IOEXP_DEVICE3_ADDR;
+    i2cLedTransaction.writeBuf = (uint8_t *)&i2cLedtxBuf[0];
+    i2cLedTransaction.writeCount = 2;
+}
+
+void Board_setDigOutput(uint8_t ledData)
+{
+    i2cLedtxBuf[1] = ledData;
+    I2C_transfer(i2cLedhandle, &i2cLedTransaction);
+}
+
+#endif /* TIESC_EMULATION_PLATFORM */

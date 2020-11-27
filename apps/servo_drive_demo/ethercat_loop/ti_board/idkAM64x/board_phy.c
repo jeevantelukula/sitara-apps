@@ -1,7 +1,7 @@
 /**
  *  \file   board_phy.c
  *
- *  \brief  AM64xx IDK Board specific phy parameters.
+ *  \brief  AM64x IDK Board specific phy parameters.
  *
  *   This file contains the phy hardware parameters specific to board.
  */
@@ -37,6 +37,8 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
+
+
 #include "stdio.h"
 #include "string.h"
 #include <stdlib.h>
@@ -47,34 +49,34 @@
 
 #include <ti/board/board.h>
 #include <board_phy.h>
+
 #include <board_misc.h>
 #include <board_gpioLed.h>
 
-#define AM64x_CPSW_PORT1_PHY_ADDR 0
-#define AM64x_CPSW_PORT2_PHY_ADDR 1
+/* TODO: Following to be added after confirmation*/
+/*
+#define AM64x_ICSS0_PORT1_PHY_ADDR 0
+#define AM64x_ICSS0_PORT2_PHY_ADDR 1
+*/
 
-#define AM64x_ICSS1_PORT1_PHY_ADDR 0
-#define AM64x_ICSS1_PORT2_PHY_ADDR 1
+#define AM64x_ICSS1_PORT1_PHY_ADDR  (0xf)
+#define AM64x_ICSS1_PORT2_PHY_ADDR  (0x3)
 
-#define AM64x_ICSS2_PORT1_PHY_ADDR 0
-#define AM64x_ICSS2_PORT2_PHY_ADDR 1
-
-#define MAX_ICSS_EMAC_PORTS     6
-
-
+#define MAX_ICSS_EMAC_PORTS     4
 
 int8_t Board_getPhyAddress(uint8_t instance, uint8_t portNumber)
 {
-    if(CPSW_PHY_ADDRESS == instance)
+    /*
+    if(PRUICSS1_PHY_ADDRESS == instance)
     {
         if(1u == portNumber)
         {
-            return AM64x_CPSW_PORT1_PHY_ADDR;
+            return AM64x_ICSS0_PORT1_PHY_ADDR;
         }
 
         else if(2u == portNumber)
         {
-            return AM64x_CPSW_PORT2_PHY_ADDR;
+            return AM64x_ICSS0_PORT2_PHY_ADDR;
         }
 
         else
@@ -83,7 +85,9 @@ int8_t Board_getPhyAddress(uint8_t instance, uint8_t portNumber)
         }
     }
 
-    else if(PRUICSS1_PHY_ADDRESS == instance)
+    else if(PRUICSS2_PHY_ADDRESS == instance)
+    */
+    if(PRUICSS2_PHY_ADDRESS == instance)
     {
         if(1u == portNumber)
         {
@@ -101,48 +105,9 @@ int8_t Board_getPhyAddress(uint8_t instance, uint8_t portNumber)
         }
     }
 
-    else if(PRUICSS2_PHY_ADDRESS == instance)
-    {
-        if(1u == portNumber)
-        {
-            return AM64x_ICSS2_PORT1_PHY_ADDR;
-        }
-
-        else if(2u == portNumber)
-        {
-            return AM64x_ICSS2_PORT2_PHY_ADDR;
-        }
-
-        else
-        {
-            return -1;
-        }
-    }
     else
     {
         return -1;
     }
 }
 
-#ifndef TIESC_EMULATION_PLATFORM
-int32_t Board_phyReset(uint8_t numPorts)
-{
-    //TODO: Not working!
-
-    //resetting PHYs of ICSS0 and ICSS1
-
-    GPIOSetDirMode_v0(CSL_GPIO1_BASE, 58, 0);
-    GPIOSetDirMode_v0(CSL_GPIO1_BASE, 38, 0);
-
-    GPIOPinWrite_v0(CSL_GPIO1_BASE, 58, 1);
-    GPIOPinWrite_v0(CSL_GPIO1_BASE, 38, 1);
-    GPIOPinWrite_v0(CSL_GPIO1_BASE, 58, 0);
-    GPIOPinWrite_v0(CSL_GPIO1_BASE, 38, 0);
-    delay_us(10);
-    GPIOPinWrite_v0(CSL_GPIO1_BASE, 58, 1);
-    GPIOPinWrite_v0(CSL_GPIO1_BASE, 38, 1);
-    delay_us(3000);
-
-    return 0;
-}
-#endif /* TIESC_EMULATION_PLATFORM */

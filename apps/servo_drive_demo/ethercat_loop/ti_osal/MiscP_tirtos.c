@@ -45,6 +45,19 @@ uint32_t OSAL_Timestamp_get32(void)
     return Timestamp_get32();
 }
 
+/*
+ *  ======== OSAL_Timestamp_get64 ========
+ */
+void OSAL_Timestamp_get64(TypesP_Timestamp64 *timestamp)
+{
+    Types_Timestamp64 timestamp64;
+    Timestamp_get64(&timestamp64);
+
+    timestamp->hi = timestamp64.hi;
+    timestamp->lo = timestamp64.lo;
+    return;
+}
+
 
 /*
  *  ======== OSAL_getCpuFrequint32_t ========

@@ -63,7 +63,6 @@ extern void OSAL_OS_start(void);
  */
 extern void OSAL_OS_exit(int stat);
 
-
 #ifdef __cplusplus
 }
 #endif

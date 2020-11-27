@@ -1,10 +1,10 @@
 /**
- * \file board_dp83867.c
- * \brief Contains DP83867 PHY Specific Apis
+ * \file board_dp83869.c
+ * \brief Contains DP83869 PHY Specific Apis
  *
 */
 /*
- * Copyright (c) 2018, Texas Instruments Incorporated
+ * Copyright (c) 2020, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,15 @@
 #include <board_dpphy.h>
 #include <soc_icss_header.h>
 
+#define DPPHY_OP_MODE_DECODE        0x1DF
+
+#define DPPHY_OP_MODE_DECODE_MII    (1u<<5)
+
+/*TODO: Remove this after verifying it to be working*/
+#if ! (defined(EIP_EMULATION_PLATFORM) || defined(PN_EMULATION_PLATFORM) || defined(TIESC_EMULATION_PLATFORM))
+
 /**
-* @brief Function does the  LED Configuration of DP83867 PHY
+* @brief Function does the  LED Configuration of DP83869 PHY
 *
 * @param mdioBaseAddress MDIO Base Address
 * @param phyNum Phy address of the port
@@ -82,6 +89,8 @@ void Board_phyLedConfig(uint32_t mdioBaseAddress, uint32_t phyNum,
 
     CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_LEDCR1_REG, phyregval);
 }
+#endif
+
 
 /**
 * @brief Function to configure PHY in MII mode
@@ -93,5 +102,9 @@ void Board_phyLedConfig(uint32_t mdioBaseAddress, uint32_t phyNum,
 */
 void Board_enablePhyMII(uint32_t mdioBaseAddress, uint32_t phyNum)
 {
-    //MII enabled by default. RMII not supported
+    uint16_t phyregval = 0;
+
+    MDIO_phyExtRegRead(mdioBaseAddress, phyNum, DPPHY_OP_MODE_DECODE, &phyregval);
+    phyregval |= DPPHY_OP_MODE_DECODE_MII;
+    MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_OP_MODE_DECODE, phyregval);
 }

@@ -96,7 +96,7 @@ extern bool icssgResetIsolated;
 
 
 int16_t icssInterruptOffset = 0;
-uint32_t i2cInterruptOffset = 0;
+int32_t i2cInterruptOffset = 0;
 
 uint8_t isEtherCATDevice(void)
 {
@@ -699,4 +699,19 @@ void Send_BootComplete_Message_To_Partner()
 {
 	/* In AM65x, there is no partner. */
 	return;
+}
+
+void tiesc_boardConfig(void)
+{
+    Board_IDInfo boardInfo;
+
+#ifndef DISABLE_UART_PRINT
+    Board_getIDInfo(&boardInfo);
+
+    UART_printf("\nBoard name \t: ");
+    UART_printf(boardInfo.boardName);
+
+    UART_printf("\nBoard Revision \t: ");
+    UART_printf(boardInfo.version);
+#endif
 }

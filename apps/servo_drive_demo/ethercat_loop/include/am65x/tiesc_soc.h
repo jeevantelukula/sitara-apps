@@ -34,123 +34,33 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
+
 #ifndef _TIESC_SOC_H_
 #define _TIESC_SOC_H_
 
-#ifdef SOC_AM335x
-#include <ti/starterware/include/board.h>
-#endif
-#ifdef SOC_AM437x
-#include <ti/starterware/include/hw/am437x.h>
+#include <ti/drv/pruss/soc/pruicss_soc.h>
+#include <ti/drv/pruss/pruicss_ver.h>
+
+/* The PRUSS drivers before version 1.0.0.16 have a typo in macro names*/
+#if (PRUICSS_DRV_VERSION_ID < 0x01000010)
+#define PRUICSS_INSTANCE_ONE   (PRUICCSS_INSTANCE_ONE)
+#define PRUICSS_INSTANCE_TWO   (PRUICCSS_INSTANCE_TWO)
+#define PRUICSS_INSTANCE_THREE (PRUICCSS_INSTANCE_THREE)
 #endif
 
-
-#define PRUICSS_INSTANCE_ONE   1
-#define PRUICSS_INSTANCE_TWO   2
-
-#if defined(SOC_AM571x)
-/* GPCFG MUX settings for MII  */
-#define GPCFG_GP_MUX_SEL_MII    4
 /* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
-#define TIESC_TASK_STACK_SIZE_MUL          1
-#elif defined(SOC_AM572x)
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
-#define TIESC_TASK_STACK_SIZE_MUL          1
-#elif defined(SOC_K2G)
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
-#define TIESC_TASK_STACK_SIZE_MUL          1
-#elif defined(SOC_AM65XX)
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
+#define SPI_EEPROM_DATA_OFFSET      0x100000
 #define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
-#define TIESC_TASK_STACK_SIZE_MUL          2
-#elif defined(SOC_AM64X)
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
-#define TIESC_TASK_STACK_SIZE_MUL          2
-#elif defined(SOC_AM335x)
-/* EEPROM data offset in SPI/QSPI Flash */
-#ifdef AMIC11X_ONCHIP_MEM_MODE
-#define SPI_EEPROM_DATA_OFFSET 0x10000
-#else
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#endif
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
-#define TIESC_TASK_STACK_SIZE_MUL          1
-#elif defined(SOC_AM437x)
-/* Mapping offset to OCMC ram  */
-#define SOC_ON_CHIP_MEM_OFFSET  SOC_OCMCRAM_REG
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET 0x100000
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
-#define TIESC_TASK_STACK_SIZE_MUL          1
-#else
-#define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_TWO
-#define TIESC_TASK_STACK_SIZE_MUL          1
-#endif
+#define TIESC_TASK_STACK_SIZE_MUL   2
 
 /* Change this define to switch between PRUICSS for AM571x */
 #define PRUICSS_INSTANCE        DEFAULT_PRUICSS_INSTANCE
 
-#if defined(SOC_AM571x)
-#if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#else
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#endif
-#elif defined(SOC_K2G)
-#if (PRUICSS_INSTANCE == PRUICSS_INSTANCE_ONE)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#else
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#endif
-#elif defined(SOC_AM335x)
-#if defined(iceAMIC11x)
 #define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
 #define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#else
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#endif
-#elif defined(SOC_AM437x)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#elif defined(SOC_AM572x)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#elif defined(SOC_AM65XX)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#elif defined(SOC_AM64X)
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_LOW
-#ifndef TIESC_EMULATION_PLATFORM
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#else
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#endif
-#else
-#define TIESC_LINK0_POL   TIESC_LINK_POL_ACTIVE_HIGH
-#define TIESC_LINK1_POL   TIESC_LINK_POL_ACTIVE_LOW
-#endif
 
-#if defined(SOC_K2G)
-#define SPINLOCK_GRANTED       1
-#define SPINLOCK_UNLOCK        1
-#else
 #define SPINLOCK_GRANTED       0
 #define SPINLOCK_UNLOCK        0
-#endif
 
 
 uint8_t isEtherCATDevice(void);
@@ -173,11 +83,7 @@ void initSpinlock();
 
 void Send_BootComplete_Message_To_Partner(void);
 
-#if defined(SOC_AM65XX) || defined (SOC_AM64X)
 void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes);
 void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
-#else
-#define tiesc_memcpy    memcpy
-#define tiesc_memset    memset
-#endif
+
 #endif /* _TIESC_SOC_H_*/

@@ -35,6 +35,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
+#ifndef TIESC_EMULATION_PLATFORM
+
 #include <ti/drv/i2c/I2C.h>
 #include <ti/drv/uart/UART_stdio.h>
 #include <delay_us.h>
@@ -56,12 +58,20 @@
 #define ROTARY_SWITCH_I2C_INSTANCE               BOARD_ROTARY_SWICH_INSTANCE
 #endif
 
+#ifdef SOC_AM65XX
+extern I2C_Handle i2c0Handle;
+#else
 extern I2C_Handle i2cLedhandle;
+#endif
+
 I2C_Transaction i2cTransaction;
 uint8_t  regRdBuf;
 uint8_t  regWrBuf;
 void Board_initRotarySwitch(void)
 {
+#ifdef SOC_AM65XX
+    I2C_Handle i2cLedhandle = i2c0Handle;
+#endif
     /*I2C Init */
     I2C_Params i2cParams;
     I2C_init();
@@ -103,6 +113,10 @@ void Board_initRotarySwitch(void)
 
 void Board_readRotarySwitch(uint8_t *readBuf)
 {
+#ifdef SOC_AM65XX
+    I2C_Handle i2cLedhandle = i2c0Handle;
+#endif
+
     regRdBuf = 0x0;
     I2C_transfer(i2cLedhandle, &i2cTransaction);
     regRdBuf = regRdBuf & 0x0F;
@@ -110,3 +124,5 @@ void Board_readRotarySwitch(uint8_t *readBuf)
         regRdBuf; //taking only the lower 4 bits which reflect the input ports
     return;
 }
+
+#endif
