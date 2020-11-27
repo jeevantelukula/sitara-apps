@@ -56,7 +56,7 @@
 #define SIM_ECAT_TIMER_PERIOD_USEC  ( 125*8 )       /* Timer period (usec.) */
 #define SIM_ECAT_TIMER_INTNUM       ( 154 )         /* Timer interrupt, R5F1_0 DMTIMER2 INT */
 
-#define MAX_ITERATION_COUNT  (50)
+#define MAX_ITERATION_COUNT  (10000)
 
 
 #endif
