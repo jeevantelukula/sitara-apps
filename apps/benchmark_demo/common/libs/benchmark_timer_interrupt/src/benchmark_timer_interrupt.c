@@ -58,8 +58,13 @@ void benchmarkTimerTickFxn(void *arg)
    uint32_t latency;
 
    /* compute the timer interrupt latency */
+#if defined(SOC_AM65XX)
    curVal = TIMERCounterGet(CSL_MCU_TIMER2_CFG_BASE);
    reloadVal = TIMERReloadGet(CSL_MCU_TIMER2_CFG_BASE);
+#else
+   curVal = TIMERCounterGet(CSL_TIMER2_CFG_BASE);
+   reloadVal = TIMERReloadGet(CSL_TIMER2_CFG_BASE);
+#endif
    latency = (curVal-reloadVal)*BENCHMARK_TIMER_TICK_PRD;
    if (latency>gTimerIntStat.intLatencyMax)
    {

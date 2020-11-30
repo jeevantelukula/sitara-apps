@@ -16,7 +16,9 @@ TARGETTYPE  := exe
 DEFS+=__COMPILER_BARRIER
 DEFS+=BUILD_MCU$(MCUNUM)
 DEFS+=BAREMETAL
+ifeq ($(BUILD_LINUX_APPS), 1)
 DEFS+=ENABLE_IPC_RPMSG_CHAR
+endif
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)

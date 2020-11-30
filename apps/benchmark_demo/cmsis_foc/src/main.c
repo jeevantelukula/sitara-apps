@@ -55,10 +55,6 @@
 
 void main(void) 
 {
-#ifdef DEBUG_PRINT
-  volatile uint32_t msCounter = 0;
-#endif
-
 #ifndef IO_CONSOLE
 	Board_initCfg boardCfg;
 #endif
@@ -99,15 +95,6 @@ void main(void)
         /* Execute FOC loop 1 time */
         focLoop(1);
         gTimerIntStat.isrCntPrev++;
-#ifdef DEBUG_PRINT
-		msCounter++;
-		if (msCounter>=DEBUG_PRINT_INTERVAL)
-		{
-			msCounter = 0;
-            MCBENCH_log(" gCountPerLoopAve = %d\n", gCountPerLoopAve);
-            MCBENCH_log(" gCountPerLoopMax = %d\n", gCountPerLoopMax);
-		}
-#endif      
       }
 
 #ifdef ENABLE_IPC_RPMSG_CHAR

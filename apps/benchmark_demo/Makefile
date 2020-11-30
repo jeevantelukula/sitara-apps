@@ -84,7 +84,7 @@ endif
 
 ifeq ($(TARGET_PLATFORM),AM64X)
 SYSFWVERSION=V3
-SYSFWFILE=sysfw-zebu.bin
+SYSFWFILE=sysfw.bin
 KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am6x-evm.bin,0x80080000
 DTB_IMG=
 endif
