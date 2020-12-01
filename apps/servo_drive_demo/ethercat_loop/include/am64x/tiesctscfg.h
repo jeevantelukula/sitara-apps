@@ -54,6 +54,6 @@
 /* Time Sync Compare Event Router input & output */
 #define TS_CMPEVT_INTRTR_IN0    ( CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_7 )  /* PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_7 */
 #define TS_CMPEVT_INTRTR_OUT0   ( 24 )  /* CMP_EVT_RTR_OUT_24 -> R5F2_0/R5F2_1_IN_48 */
-#define TS_CMPEVT_INTRTR_HOST_ID0 ( TISCI_HOST_ID_MAIN_1_R5_0 )    /* Non-secure context Host ID */
+#define TS_CMPEVT_INTRTR_HOST_ID0 ( TISCI_HOST_ID_MAIN_1_R5_1 )    /* Non-secure context Host ID */
 
 #endif /* _TIESC_TS_CFG_H_ */
