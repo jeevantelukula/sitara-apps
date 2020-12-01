@@ -73,10 +73,10 @@ IMG4=
 HLOS_BIN_PATH=$(PSDK_PATH)/linux/prebuilt-images
 ATF_IMG=mpu1_0,$(HLOS_BIN_PATH)/bl31.bin,0x70020000,0x70020000
 OPTEE_IMG=load_only,$(HLOS_BIN_PATH)/bl32.bin,0x9e800000
-ifneq ($(RTOS_ONLY_BUILD),1)
-	HLOS_BOOT="optimized"
+ifeq ($(BUILD_LINUX_APPS),1)
+HLOS_BOOT="optimized"
 else
-	HLOS_BOOT=
+HLOS_BOOT=
 endif
 
 ifeq ($(TARGET_PLATFORM),AM65X)
@@ -98,11 +98,7 @@ export GCC_LINUX_ARM_PATH=$(PSDK_PATH)/rtos/gcc-arm-9.2-2019.12-mingw-w64-i686-a
 endif
 
 app_img_build:
-ifneq ($(RTOS_ONLY_BUILD),1)
 	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
-else
-	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
-endif
 #Create Benchmark Demo SD Card Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/app)"
