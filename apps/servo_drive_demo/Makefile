@@ -63,7 +63,7 @@ IMG1=m4f_0,$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/M4F/NO_OS/$(TAR
 IMG2=mcu1_0,$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/R5F/SYSBIOS/$(TARGET_BUILD)/app_tirtos_mcu1_0_servo_drive_ethcat.out)
 IMG3=mcu2_0,$(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu2_0_servo_drive_pscontrol.out)
 SYSFWVERSION=V3
-SYSFWFILE=sysfw-zebu.bin
+SYSFWFILE=sysfw.bin
 endif
 
 ifneq ($(RTOS_ONLY_BUILD),1)

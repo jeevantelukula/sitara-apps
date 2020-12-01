@@ -86,7 +86,7 @@ ifeq ($(TARGET_PLATFORM),AM64X)
 SYSFWVERSION=V3
 SYSFWFILE=sysfw.bin
 KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am6x-evm.bin,0x80080000
-DTB_IMG=
+DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am64-base-board.dtb,0x82000000
 endif
 
 ifeq ($(HOST_OS),Windows_NT)
@@ -100,7 +100,7 @@ app_img_build:
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/app)"
 ifeq ($(TARGET_PLATFORM),AM64X)
-	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
+	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
 endif
 ifeq ($(TARGET_PLATFORM),AM65X)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
@@ -110,7 +110,7 @@ endif
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/app)"
 ifeq ($(TARGET_PLATFORM),AM64X)
-	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
+	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
 endif
 ifeq ($(TARGET_PLATFORM),AM65X)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
