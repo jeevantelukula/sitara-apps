@@ -70,27 +70,36 @@ IMG1=mcu1_0,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no
 IMG2=mcu1_1,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_1_cmsis_cfft.out
 IMG3=
 IMG4=
+
+ifeq ($(RTOS_ONLY_BUILD),0)
+HLOS_BOOT="optimized"
 HLOS_BIN_PATH=$(PSDK_PATH)/linux/prebuilt-images
 ATF_IMG=mpu1_0,$(HLOS_BIN_PATH)/bl31.bin,0x70020000,0x70020000
 OPTEE_IMG=load_only,$(HLOS_BIN_PATH)/bl32.bin,0x9e800000
-ifeq ($(BUILD_LINUX_APPS),1)
-HLOS_BOOT="optimized"
+ifeq ($(TARGET_PLATFORM),AM65X)
+KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am65xx-evm.bin,0x80080000
+DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am654-base-board.dtb,0x82000000
+endif
+ifeq ($(TARGET_PLATFORM),AM64X)
+KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am6x-evm.bin,0x80080000
+DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am64-base-board.dtb,0x82000000
+endif
 else
 HLOS_BOOT=
+ATF_IMG=
+OPTEE_IMG=
+KERNEL_IMG=
+DTB_IMG=
 endif
 
 ifeq ($(TARGET_PLATFORM),AM65X)
 SYSFWVERSION=V0
 SYSFWFILE=sysfw_sr2.bin
-KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am65xx-evm.bin,0x80080000
-DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am654-base-board.dtb,0x82000000
 endif
 
 ifeq ($(TARGET_PLATFORM),AM64X)
 SYSFWVERSION=V3
 SYSFWFILE=sysfw.bin
-KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am6x-evm.bin,0x80080000
-DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am64-base-board.dtb,0x82000000
 endif
 
 ifeq ($(HOST_OS),Windows_NT)
