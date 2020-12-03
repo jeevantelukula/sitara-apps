@@ -135,7 +135,7 @@ void Configure_Rat(void)
 
 void Configure_Mbox(void)
 {
-    MailboxReset(MAILBOX_BASE_ADDRESS);
+    //MailboxReset(MAILBOX_BASE_ADDRESS);
     MailboxDisableQueueNotFullInt(MAILBOX_BASE_ADDRESS, MAILBOX_R5F0_CPUID, MAILBOX_QUEUE_0);
     MailboxEnableNewMsgInt(MAILBOX_BASE_ADDRESS, MAILBOX_M4F_CPUID, MAILBOX_QUEUE_0);
 }
