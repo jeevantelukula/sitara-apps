@@ -68,56 +68,54 @@ SECTIONS
 {
 /* 'intvecs' and 'intc_text' sections shall be placed within                  */
 /* a range of +\- 16 MB                                                       */
-    .intvecs 	: {} palign(8) 		> OCSRAM2
-    .intc_text 	: {} palign(8) 		> OCSRAM2
+    .intvecs 	: {} palign(8) 		> R5F_ATCM
+    .intc_text 	: {} palign(8) 		> R5F_ATCM
     .rstvectors 	: {} palign(256) 		> R5F_ATCM_SBL_RSVD
-    .bootCode      : {} palign(8)      > OCSRAM2
-    .startupCode   : {} palign(8)      > OCSRAM2
-    .startupData   : {} palign(8)      > OCSRAM2, type = NOINIT
-    .text    	: {} palign(8) 		> OCSRAM2
-    .const   	: {} palign(8) 		> OCSRAM2
-    .cinit   	: {} palign(8) 		> OCSRAM2
-    .pinit   	: {} palign(8) 		> OCSRAM2
-    .bss     	: {} align(4)  		> OCSRAM2
-    .far     	: {} align(4)  		> OCSRAM2
-    .data    	: {} palign(128) 	> OCSRAM2
-    .boardcfg_data        : {} palign(128)           > OCSRAM2
-    .sysmem  	: {} 				> OCSRAM2
+    .bootCode      : {} palign(8)      > R5F_ATCM
+    .startupCode   : {} palign(8)      > R5F_ATCM
+    .startupData   : {} palign(8)      > R5F_ATCM, type = NOINIT
+    .text    	: {} palign(8) 		> OCSRAM3
+    .const   	: {} palign(8) 		> OCSRAM3
+    .cinit   	: {} palign(8) 		> OCSRAM3
+    .pinit   	: {} palign(8) 		> OCSRAM3
+    .bss     	: {} align(4)  		> OCSRAM3
+    .far     	: {} align(4)  		> OCSRAM3
+    .data    	: {} palign(128) 	> OCSRAM3
+    .boardcfg_data        : {} palign(128)           > OCSRAM3
+    .sysmem  	: {} 				> OCSRAM3
 
     /* USB ram disk dev-msc example */
-    .bss:extMemCache:ramdisk : {} align (32)     > OCSRAM2
+    .bss:extMemCache:ramdisk : {} align (32)     > OCSRAM3
 
     /* USB or any other LLD buffer for benchmarking */
-    .benchmark_buffer (NOLOAD) {} ALIGN (8) > OCSRAM2
+    .benchmark_buffer (NOLOAD) {} ALIGN (8) > OCSRAM3
 
-    .stack  	: {} align(4)		> OCSRAM2  (HIGH)
-    .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
+    .stack  	: {} align(4)		> OCSRAM3  (HIGH)
+    .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> OCSRAM3  (HIGH)
     RUN_START(__IRQ_STACK_START)
     RUN_END(__IRQ_STACK_END)
-    .fiqStack  	: {. = . + __FIQ_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
+    .fiqStack  	: {. = . + __FIQ_STACK_SIZE;} align(4)		> OCSRAM3  (HIGH)
     RUN_START(__FIQ_STACK_START)
     RUN_END(__FIQ_STACK_END)
-    .abortStack  	: {. = . + __ABORT_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
+    .abortStack  	: {. = . + __ABORT_STACK_SIZE;} align(4)		> OCSRAM3  (HIGH)
     RUN_START(__ABORT_STACK_START)
     RUN_END(__ABORT_STACK_END)
-    .undStack  	: {. = . + __UND_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
+    .undStack  	: {. = . + __UND_STACK_SIZE;} align(4)		> OCSRAM3  (HIGH)
     RUN_START(__UND_STACK_START)
     RUN_END(__UND_STACK_END)
-    .svcStack  	: {. = . + __SVC_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
+    .svcStack  	: {. = . + __SVC_STACK_SIZE;} align(4)		> OCSRAM3  (HIGH)
     RUN_START(__SVC_STACK_START)
     RUN_END(__SVC_STACK_END)
 
 /* Additional sections settings 	*/
 
-    .bss:l3mem              (NOLOAD)(NOINIT) : {} > OCSRAM2
-    .bss:ddr_shared_mem     (NOLOAD) : {} > DDR_MCU1_0_IPC
     .testInCode    	: {} palign(8) 		> R5F_ATCM
     .testInData    	: {} palign(8) 		> R5F_ATCM
     .resource_table : {
         __RESOURCE_TABLE = .;
-    } > DDR_MCU1_0_RESOURCE_TABLE
-	.tracebuf    	: {} palign(1024) 		> DDR_MCU1_0_IPC
-	ipc_data_buffer : {} palign(128) 		> DDR_MCU1_0_IPC
+    } > DDR_MCU2_0_RESOURCE_TABLE
+	.tracebuf    	: {} palign(1024) 		> DDR_MCU2_0_IPC
+	ipc_data_buffer : {} palign(128) 		> DDR_MCU2_0
 }  /* end of SECTIONS */
 
 /*----------------------------------------------------------------------------*/

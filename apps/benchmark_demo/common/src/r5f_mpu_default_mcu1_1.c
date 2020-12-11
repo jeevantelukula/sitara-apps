@@ -155,7 +155,7 @@ const CSL_ArmR5MpuRegionCfg  gCslR5MpuCfg[CSL_ARM_R5F_MPU_REGIONS_MAX] =
         /* Region 7 configuration: Ring buffer */
         .regionId         = 7U,
         .enable           = 1U,
-        .baseAddr         = 0xA0000000,
+        .baseAddr         = 0xA1000000,
         .size             = CSL_ARM_R5_MPU_REGION_SIZE_2MB,
         .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
         .exeNeverControl  = 1U,
@@ -169,8 +169,8 @@ const CSL_ArmR5MpuRegionCfg  gCslR5MpuCfg[CSL_ARM_R5F_MPU_REGIONS_MAX] =
         /* Region 8 configuration: Ring buffer */
         .regionId         = 8U,
         .enable           = 1U,
-        .baseAddr         = 0xA1000000,
-        .size             = CSL_ARM_R5_MPU_REGION_SIZE_2MB,
+        .baseAddr         = 0xA5000000,
+        .size             = CSL_ARM_R5_MPU_REGION_SIZE_8MB,
         .subRegionEnable  = CSL_ARM_R5_MPU_SUB_REGION_ENABLE_ALL,
         .exeNeverControl  = 1U,
         .accessPermission = CSL_ARM_R5_ACC_PERM_PRIV_USR_RD_WR,
@@ -179,5 +179,4 @@ const CSL_ArmR5MpuRegionCfg  gCslR5MpuCfg[CSL_ARM_R5F_MPU_REGIONS_MAX] =
         .cachePolicy      = CSL_ARM_R5_CACHE_POLICY_NON_CACHEABLE,
         .memAttr          = 0U,
     },
-    
 };

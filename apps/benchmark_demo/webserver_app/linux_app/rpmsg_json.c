@@ -59,27 +59,41 @@
 #include "jsmn.h"
 #include "benchmark_stat.h"
 
+#ifndef AM65X
 #define NUM_R5_CORES 4
+#else
+#define NUM_R5_CORES 2
+#endif
 #define NUM_R5_APPS 5
 core_stat R5CoreStat[NUM_R5_CORES];
 core_output A53CoreStat;
 core_input curR5CoreInput[NUM_R5_CORES] = {
   {0, 0, 0},
   {0, 0, 0},
+#ifndef AM65X
   {0, 0, 0},
-  {0, 0, 0}
+  {0, 0, 0},
+#endif
 };
 
 /* Change BENCHMARK_DEMO_FW_ROOT is required for this program to run */
 /* either provide it via build system or it will be default to the following location */
 #ifndef BENCHMARK_DEMO_FW_ROOT
+#ifndef AM65X
+#define BENCHMARK_DEMO_FW_ROOT "/lib/firmware/sitara-apps/benchmark_demo/out/AM64X/R5F/NO_OS/release"
+#else
 #define BENCHMARK_DEMO_FW_ROOT "/lib/firmware/sitara-apps/benchmark_demo/out/AM65X/R5F/NO_OS/release"
+#endif
 #endif
 
 /* Change RPMSG_FW_PATHNAME is required for this program to run */
 /* either provide it via build system or it will be default to the following location */
 #ifndef RPMSG_FW_PATHNAME
+#ifndef AM65X
+#define RPMSG_FW_PATHNAME "/lib/firmware/am64-main-r5f%d_%d-fw"
+#else
 #define RPMSG_FW_PATHNAME "/lib/firmware/am65x-mcu-r5f%d_%d-fw"
+#endif
 #endif
 
 char commandBuffer[256];
@@ -119,31 +133,31 @@ long diff(struct timespec start, struct timespec end)
 
 int send_msg(int fd, char *msg, int len)
 {
-	int ret = 0;
+    int ret = 0;
 
-	ret = write(fd, msg, len);
-	if (ret < 0) {
-		perror("Can't write to rpmsg endpt device\n");
-		return -1;
-	}
+    ret = write(fd, msg, len);
+    if (ret < 0) {
+        perror("Can't write to rpmsg endpt device\n");
+        return -1;
+    }
 
-	return ret;
+    return ret;
 }
 
 int recv_msg(int fd, int len, char *reply_msg, int *reply_len)
 {
-	int ret = 0;
+    int ret = 0;
 
-	/* Note: len should be max length of response expected */
-	ret = read(fd, reply_msg, len);
-	if (ret < 0) {
-		perror("Can't read from rpmsg endpt device\n");
-		return -1;
-	} else {
-		*reply_len = ret;
-	}
+    /* Note: len should be max length of response expected */
+    ret = read(fd, reply_msg, len);
+    if (ret < 0) {
+        perror("Can't read from rpmsg endpt device\n");
+        return -1;
+    } else {
+        *reply_len = ret;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
@@ -792,8 +806,8 @@ int main(int argc, char *argv[])
   /* Use auto-detection for SoC */
   ret = rpmsg_char_init(NULL);
   if (ret) {
-	printf("rpmsg_char_init failed, ret = %d\n", ret);
-	return ret;
+    printf("rpmsg_char_init failed, ret = %d\n", ret);
+    return ret;
   }
   
   while (1)
@@ -803,11 +817,11 @@ int main(int argc, char *argv[])
 #ifdef DEBUG_PRINT
     printf("%d bytes read and %d tokens parsed\n", bytesRead, token_num);
 #endif
-    
+
     /* update the core stats from JSON file */ 
     json_read_fields(dataBuf, bytesRead, tokenList, token_num, R5CoreStat, NUM_R5_CORES, &A53CoreStat);
-  
-    for (j=0; j<NUM_R5_CORES/2; j++)
+
+    for (j=0; j<NUM_R5_CORES; j++)
     {
       /* update the curR5CoreInput[j] according the JSON file */
       /* if we have a new selection */
@@ -817,8 +831,9 @@ int main(int argc, char *argv[])
         printf("mod_flag set for core %d\n", j);
 #endif
         /* if we have a new app selection */
-        if (R5CoreStat[j].input.app!=curR5CoreInput[j].app)
+        if ((R5CoreStat[j].input.app!=curR5CoreInput[j].app)&&(j%2))
         {
+            /* Stop the higher core in the cluster first */
 #ifdef DEBUG_PRINT
             printf("Switch from %d to %d\n", R5CoreStat[j].input.app, curR5CoreInput[j].app);
 #endif
@@ -834,20 +849,81 @@ int main(int argc, char *argv[])
               printf("Failed to stop rpmsg_char driver.\n");
               return -EINVAL;
             }
-            /* change the soft link for R5 core j */ 
-            sprintf(commandBuffer, softLinkFormat[curR5CoreInput[j].app-1], 1, j, 0, j); 
+            /* wait 1sec for the R5 application to stop */
+            usleep(1000000);
+
+            /* Stop the lower core in the cluster second */
 #ifdef DEBUG_PRINT
-            printf("Softlink: %s\n", commandBuffer);			
+            printf("Switch from %d to %d\n", R5CoreStat[j-1].input.app, curR5CoreInput[j-1].app);
+#endif
+            /* stop the app on R5 app on core j-1 */
+            sprintf(commandBuffer, "echo stop > /sys/class/remoteproc/remoteproc%d/state", j-1);
+#ifdef DEBUG_PRINT
+            printf("Stop: %s\n", commandBuffer);
+#endif
+            ret = system(commandBuffer);
+            if (ret < 0) {
+              printf("Failed to stop rpmsg_char driver.\n");
+              return -EINVAL;
+            }
+            /* wait 1sec for the R5 application to stop */
+            usleep(1000000);
+
+            /* Start the lower core in the cluster first */
+            /* change the soft link for R5 core j-1 */
+            sprintf(commandBuffer, softLinkFormat[curR5CoreInput[j-1].app-1], 1+((j-1)/2), (j-1)%2, 0+((j-1)/2), (j-1)%2);
+#ifdef DEBUG_PRINT
+            printf("Softlink: %s\n", commandBuffer);
 #endif
             ret = system(commandBuffer);
             if (ret < 0) {
               printf("Failed to change soft link.\n");
               return -EINVAL;
             }
-            /* load and start the R5 app on core j */
-            sprintf(commandBuffer, "echo start > /sys/class/remoteproc/remoteproc%d/state", j); 
+            ret = system("sync");
+            if (ret < 0) {
+              printf("Failed to change soft link.\n");
+              return -EINVAL;
+            }
+            /* wait 1sec for the softlink to get ready */
+            usleep(1000000);
+
+            /* load and start the R5 app on core j-1 */
+            sprintf(commandBuffer, "echo start > /sys/class/remoteproc/remoteproc%d/state", j-1);
 #ifdef DEBUG_PRINT
-            printf("Start: %s\n", commandBuffer);			
+            printf("Start: %s\n", commandBuffer);
+#endif
+            ret = system(commandBuffer);
+            if (ret < 0) {
+              printf("Failed to start rpmsg_char driver.\n");
+              return -EINVAL;
+            }
+            /* wait 1sec for the R5 application to get ready */
+            usleep(1000000);
+
+            /* Start the higher core in the cluster second */
+            /* change the soft link for R5 core j */
+            sprintf(commandBuffer, softLinkFormat[curR5CoreInput[j].app-1], 1+(j/2), j%2, 0+(j/2), j%2);
+#ifdef DEBUG_PRINT
+            printf("Softlink: %s\n", commandBuffer);
+#endif
+            ret = system(commandBuffer);
+            if (ret < 0) {
+              printf("Failed to change soft link.\n");
+              return -EINVAL;
+            }
+            ret = system("sync");
+            if (ret < 0) {
+              printf("Failed to change soft link.\n");
+              return -EINVAL;
+            }
+            /* wait 1sec for the softlink to get ready */
+            usleep(1000000);
+
+            /* load and start the R5 app on core j */
+            sprintf(commandBuffer, "echo start > /sys/class/remoteproc/remoteproc%d/state", j);
+#ifdef DEBUG_PRINT
+            printf("Start: %s\n", commandBuffer);
 #endif
             ret = system(commandBuffer);
             if (ret < 0) {
@@ -855,14 +931,22 @@ int main(int argc, char *argv[])
               return -EINVAL;
             }
 
-            /* wait 3sec for the R5 application to get ready */
-            usleep(3000000);
+            /* wait 1sec for the R5 application to get ready */
+            usleep(1000000);
         }
 
         /* if we have a new app selection */
         if (R5CoreStat[j].input.freq!=curR5CoreInput[j].freq)
         {
+            /* update the current app selection */
             curR5CoreInput[j].freq = R5CoreStat[j].input.freq;
+        }
+
+        if ((R5CoreStat[j].input.app!=curR5CoreInput[j].app)&&((j&0x1)==0))
+        {
+            /* update the current app selection */
+            curR5CoreInput[j].app = R5CoreStat[j].input.app;
+            continue;
         }
       }
 
@@ -872,37 +956,42 @@ int main(int argc, char *argv[])
        * remote processor
       */
       sprintf(eptdev_name, "rpmsg-char-%d-%d", j, getpid());
-      rcdev = rpmsg_char_open(j, DEVICE_NAME, REMOTE_ENDPT,
-				eptdev_name, FLAGS);
+#ifdef AM65X
+      rcdev = rpmsg_char_open(R5F_MCU0_0+j, DEVICE_NAME, REMOTE_ENDPT,
+                eptdev_name, FLAGS);
+#else
+      rcdev = rpmsg_char_open(R5F_MAIN0_0+j, DEVICE_NAME, REMOTE_ENDPT,
+                eptdev_name, FLAGS);
+#endif
       if (!rcdev) {
-		perror("Can't create an endpoint device");
-		return -1;
+        perror("Can't create an endpoint device");
+        return -1;
       }
 
 #ifdef DEBUG_PRINT
       printf("Created endpt device %s, fd = %d port = %d\n", eptdev_name,
-		rcdev->fd, rcdev->endpt);      /* update the RPMgs_char device name */
+      rcdev->fd, rcdev->endpt);      /* update the RPMgs_char device name */
 #endif
 
       /* Copy the curR5CoreInput[j].input into the sending data buffer. */
       packet_len = PAYLOAD_SIZE;
-	  memcpy((char *)packet_buf, &curR5CoreInput[j].app, packet_len);
+      memcpy((char *)packet_buf, &curR5CoreInput[j].app, packet_len);
       
       clock_gettime(CLOCK_REALTIME, &start);
 
       ret = send_msg(rcdev->fd, (char *)packet_buf, packet_len);
       if (ret < 0) {
-		printf("send_msg failed, ret = %d\n", ret);
-		return -1;
-	  }
-	  if (ret != packet_len) {
-		printf("bytes written does not match send request, ret = %d, packet_len = %d\n",
-				ret, packet_len);
-		return -1;
-	  }
-	  
+        printf("send_msg failed, ret = %d\n", ret);
+        return -1;
+      }
+      if (ret != packet_len) {
+        printf("bytes written does not match send request, ret = %d, packet_len = %d\n",
+                ret, packet_len);
+        return -1;
+      }
+
 #ifdef DEBUG_PRINT
-	  printf("Sent message to core%d: size=%d\n", j, packet_len);
+      printf("Sent message to core%d: size=%d\n", j, packet_len);
       /* print out sent data size */
       dataPtr = (int *)packet_buf;
       for (k = 0; k < packet_len/sizeof(int); k++) {
@@ -911,14 +1000,14 @@ int main(int argc, char *argv[])
       printf("\n");
 #endif
 
-	  ret = recv_msg(rcdev->fd, 256, (char *)packet_buf, &packet_len);
-	  if (ret < 0) {
-		printf("recv_msg failed for iteration %d, ret = %d\n", ret);
-		return -1;
-	  }
+      ret = recv_msg(rcdev->fd, 256, (char *)packet_buf, &packet_len);
+      if (ret < 0) {
+        printf("recv_msg failed for iteration %d, ret = %d\n", ret);
+        return -1;
+      }
 
 #ifdef DEBUG_PRINT
-	  printf("Receided message from core%d: size=%d\n", j, packet_len);
+      printf("Receided message from core%d: size=%d\n", j, packet_len);
       /* print out received data size */
       dataPtr = (int *)packet_buf;
       for (k = 0; k < packet_len/sizeof(int); k++) {
@@ -927,19 +1016,19 @@ int main(int argc, char *argv[])
       printf("\n");
 #endif
 
-	  clock_gettime(CLOCK_REALTIME, &end);
+      clock_gettime(CLOCK_REALTIME, &end);
       elapsed = diff(start, end);
 
       /* save the RPMsg data in R5CoreStat[] */
       memcpy(&R5CoreStat[j], (char *)packet_buf, packet_len);
-	  	  
+
       printf("Avg round trip time: %ld usecs\n", elapsed);
 
-	  ret = rpmsg_char_close(rcdev);
-	  if (ret < 0) {
+      ret = rpmsg_char_close(rcdev);
+      if (ret < 0) {
         printf("rpmsg_char_close() failed\n");
-		return -1;
-	  }
+        return -1;
+      }
     }
 
     /* Generate JSON file using the core stats */

@@ -25,7 +25,7 @@ APPDIR := $(abspath $(SDIR)/..)
 
 # Provide list of C files by using built-in macro
 CSOURCES    := $(call all-c-files)
-CSOURCES    += ../../common/src/r5f_mpu_default.c
+CSOURCES    += ../../common/src/r5f_mpu_default_mcu$(MCUNUM).c
 
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include

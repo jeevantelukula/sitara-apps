@@ -100,24 +100,42 @@ MEMORY
     /*******************************************************/
     /*                      DDR Memory                     */
     /*******************************************************/
-    /* DDR for MCU1_0 for Linux IPC [ size 1024.00 KB ] */
-    DDR_MCU1_0_IPC		( RWIX )	: ORIGIN = 0xA0000000 , LENGTH = 0x00100000
+    /* DDR for MCU1_0 for Linux IPC [ size 1024.00 B ] */
+    DDR_MCU1_0_RESOURCE_TABLE		( RWIX )	: ORIGIN = 0xA0100000 , LENGTH = 0x00000400
     /* DDR for MCU1_0 for Linux resource table [ size 1024 B ] */
-    DDR_MCU1_0_RESOURCE_TABLE	( RWIX )	: ORIGIN = 0xA0100000 , LENGTH = 0x00000400
-    /* DDR for MCU1_0 for code/data [ size ~15.00 MB ] */
-    DDR_MCU1_0			( RWIX )	: ORIGIN = 0xA0100400 , LENGTH = 0x00EFFC00
+    DDR_MCU1_0_IPC	( RWIX )	: ORIGIN = 0xA0100400 , LENGTH = 0x00100000
+    /* DDR for MCU1_0 for code/data [ size 12.00 MB ] */
+    DDR_MCU1_0			( RWIX )	: ORIGIN = 0xA0400000 , LENGTH = 0x00C00000
 
-    /* DDR for MCU1_1 for Linux IPC [ size 1024.00 KB ] */
-    DDR_MCU1_1_IPC		( RWIX )	: ORIGIN = 0xA1000000 , LENGTH = 0x00100000
     /* DDR for MCU1_1 for Linux resource table [ size 1024 B ] */
     DDR_MCU1_1_RESOURCE_TABLE	( RWIX )	: ORIGIN = 0xA1100000 , LENGTH = 0x00000400
-    /* DDR for MCU1_1 for code/data [ size ~15.00 MB ] */
-    DDR_MCU1_1			( RWIX )	: ORIGIN = 0xA1100400 , LENGTH = 0x00EFFC00
+    /* DDR for MCU1_1 for Linux IPC [ size 1024.00 KB ] */
+    DDR_MCU1_1_IPC		( RWIX )	: ORIGIN = 0xA1100400 , LENGTH = 0x00100000
+    /* DDR for MCU1_1 for code/data [ size 12.00 MB ] */
+    DDR_MCU1_1			( RWIX )	: ORIGIN = 0xA1400400 , LENGTH = 0x00C00000
+
+    /* DDR for MCU2_0 for Linux resource table [ size 1024 B ] */
+    DDR_MCU2_0_RESOURCE_TABLE	( RWIX )	: ORIGIN = 0xA2100000 , LENGTH = 0x00000400
+    /* DDR for MCU2_0 for Linux IPC [ size 1024.00 KB ] */
+    DDR_MCU2_0_IPC		( RWIX )	: ORIGIN = 0xA2100400 , LENGTH = 0x00100000
+    /* DDR for MCU2_0 for code/data [ size 12.00 MB ] */
+    DDR_MCU2_0			( RWIX )	: ORIGIN = 0xA2400000 , LENGTH = 0x00C00000
+
+    /* DDR for MCU2_1 for Linux resource table [ size 1024 B ] */
+    DDR_MCU2_1_RESOURCE_TABLE	( RWIX )	: ORIGIN = 0xA3100000 , LENGTH = 0x00000400
+    /* DDR for MCU2_1 for Linux IPC [ size 1024.00 KB ] */
+    DDR_MCU2_1_IPC		( RWIX )	: ORIGIN = 0xA3100400 , LENGTH = 0x00100000
+    /* DDR for MCU2_1 for code/data [ size 12.00 MB ] */
+    DDR_MCU2_1			( RWIX )	: ORIGIN = 0xA3400000 , LENGTH = 0x00C00000
 
     /* Memory for MCU1_0 shared memory buffers in DDR [ size 16.00 MB ] */
-    DDR_MCU1_0_SHARED_MEM			: ORIGIN = 0xA3000000 , LENGTH = 0x01000000
+    DDR_MCU1_0_SHARED_MEM			: ORIGIN = 0xA4000000 , LENGTH = 0x01000000
     /* Memory for MCU1_1 shared memory buffers in DDR [ size 16.00 MB ] */
-    DDR_MCU1_1_SHARED_MEM			: ORIGIN = 0xA4000000 , LENGTH = 0x01000000
+    DDR_MCU1_1_SHARED_MEM			: ORIGIN = 0xA5000000 , LENGTH = 0x01000000
+    /* Memory for MCU2_0 shared memory buffers in DDR [ size 16.00 MB ] */
+    DDR_MCU2_0_SHARED_MEM			: ORIGIN = 0xA6000000 , LENGTH = 0x01000000
+    /* Memory for MCU2_1 shared memory buffers in DDR [ size 16.00 MB ] */
+    DDR_MCU2_1_SHARED_MEM			: ORIGIN = 0xA7000000 , LENGTH = 0x01000000
 
     /* Memory for IPC Vring's. MUST be non-cached or cache-coherent [ size 32.00 MB ] */
     IPC_VRING_MEM				: ORIGIN = 0xBA000000 , LENGTH = 0x02000000
