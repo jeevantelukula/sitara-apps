@@ -36,6 +36,7 @@
 --stack_size=0x2000
 --heap_size=0x1000
 --retain="*(.utilsCopyVecsToAtcm)"
+--entry_point=ti_sysbios_family_arm_v7r_keystone3_Hwi_vectors
 
 /*----------------------------------------------------------------------------*/
 /* Section Configuration                                                      */
@@ -45,7 +46,7 @@ SECTIONS
 {
     .vecs       : {
          *(.vecs)
-    } palign(256) > MCU0_R5F0_BTCM
+    } palign(256) > R5F_ATCM_SBL_RSVD
     .text_boot {
         *boot.aer5f*<*boot.o*>(.text)
      }  palign(8)   > MCU0_R5F0_BTCM
