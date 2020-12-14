@@ -49,9 +49,11 @@
 
 /* Configures MAIN2MCU_LVL_INTRTR0 interrupt router */
 int32_t configureCmpEventInterruptRouter(
-    int32_t intrRtrInIntNum,
-    int32_t intrRtrOutIntNum,
-    int32_t intrRtrHostId
+    uint16_t intrRtrSrcDevId,
+    uint16_t intrRtrSrcIdx,
+    uint16_t intrRtrDstDevId,
+    uint16_t intrRtrDstIrq,
+    uint8_t intrRtrSecHost
 );
 
 /* MAIN2MCU_LVL_INTRTR0 input interrupt */

@@ -50,7 +50,9 @@ int32_t configureInterruptAggregator(
     int32_t vintrStatusBit
 )
 {
-    int32_t retVal = 0;
+    int32_t retVal = CSL_PASS;
+    struct tisci_msg_rm_irq_set_req  rmIrqReq;
+    struct tisci_msg_rm_irq_set_resp rmIrqResp;
     uint32_t vintrBitNum;
 
     /* Initialize Interrupt Aggregator config structure */
@@ -70,21 +72,33 @@ int32_t configureInterruptAggregator(
         .mcastEventCnt  = 128U
     };
 
+    /* Configure the local to global (L2G) mapping of local event to global event */
     vintrBitNum = ((iaVintr << 6) & 0x3FC0) | (vintrStatusBit & 0x3F);
     retVal += CSL_intaggrMapEventToLocalEvent(&iaRegs,
                                              iaSevi,
                                              iaLevi,
                                              CSL_INTAGGR_EVT_DETECT_MODE_ACTIVE_HIGH_PULSE);
-    retVal += CSL_intaggrMapEventIntr(&iaRegs,
-                                      iaSevi,
-                                      vintrBitNum);
+
+    /* Configure the global event to interrupt aggregator output mapping through sciclient call */
+    rmIrqReq.valid_params           =  TISCI_MSG_VALUE_RM_IA_ID_VALID
+                                      | TISCI_MSG_VALUE_RM_VINT_VALID
+                                      | TISCI_MSG_VALUE_RM_GLOBAL_EVENT_VALID
+                                      | TISCI_MSG_VALUE_RM_VINT_STATUS_BIT_INDEX_VALID
+                                      | TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID;
+
+    rmIrqReq.src_id                 = TISCI_DEV_DMASS0_INTAGGR_0;
+    rmIrqReq.ia_id                  = TISCI_DEV_DMASS0_INTAGGR_0;
+    rmIrqReq.vint                   = iaVintr;
+    rmIrqReq.global_event           = iaSevi;
+    rmIrqReq.vint_status_bit_index  = vintrStatusBit;
+    rmIrqReq.secondary_host         = (uint8_t)TISCI_HOST_ID_M4_0;
+    retVal += Sciclient_rmIrqSet(&rmIrqReq, &rmIrqResp, SCICLIENT_SERVICE_WAIT_FOREVER);
+
+    /* Clear the interrupt aggregator interrupt and enable it */
     retVal += CSL_intaggrClrIntr(&iaRegs, vintrBitNum);
     retVal += CSL_intaggrSetIntrEnable(&iaRegs, vintrBitNum, TRUE);
-    if (retVal < 0) {
-        return -1;
-    }
 
-    return 0;
+    return retVal;
 }
 
 /* Configure interrupts: the R5F core is used to configure the CMP EVT router to direct interrupts
@@ -96,43 +110,33 @@ int32_t configureInterrupts()
 {
     int32_t status = 0;
 
-    /* Configure CompareEvent Interrupt Router */
-    status = configureCmpEventInterruptRouter(CMPEVT7_INTRTR_IN, CMPEVT7_INTRTR_OUT, CMPEVT7_INTRTR_HOST_ID);
-    if (status != CFG_HOST_INTR_ERR_NERR) {
-        status = TEST_TS_ERR_CFG_HOST_INTR;
-        UART_printf("\n\rError=%d: ", status);
-        System_printf("taskSysInitFxn: Error=%d: ", status);
-        System_exit(-1);
-    }
+    /* Configure Compare Event Router ICSSG1_IEP0_CMP7 -> R5F1_0 VIM INT 48 */
+    status += configureCmpEventInterruptRouter(TISCI_DEV_PRU_ICSSG1, CMPEVT7_SRC_IDX, TISCI_DEV_R5FSS0_CORE0, CMPEVT7_R5F_VIM_IN, TISCI_HOST_ID_MAIN_0_R5_1);
+    /* Configure Compare Event Router ICSSG1_IEP0_CMP8 -> A53 GIC INT 48 */
+    status += configureCmpEventInterruptRouter(TISCI_DEV_PRU_ICSSG1, CMPEVT8_SRC_IDX, TISCI_DEV_GICSS0, CMPEVT8_A53_GIC_IN, TISCI_HOST_ID_A53_2);
+    /* Configure Compare Event Router ICSSG1_IEP0_CMP9 -> INTAGGR (L2G) input 0 */
+    /* NOTICE: the following line is commented out until the sciclient APIs are updated to allow the M4 interrupt path mapping */
+    /*
+    status += configureCmpEventInterruptRouter(TISCI_DEV_PRU_ICSSG1, CMPEVT9_SRC_IDX, TISCI_DEV_DMASS0_INTAGGR_0, CMPEVT9_INTAGGR_IN, TISCI_HOST_ID_M4_0);
+    */
 
-    /* CompareEvent Interrupt Router CMP4 */
-    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_8,
-                                              0, TISCI_HOST_ID_A53_2);
     if (status != CFG_HOST_INTR_ERR_NERR) {
-        status = TEST_TS_ERR_CFG_HOST_INTR;
-        UART_printf("\n\rError=%d: ", status);
-        System_printf("taskSysInitFxn: Error=%d: ", status);
-        System_exit(-1);
-    }
-
-    /* CompareEvent Interrupt Router CMP5 -> M4 */
-    status = configureCmpEventInterruptRouter(CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_9,
-                                              32, TISCI_HOST_ID_ALL);
-    if (status != CFG_HOST_INTR_ERR_NERR) {
-        status = TEST_TS_ERR_CFG_HOST_INTR;
-        UART_printf("\n\rError=%d: ", status);
-        System_printf("taskSysInitFxn: Error=%d: ", status);
+        UART_printf("\n\rError=%d", status);
+        System_printf("configureInterrupts CmpEventInterruptRouter: Error=%d: ", status);
         System_exit(-1);
     }
 
     /* Configure Interrupt Aggregator (for M4 interrupt)*/
+    /* NOTICE: the following line is commented out until the sciclient APIs are updated to allow the M4 event/interrupt path mapping */
+    /*
     status = configureInterruptAggregator(0, 1500, 168, 0);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
-        System_printf("taskSysInitFxn: Error=%d: ", status);
+        System_printf("configureInterrupts InterruptAggregator: Error=%d: ", status);
         System_exit(-1);
     }
+    */
 
     return 0;
 }

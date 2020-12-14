@@ -45,15 +45,15 @@
 /* Interrupt Router to Configure */
 #define DEV_CMPEVT_INTRTR                   ( TISCI_DEV_CMP_EVENT_INTROUTER0 )
 
-/* Compare event router i*/
-//#define CMPEVT7_INTRTR_IN    ( CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG0_PR1_IEP0_CMP_INTR_REQ_7 )  /* ICSSG_0_IEP0_CMP_TIMER7_INT */
-#define CMPEVT7_INTRTR_IN    ( CSLR_CMP_EVENT_INTROUTER0_IN_PRU_ICSSG1_PR1_IEP0_CMP_INTR_REQ_7 )  /* ICSSG_1_IEP0_CMP_TIMER7_INT */
+/* Compare event router source indices */
+#define CMPEVT7_SRC_IDX    ( 19 )  /* ICSSG1_IEP0_CMPEVT7_CMPEVTRTR_SRC_IDX */
+#define CMPEVT8_SRC_IDX    ( 20 )  /* ICSSG1_IEP0_CMPEVT8_CMPEVTRTR_SRC_IDX */
+#define CMPEVT9_SRC_IDX    ( 21 )  /* ICSSG1_IEP0_CMPEVT9_CMPEVTRTR_SRC_IDX */
 
-/* Compare event router output */
-#define CMPEVT7_INTRTR_OUT   ( 16 )  /* COMPEVT3_RTR_COMP_16_EVT */
-
-/* Compare event router Host ID */
-#define CMPEVT7_INTRTR_HOST_ID   ( TISCI_HOST_ID_MAIN_0_R5_0 )  /* R5F0 Core0 Host ID */
+/* Compare event routed to next path input (R5F VIM, or A53 GIC, or Interrupt Aggregator L2G block) */
+#define CMPEVT7_R5F_VIM_IN   ( 48 )  /* R5F VIM input 48 is where we want the CMP7 event routed */
+#define CMPEVT8_A53_GIC_IN   ( 48 )  /* A53 GIC input 48 is where we want the CMP8 event routed */
+#define CMPEVT9_INTAGGR_IN   ( 0 )   /* Interrupt Aggregator L2G input 0 is where we want the CMP9 event routed */
 
 /* Compare event router ouput R5 interrupt */
 #define TS_CMPEVT_INTRTR_R5 ( CSLR_R5FSS0_CORE0_INTR_CMP_EVENT_INTROUTER0_OUTP_16 )

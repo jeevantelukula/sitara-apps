@@ -53,32 +53,28 @@ HwiP_Handle hwiHandle = NULL;
 
 /* Configures Compare Event router */
 int32_t configureCmpEventInterruptRouter(
-    int32_t intrRtrInIntNum, 
-    int32_t intrRtrOutIntNum,
-    int32_t intrRtrHostId
+    uint16_t intrRtrSrcDevId,
+    uint16_t intrRtrSrcIdx,
+    uint16_t intrRtrDstDevId,
+    uint16_t intrRtrDstIrq,
+    uint8_t intrRtrSecHost
 )
 {
     struct tisci_msg_rm_irq_set_req  rmIrqReq;
     struct tisci_msg_rm_irq_set_resp rmIrqResp;
     int32_t retVal = 0;
 
-    /* Unused params */
-    rmIrqReq.ia_id                  = 0U;
-    rmIrqReq.vint                   = 0U;
-    rmIrqReq.global_event           = 0U;
-    rmIrqReq.vint_status_bit_index  = 0U;
-
     rmIrqReq.valid_params   = TISCI_MSG_VALUE_RM_DST_ID_VALID
                                   | TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID
                                   | TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID;
-    rmIrqReq.src_id         = DEV_CMPEVT_INTRTR;
-    rmIrqReq.src_index      = intrRtrInIntNum;
-    rmIrqReq.dst_id         = DEV_CMPEVT_INTRTR;
-    rmIrqReq.dst_host_irq   = intrRtrOutIntNum;
-    rmIrqReq.secondary_host = intrRtrHostId;
+    rmIrqReq.src_id         = intrRtrSrcDevId;
+    rmIrqReq.src_index      = intrRtrSrcIdx;
+    rmIrqReq.dst_id         = intrRtrDstDevId;
+    rmIrqReq.dst_host_irq   = intrRtrDstIrq;
+    rmIrqReq.secondary_host = intrRtrSecHost;
 
     /* Config event */
-    retVal = Sciclient_rmIrqSetRaw(
+    retVal = Sciclient_rmIrqSet(
                  &rmIrqReq, &rmIrqResp, SCICLIENT_SERVICE_WAIT_FOREVER);
 
     if(retVal != CSL_PASS)
