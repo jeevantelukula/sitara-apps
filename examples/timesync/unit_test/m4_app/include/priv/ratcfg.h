@@ -41,6 +41,8 @@
 #define MCU_RAT_OFFSET0     (uint32_t) 0x60000000
 /* OC-SRAM at 0x70000000, M4F addr 0x70000000 */
 #define MCU_RAT_OFFSET1     (uint32_t) 0x00000000
+/* DMASS register space at 0x48000000, M4F addr 0xA8000000 */
+#define MCU_RAT_OFFSET2     (uint32_t) 0x60000000
 
 bool configure_rat();
 

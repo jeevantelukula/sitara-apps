@@ -34,6 +34,8 @@
 #ifndef APP_H_
 #define APP_H_
 
+#define TS_INTAGGR_EVT_NUM	186
+
 void configure_nvic();
 
 void application_loop();

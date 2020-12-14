@@ -48,9 +48,9 @@ bool configure_rat()
 {
     /* return false on success */
     bool retVal = false;
-    CSL_ratRegs * MCU_RAT_MMR = (CSL_ratRegs *) MCU_RAT_MMR_BASE;
+    CSL_ratRegs *MCU_RAT_MMR = (CSL_ratRegs *) MCU_RAT_MMR_BASE;
 
-    /* ti/csl/arch/m4/src/startup.c */
+    /* ti/csl/arch/m4/src/startup/startup.c */
     /* CSL already uses regions 0 - 6 by default */
     retVal |= !CSL_ratDisableRegionTranslation(MCU_RAT_MMR, 6);    // re-defining for MAIN ESM
     retVal |= !CSL_ratDisableRegionTranslation(MCU_RAT_MMR, 7);    // using for MAIN Mailbox
