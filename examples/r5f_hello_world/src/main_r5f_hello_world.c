@@ -119,6 +119,7 @@ int main(void)
     /* UART_printf does not natively print float numbers */
     UART_printf("Instruction Cache Misses:%d\n", i_cache_miss_count);
     UART_printf("Data Cache Misses: %d\n\n", d_cache_miss_count);
+    UART_printf("\r\nUART Hello World Test Completed !!!!\n\n");
 
     /* Reset PMU counters (cycle and cache miss counters) and take initial reading */
     resetPmuEventCounters();
@@ -146,4 +147,5 @@ int main(void)
     appLogPrintf("Total Time in ms:%f\n", (float)gTotalTime * 0.00000125);
     appLogPrintf("Instruction Cache Misses:%d\n", i_cache_miss_count);
     appLogPrintf("Data Cache Misses: %d\n\n", d_cache_miss_count);
+    appLogPrintf("appLogPrintf CCS Console Hello World Test Completed !!!\n\n");
 }
