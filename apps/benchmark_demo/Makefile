@@ -14,6 +14,13 @@ BUILD_MULTI_PROJECT := 1
 BUILD_TARGET ?= $(CONCERTO_ROOT)/build_targets/processor-sdk/target.mak
 BUILD_PLATFORM :=
 
+# By default, only build linux userspace apps if we are not on Windows, but also
+# allow users to choose on commandline.
+BUILD_LINUX_APPS ?= 1
+ifeq ($(HOST_OS),Windows_NT)
+BUILD_LINUX_APPS = 0
+endif
+
 ifeq ($(TARGET_PLATFORM),AM65X)
 # Recursively find all concerco.mak in the following directory list.
 DIRECTORIES = $(HOST_ROOT) $(RPMSG_DIR)
@@ -32,13 +39,6 @@ endif
 
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
-
-# By default, only build linux userspace apps if we are not on Windows, but also
-# allow users to choose on commandline.
-BUILD_LINUX_APPS ?= 1
-ifeq ($(HOST_OS),Windows_NT)
-BUILD_LINUX_APPS = 0
-endif
 
 # Build variable to support a RTOS/BM only (non-Linux) demo build
 # Linux images will not be available in RTOS build flow
