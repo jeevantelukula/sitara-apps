@@ -831,7 +831,8 @@ int main(int argc, char *argv[])
         printf("mod_flag set for core %d\n", j);
 #endif
         /* if we have a new app selection */
-        if ((R5CoreStat[j].input.app!=curR5CoreInput[j].app)&&(j%2))
+        /* if ((R5CoreStat[j].input.app!=curR5CoreInput[j].app)&&(j%2)) */
+        if (0) /* bypass the app selection for now */
         {
             /* Stop the higher core in the cluster first */
 #ifdef DEBUG_PRINT
@@ -942,7 +943,8 @@ int main(int argc, char *argv[])
             curR5CoreInput[j].freq = R5CoreStat[j].input.freq;
         }
 
-        if ((R5CoreStat[j].input.app!=curR5CoreInput[j].app)&&((j&0x1)==0))
+        /* if ((R5CoreStat[j].input.app!=curR5CoreInput[j].app)&&((j&0x1)==0)) */
+        if (R5CoreStat[j].input.app!=curR5CoreInput[j].app)
         {
             /* update the current app selection */
             curR5CoreInput[j].app = R5CoreStat[j].input.app;
