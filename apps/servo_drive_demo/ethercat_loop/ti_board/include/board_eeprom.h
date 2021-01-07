@@ -45,6 +45,15 @@
 #include <ti/board/board.h>
 #include <ti/drv/i2c/I2C.h>
 
+#if defined(SOC_AM65XX)
+/*NOTE: For R5F on AM65xx, I2C driver allows access by default only to
+ *      MCU_I2C0 instance. MCU_I2C0 is accessible using i2cInitCfg[0].
+ *      Board ID EEPROM is connected to WKUP_I2C0 instance. In order to
+ *      access WKUP_I2C0, we need to add an entry in i2cInitCfg[] array
+ *      which is done here. We add the required details in i2cInitCfg[1].
+ *      Similarly i2cInitCfg[0] is used for LEDs and Rotary Switch access*/
+#define I2C_BOARD_ID_EEPROM_INSTANCE    (1)
+#endif
 /**
 * @brief Function to get MAC address
 *

@@ -1,7 +1,7 @@
 /**
  *  \file   board_eeprom.c
  *
- *  \brief  AM64x IDK Board EEPROM specific functions
+ *  \brief  AM64x EVM Board EEPROM specific functions
  *
  *   This file contains the GPIO hardware parameters specific to board.
  */

@@ -6,7 +6,7 @@ include $(PRELUDE)
 
 TARGET      := app_servo_drive_ethcat_tiboard_idkAM64x
 TARGETTYPE  := library
-CSOURCES    := board_gpioLed.c board_i2cLed.c board_phy.c tiescphy_dp83869.c board_eeprom.c
+CSOURCES    := board_gpioLed.c board_i2cLed.c board_spi.c board_phy.c tiescphy_dp83869.c board_eeprom.c
 
 # Define root directory
 LIBDIR := $(abspath $(SDIR)/../..)

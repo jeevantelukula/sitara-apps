@@ -56,11 +56,9 @@
 #endif
 #include <ti/board/board.h>
 
-#ifndef TIESC_EMULATION_PLATFORM
 #include <board_gpioLed.h>
 #include <board_i2cLed.h>
 #include <board_spi.h>
-#endif
 
 /* Please note: Baremetal mode is not validated on AM6xx devices */
 #ifdef BARE_METAL
@@ -463,9 +461,7 @@ void LEDtask(uint32_t arg0, uint32_t arg1)
 #else
         TaskP_sleep(200 * OS_TICKS_IN_MILLI_SEC);
 
-#ifndef TIESC_EMULATION_PLATFORM
         Board_setDigOutput(0x6a);
-#endif
 #endif
 #ifdef BARE_METAL
     }

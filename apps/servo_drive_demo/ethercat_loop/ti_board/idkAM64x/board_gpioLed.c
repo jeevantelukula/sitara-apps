@@ -2,7 +2,7 @@
  *  \file   board_gpioLed.c
  *
  *  \brief:
- *  AM64x GPIO LED configurations
+ *  AM64x EVM GPIO LED configurations
  *
 */
 /*

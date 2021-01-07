@@ -581,3 +581,120 @@ void Board_phySoftRestart(uint32_t mdioBaseAddress, uint32_t phyNum)
     regData |= DPPHY_SOFT_RESET;
     CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_GEN_CTRL, regData);
 }
+
+/**
+* @brief API to Change Phy Configuration
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyMode    PHY_CONFIG_AUTONEG
+*                   PHY_CONFIG_100FD
+*                   PHY_CONFIG_10FD
+*                   PHY_CONFIG_100HD
+* @param phyNum Phy address of the port
+*
+* @retval none
+*/
+void MDIO_setPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum,
+                       uint8_t phyMode)
+{
+    uint16_t regStatus = 0;
+
+    CSL_MDIO_phyRegRead(mdioBaseAddress, phyNum, DPPHY_BMCR_REG, &regStatus);
+
+    switch(phyMode)
+    {
+        case PHY_CONFIG_AUTONEG:
+            regStatus |= PHY_AUTO_NEGOTIATE_EN;
+            break;
+
+        case PHY_CONFIG_100FD:
+            regStatus &= ~(PHY_AUTO_NEGOTIATE_EN);
+            regStatus &= ~(PHY_SPEEDSEL_100_MSB);
+            regStatus |= PHY_SPEEDSEL_100;
+            regStatus |= PHY_DUPLEXMODE_FULL;
+            break;
+
+        case PHY_CONFIG_10FD:
+            regStatus &= ~(PHY_AUTO_NEGOTIATE_EN);
+            regStatus &= ~(PHY_SPEEDSEL_100_MSB);
+            regStatus &= ~(PHY_SPEEDSEL_100);
+            regStatus |= PHY_DUPLEXMODE_FULL;
+            break;
+
+        case PHY_CONFIG_100HD:
+            regStatus &= ~(PHY_AUTO_NEGOTIATE_EN);
+            regStatus &= ~(PHY_SPEEDSEL_100_MSB);
+            regStatus |= PHY_SPEEDSEL_100;
+            regStatus &= ~(PHY_DUPLEXMODE_FULL);
+            break;
+
+        case PHY_CONFIG_10HD:
+            regStatus &= ~(PHY_AUTO_NEGOTIATE_EN);
+            regStatus &= ~(PHY_SPEEDSEL_100_MSB);
+            regStatus &= ~(PHY_SPEEDSEL_100);
+            regStatus &= ~(PHY_DUPLEXMODE_FULL);
+            break;
+
+        default:
+            regStatus |= PHY_AUTO_NEGOTIATE_EN;
+            break;
+    }
+
+    CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_BMCR_REG, regStatus);
+}
+/**
+* @brief Function to get the PHY Speed and duplexity
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+*
+*  @retval PHY_CONFIG_10FD 10 Mbps and Full duplex
+*          PHY_CONFIG_10HD 10 Mbps and Half duplex
+*          PHY_CONFIG_100FD 100 Mbps and Full duplex
+*          PHY_CONFIG_100HD 100 Mbps and Half duplex
+*/
+uint8_t MDIO_getPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum)
+{
+    uint16_t regStatus = 0;
+
+    CSL_MDIO_phyRegRead(mdioBaseAddress, phyNum, DPPHY_PHYSTS_REG, &regStatus);
+
+    if((regStatus & DPPHY_SPEED_STATUS) == DPPHY_SPEED_10M)  /*Speed is 10*/
+    {
+        if(regStatus & DPPHY_DUPLEX_STATUS)
+        {
+            return PHY_CONFIG_10FD;
+        }
+
+        else
+        {
+            return PHY_CONFIG_10HD;
+        }
+    }
+    else if((regStatus & DPPHY_SPEED_STATUS) == DPPHY_SPEED_100M)/*Speed is 100*/
+    {
+        if(regStatus & DPPHY_DUPLEX_STATUS)
+        {
+            return PHY_CONFIG_100FD;
+        }
+
+        else
+        {
+            return PHY_CONFIG_100HD;
+        }
+    }
+    else if((regStatus & DPPHY_SPEED_STATUS) == DPPHY_SPEED_1000M)/*Speed is 1000*/
+    {
+        if(regStatus & DPPHY_DUPLEX_STATUS)
+        {
+            return PHY_CONFIG_1000FD;
+        }
+
+        else
+        {
+            return PHY_CONFIG_1000HD;
+        }
+    }
+
+    return PHY_CONFIG_INVALID;
+}

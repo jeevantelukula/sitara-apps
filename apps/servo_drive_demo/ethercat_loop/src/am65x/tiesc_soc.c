@@ -1,6 +1,6 @@
 /**
-* tiesc_soc_am65x.c: Implements EVM/IDK initialization and Pinmux.
-*                    Does EtherCAT Device select and interrupt allocation.
+* tiesc_soc.c: Implements EVM/IDK initialization and Pinmux.
+*              Does EtherCAT Device select and interrupt allocation.
 */
 /*
  * Copyright (c) 2015-2020, Texas Instruments Incorporated
@@ -51,7 +51,7 @@
 #include <ti/drv/gpio/GPIO.h>
 #include <board_gpioLed.h>
 #include <board_misc.h>
-
+#include <board_eeprom.h>
 #include <board_spi.h>
 #include <board_phy.h>
 #include <board_dpphy.h>
@@ -68,9 +68,10 @@
 #include <ti/drv/i2c/soc/I2C_soc.h>
 #include <ti/csl/soc/am65xx/src/cslr_intr_mcu0.h>
 #include <ti/csl/soc/am65xx/src/cslr_soc_baseaddress.h>
-#include <ti/board/src/am65xx_idk/include/board_cfg.h>
 #include <interruptroute.h>
 #endif
+
+#include <ti/board/src/am65xx_idk/include/board_cfg.h>
 
 #if defined (__aarch64__)
 /* A53 */
@@ -79,9 +80,11 @@
 #define ARM_INTERRUPT_OFFSET_ICSS2 (302-20)
 #endif
 
+
 #define CSL_SEMAPHORE_REG_OFFSET(n)        (0x100 + ((n) * 0x04))
 
-SPI_Handle handle;                   /* SPI handle */
+extern I2C_Handle i2c1Handle;
+I2C_Handle eepromFlashHandle = NULL;
 
 extern PRUICSS_Handle pruIcss1Handle;
 extern PRUICSS_Config pruss_config[2 + 1];
@@ -90,13 +93,14 @@ extern PRUICSS_Config pruss_config[2 + 1];
 #define MCSPI_INSTANCE         (0U)
 
 void tiesc_mii_pinmuxConfig (void);
+void tiesc_eeprom_init(void);
 
 
 extern bool icssgResetIsolated;
 
 
 int16_t icssInterruptOffset = 0;
-int32_t i2cInterruptOffset = 0;
+uint32_t i2cInterruptOffset = 0;
 
 uint8_t isEtherCATDevice(void)
 {
@@ -162,12 +166,54 @@ void bsp_soft_reset()
     return;
 }
 
+void tiesc_eeprom_init(void)
+{
+    int32_t ret;
+    ret = Board_i2cEepromInit();
+    if (BOARD_SOK != ret)
+    {
+        UART_printf("Board_i2cEepromInit returned error = %d\n", ret);
+    }
+    eepromFlashHandle = i2c1Handle;
+}
+
+int32_t tiesc_eeprom_read(uint32_t  offset,
+                      uint8_t  *buf,
+                      uint32_t  len)
+{
+    int32_t ret;
+
+    ret = Board_i2cEepromRead(eepromFlashHandle, offset, buf, len, BOARD_APP_EEPROM_ADDR);
+
+    if (BOARD_SOK != ret)
+    {
+        UART_printf("Board_i2cEepromRead returned error = %d\n", ret);
+    }
+
+    return ret;
+}
+
+int32_t tiesc_eeprom_write(uint32_t  offset,
+                       uint8_t  *buf,
+                       uint32_t  len)
+{
+    int32_t ret;
+
+    ret = Board_i2cEepromWrite(eepromFlashHandle, offset, buf, len, BOARD_APP_EEPROM_ADDR);
+
+    if (BOARD_SOK != ret)
+    {
+        UART_printf("Board_i2cEepromWrite returned error = %d\n", ret);
+    }
+
+    return ret;
+}
 
 void bsp_soc_evm_init()
 {
 
 #if !defined (__aarch64__)
-    I2C_HwAttrs   i2c_cfg;
+    I2C_HwAttrs i2cCfg;
 #endif
 
     if(icssgResetIsolated==FALSE)
@@ -228,32 +274,28 @@ void bsp_soc_evm_init()
 #if !defined (__aarch64__)
 
     /* Route Interrupts to R5F. */
-	icssInterruptOffset = route_icss_interrupts_to_r5f(PRUICSS_INSTANCE);
-	if(INTERRUPT_ROUTE_ERROR != icssInterruptOffset)
-	{
-	    icssInterruptOffset = (int16_t)icssInterruptOffset;
-	}
-	else
-	{
-		/*Wait here in an endless loop as there is an error. */
-		while(1);
-	}
+    icssInterruptOffset = (int16_t)route_icss_interrupts_to_r5f(PRUICSS_INSTANCE);
+    i2cInterruptOffset = route_i2c_interrupts_to_r5f();
 
-	i2cInterruptOffset = route_i2c_interrupts_to_r5f();
-	if(INTERRUPT_ROUTE_ERROR == i2cInterruptOffset)
-	{
-		/*Wait here in an endless loop as there is an error. */
-		while(1);
-	}
+    /*NOTE: For R5F, I2C driver allows access by default only to MCU_I2C0
+     *      instance. MCU_I2C0 is accessible using i2cInitCfg[0]. LEDs and
+     *      IO Expander are connected to I2C0 instance. In order to access
+     *      I2C0, we need to add an entry in i2cInitCfg[] array which is
+     *      done here. We add the required details in i2cInitCfg[0].
+     *      Similarly i2cInitCfg[1] is used for Board ID EEPROM access.
+     *      These needs to be done before calling any I2C APIs*/
 
-    /* LED's and Rotary Switch are connected to Main Domain I2C0. Reconfigure I2C to use I2C0 of main domain. */
-    /* Get the default I2C init configurations */
-    I2C_socGetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
+    /* Enable Main I2C0 port for LEDs and Rotary switch access */
+    I2C_socGetInitCfg(I2C_LED_INSTANCE, &i2cCfg);
+    i2cCfg.baseAddr = CSL_I2C0_CFG_BASE;
+    i2cCfg.intNum = i2cInterruptOffset;
+    I2C_socSetInitCfg(I2C_LED_INSTANCE, &i2cCfg);
 
-    i2c_cfg.baseAddr = CSL_I2C0_CFG_BASE;
-    i2c_cfg.intNum = i2cInterruptOffset;
-
-    I2C_socSetInitCfg(BOARD_I2C_IOEXP_INSTANCE, &i2c_cfg);
+    /* Enable Wake-up I2C0 port for EEPROM access */
+    I2C_socGetInitCfg(I2C_BOARD_ID_EEPROM_INSTANCE, &i2cCfg);
+    i2cCfg.baseAddr = CSL_WKUP_I2C0_CFG_BASE;
+    i2cCfg.enableIntr = 0;
+    I2C_socSetInitCfg(I2C_BOARD_ID_EEPROM_INSTANCE, &i2cCfg);
 #endif
 
     /* I2C Init */
@@ -262,8 +304,10 @@ void bsp_soc_evm_init()
     /* Rotary Switch Init */
     Board_initRotarySwitch();
 
-    QSPI_init();
+    /* Initialize flash handle for i2c eeprom */
+    tiesc_eeprom_init();
 
+    QSPI_init();
 }
 
 

@@ -1,5 +1,5 @@
 /**
- * tlk105_tiescbsp.c
+ * tiescphy_dp83869.c
  *
 */
 /*

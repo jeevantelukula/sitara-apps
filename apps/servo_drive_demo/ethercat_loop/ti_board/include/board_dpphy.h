@@ -136,14 +136,14 @@
 #define LED_BLINK_100     100
 #define LED_BLINK_50      50
 
+#define  PHY_CONFIG_AUTONEG         0u
 #define  PHY_CONFIG_100FD           1u
 #define  PHY_CONFIG_10FD            2u
 #define  PHY_CONFIG_100HD           3u
 #define  PHY_CONFIG_10HD            4u
 #define  PHY_CONFIG_1000FD          5u
 #define  PHY_CONFIG_1000HD          6u
-
-
+#define  PHY_CONFIG_INVALID         7u
 
 #define PHY_ENABLE_AUTO_MDIX  0u
 #define PHY_ENABLE_FORCE_MDI  1u
@@ -154,6 +154,11 @@
 #define PHY_POWERMODE_PASSIVE_SLEEP 3u
 
 #define DPPHY_SOFT_RESET    (1u<<14)
+
+#define PHY_AUTO_NEGOTIATE_EN   (1<<12)
+#define PHY_SPEEDSEL_100        (1<<13)
+#define PHY_SPEEDSEL_100_MSB    (1<<6)
+#define PHY_DUPLEXMODE_FULL     (1<<8)
 
 #ifdef INCLUDE_DPPHY_WORKAROUND
 
@@ -510,5 +515,34 @@ extern void MDIO_phyExtRegWrite(uint32_t mdioBaseAddress, uint32_t phyNum,
 * @retval none
 */
 extern void Board_phySoftRestart(uint32_t mdioBaseAddress, uint32_t phyNum);
+
+/**
+* @brief API to Change Phy Configuration
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyMode    PHY_CONFIG_AUTONEG
+*                   PHY_CONFIG_100FD
+*                   PHY_CONFIG_10FD
+*                   PHY_CONFIG_100HD
+* @param phyNum Phy address of the port
+* @param mdioSemhandle Semaphore handle if thread safe MDIO access is used
+*
+* @retval none
+*/
+void MDIO_setPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum,
+                       uint8_t phyMode);
+
+/**
+* @brief Function to get the PHY Speed and duplexity
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+*
+*  @retval PHY_CONFIG_10FD 10 Mbps and Full duplex
+*          PHY_CONFIG_10HD 10 Mbps and Half duplex
+*          PHY_CONFIG_100FD 100 Mbps and Full duplex
+*          PHY_CONFIG_100HD 100 Mbps and Half duplex
+*/
+uint8_t MDIO_getPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum);
 
 #endif

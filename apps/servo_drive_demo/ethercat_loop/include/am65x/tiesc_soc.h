@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2015, Texas Instruments Incorporated
+ * Copyright (c) 2015-2020, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 
 #include <ti/drv/pruss/soc/pruicss_soc.h>
 #include <ti/drv/pruss/pruicss_ver.h>
+#include <ti/csl/soc/am65xx/src/cslr_soc_baseaddress.h>
 
 /* The PRUSS drivers before version 1.0.0.16 have a typo in macro names*/
 #if (PRUICSS_DRV_VERSION_ID < 0x01000010)
@@ -48,10 +49,10 @@
 #define PRUICSS_INSTANCE_THREE (PRUICCSS_INSTANCE_THREE)
 #endif
 
-/* EEPROM data offset in SPI/QSPI Flash */
-#define SPI_EEPROM_DATA_OFFSET      0x100000
+/* EEPROM data offset in I2C EEPROM Flash */
+#define I2C_EEPROM_DATA_OFFSET      (0x3800)
 #define DEFAULT_PRUICSS_INSTANCE    PRUICSS_INSTANCE_ONE
-#define TIESC_TASK_STACK_SIZE_MUL   2
+#define TIESC_TASK_STACK_SIZE_MUL          2
 
 /* Change this define to switch between PRUICSS for AM571x */
 #define PRUICSS_INSTANCE        DEFAULT_PRUICSS_INSTANCE
@@ -81,9 +82,12 @@ void display_esc_version(uint16_t revision, uint16_t build);
 
 void initSpinlock();
 
-void Send_BootComplete_Message_To_Partner(void);
+int32_t tiesc_eeprom_read(uint32_t  offset, uint8_t  *buf, uint32_t  len);
+int32_t tiesc_eeprom_write(uint32_t  offset, uint8_t  *buf, uint32_t  len);
 
 void * tiesc_memcpy(uint8_t *dst, const uint8_t *src, uint32_t size_bytes);
 void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
+
+void Send_BootComplete_Message_To_Partner(void);
 
 #endif /* _TIESC_SOC_H_*/

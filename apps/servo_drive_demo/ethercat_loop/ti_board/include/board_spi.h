@@ -44,14 +44,15 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#if defined(SOC_K2G) || defined(SOC_AM65XX)
+#if defined(SOC_K2G) || defined(SOC_AM65XX) || defined(SOC_AM64X)
 #include <ti/board/src/flash/include/board_flash.h>
+#include <ti/board/src/flash/nor/nor.h>
 #elif defined(SOC_AM572x) || defined(SOC_AM571x) || defined(SOC_AM437x)
 #include <ti/drv/spi/SPIver.h>
 #include <ti/drv/spi/test/qspi_flash/src/Flash_S25FL/S25FL.h>
 #endif
 
-#ifndef SOC_AM65XX
+#if !(defined(SOC_AM65XX) || defined(SOC_AM64X))
 typedef int32_t Board_flash_STATUS;       /** Board Flash API return type */
 #endif
 
@@ -59,7 +60,6 @@ typedef int32_t Board_flash_STATUS;       /** Board Flash API return type */
 #define BOARD_FLASH_EUNSUPPORTED  -2      /**< Error code for unsupported feature */
 #define BOARD_FLASH_EFAIL         -1      /**< General failure code */
 #define BOARD_FLASH_EOK           0       /**< General success code */
-
 
 #if defined(SOC_AM572x) || defined(SOC_AM571x) || defined(SOC_AM335x) || defined(SOC_AM437x)
 
@@ -234,6 +234,12 @@ void QSPI_board_crossbarInit(void);
  *
  */
 void QSPI_init();
+
+/**
+ * @brief Initializes OSPI module. The handle boardFlashHandle can be used by the application.
+ *
+ */
+void OSPI_init();
 
 void LoadData(void);
 

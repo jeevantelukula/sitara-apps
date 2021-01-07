@@ -96,16 +96,19 @@ void Board_xbarMpuIrqConfigure(Uint32 irqNumIdx, CSL_XbarIrq xbarIrq)
     }
 }
 #endif
+#ifndef SOC_J721E
+//FIXME : can remove for Processor SDK 6.1 as its defined in board lib
 void Board_delay(uint32_t delay)
 {
     volatile uint32_t delay1 = delay * 2;
 
     while(delay1--) ;
 }
+#endif
 
 void Board_getDigInput(uint8_t *switchs)
 {
-#if !defined(SOC_K2G) && !defined(SOC_AM65XX) /* K2G ICE doesnt have the DigInputs over SPI instead using rotary switch*/
+#if !defined(SOC_K2G) && !defined(SOC_AM65XX) && !defined(SOC_AM64X) /* K2G ICE doesnt have the DigInputs over SPI instead using rotary switch*/
 #if !defined(iceAMIC11x) /* AMIC11x ICE doesnt have the DigInputs over SPI */
     Board_readHVS(switchs);
 #endif

@@ -1,7 +1,7 @@
 /**
  *  \file   board_phy.c
  *
- *  \brief  AM64x IDK Board specific phy parameters.
+ *  \brief  AM64x EVM Board specific phy parameters.
  *
  *   This file contains the phy hardware parameters specific to board.
  */

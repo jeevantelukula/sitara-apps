@@ -261,7 +261,7 @@ process path latency improvement can be achieved by disabling below define */
 #define USE_ECAT_TIMER
 #endif
 
-#if !defined(_JAILHOUSE_INMATE) && !defined(TIESC_EMULATION_PLATFORM)
+#if !defined(_JAILHOUSE_INMATE)
 #define ENABLE_ONLINE_FIRMWARE_UPGRADE
 #endif
 

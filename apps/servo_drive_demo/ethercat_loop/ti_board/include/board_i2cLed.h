@@ -40,6 +40,17 @@
 #ifndef _BOARD_I2CLED_H_
 #define _BOARD_I2CLED_H_
 
+#include <stdint.h>
+
+#if defined(SOC_AM65XX)
+/*NOTE: For R5F on AM65xx, I2C driver allows access by default only to
+ *      MCU_I2C0 instance. MCU_I2C0 is accessible using i2cInitCfg[0]. LEDs
+ *      and IO Expander are connected to I2C0 instance. In order to access
+ *      I2C0, we need to add an entry in i2cInitCfg[] array which is done
+ *      here. We add the required details in i2cInitCfg[0]. Similarly
+ *      i2cInitCfg[1] is used for Board ID EEPROM access*/
+#define I2C_LED_INSTANCE    (0)
+#endif
 
 /***********************************************************************/
 /* Functions                                                           */

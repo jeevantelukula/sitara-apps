@@ -1,7 +1,7 @@
 /**
  *  \file   board_spi.c
  *
- *  \brief  AM64xx IDK Board SPI specific APIS
+ *  \brief  AM64x EVM Board SPI specific APIS
  *
  *
  */
@@ -38,90 +38,34 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-#ifndef TIESC_EMULATION_PLATFORM
-
-#include <stdbool.h>
-#include <ti/csl/soc.h>
-#include <ti/drv/gpio/GPIO.h>
 #include <board_spi.h>
-/* Flash header file */
-#include <ti/drv/spi/SPI.h>
-#include <ti/drv/spi/soc/SPI_soc.h>
-#include <ti/board/board.h>
 #include <ti/board/src/am64x_evm/include/board_cfg.h>
 #include <ti/drv/uart/UART_stdio.h>
+#include <ti/drv/spi/soc/SPI_soc.h>
 
-
-#define QSPI_PER_CNT            (1U)
-#define QSPI_INSTANCE           (1U)
-#define QSPI_OFFSET             (4U)
-
-/** \brief QSPI Flash handle. Can be extern from app*/
+/** \brief OSPI Flash handle. Can be extern from app*/
 Board_flashHandle boardFlashHandle;
 
-extern SPI_Handle handle;                   /* SPI handle */
-
-#define USE_INDUS_INPUTS 0
-
-void LoadData(void)
-{
-#if USE_INDUS_INPUTS
-    GPIO_write(8, 0);
-    delay_us(1);
-    GPIO_write(8, 1);
-    delay_us(1);
-    return;
-#endif
-}
-
-void Board_readHVS(uint8_t *switches)
-{
-#if USE_INDUS_INPUTS
-    /* MCSPI params required */
-    /* Buffer containing the known data that needs to be written to flash */
-    uint8_t txBuf[1U];
-    /* Buffer containing the received data */
-    uint8_t rxBuf[1U] = {0xFFU};
-    /* Transfer length */
-    uint32_t transferLength;
-    SPI_Transaction transaction;         /* SPI transaction */
-
-    /* Load data */
-    LoadData();
-
-    /* Initiate transfer */
-    txBuf[0] = 0xAAU;
-    transferLength = 1U;
-
-    transaction.count = transferLength;
-    transaction.txBuf = &txBuf[0];
-    transaction.rxBuf = &rxBuf[0];
-    SPI_transfer(handle, &transaction);
-
-    *switches = *rxBuf & 0xFF;
-#endif
-}
-
-void QSPI_init()
+void OSPI_init()
 {
     OSPI_v0_HwAttrs ospi_cfg;
+    uint32_t          tuneEnable;
 
+    /* NOTE: DAC writes are not supported on Cypress xSPI Flash - Switch to INDAC mode for write as WA to PDK-7115 */
     /* Get the default OSPI init configurations */
     OSPI_socGetInitCfg(BOARD_OSPI_NOR_INSTANCE, &ospi_cfg);
-
-    /* Indirect access controller mode always uses polling, interrupt is not supported */
-    ospi_cfg.intrEnable = false;
+    ospi_cfg.dacEnable = false;
     ospi_cfg.phyEnable = false;
-
-
+    ospi_cfg.dmaEnable = false;
+    ospi_cfg.intrEnable = true;
     /* Set the default OSPI init configurations */
     OSPI_socSetInitCfg(BOARD_OSPI_NOR_INSTANCE, &ospi_cfg);
 
+    tuneEnable = FALSE;
 
-    /* Open the Board QSPI NOR device with QSPI port 0
-       and use default QSPI configurations */
-    boardFlashHandle = Board_flashOpen(BOARD_FLASH_ID_MT35XU512ABA1G12,
-                                       BOARD_OSPI_NOR_INSTANCE, NULL);
+    /* Open the Board OSPI NOR device
+       and use default OSPI configurations */
+    boardFlashHandle = Board_flashOpen(BOARD_FLASH_ID_S28HS512T, BOARD_OSPI_NOR_INSTANCE, (void *)(&tuneEnable));
 
     if(!boardFlashHandle)
     {
@@ -130,4 +74,3 @@ void QSPI_init()
     }
 }
 
-#endif /* TIESC_EMULATION_PLATFORM */
