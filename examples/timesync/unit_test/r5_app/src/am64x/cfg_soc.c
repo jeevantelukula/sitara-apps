@@ -74,6 +74,7 @@ int32_t configureInterruptAggregator(
 
     /* Configure the local to global (L2G) mapping of local event to global event */
     vintrBitNum = ((iaVintr << 6) & 0x3FC0) | (vintrStatusBit & 0x3F);
+    /* NOTICE: the following line is subject to change as the sciclient API to configure L2G registers becomes available */
     retVal += CSL_intaggrMapEventToLocalEvent(&iaRegs,
                                              iaSevi,
                                              iaLevi,
@@ -115,10 +116,7 @@ int32_t configureInterrupts()
     /* Configure Compare Event Router ICSSG1_IEP0_CMP8 -> A53 GIC INT 48 */
     status += configureCmpEventInterruptRouter(TISCI_DEV_PRU_ICSSG1, CMPEVT8_SRC_IDX, TISCI_DEV_GICSS0, CMPEVT8_A53_GIC_IN, TISCI_HOST_ID_A53_2);
     /* Configure Compare Event Router ICSSG1_IEP0_CMP9 -> INTAGGR (L2G) input 0 */
-    /* NOTICE: the following line is commented out until the sciclient APIs are updated to allow the M4 interrupt path mapping */
-    /*
     status += configureCmpEventInterruptRouter(TISCI_DEV_PRU_ICSSG1, CMPEVT9_SRC_IDX, TISCI_DEV_DMASS0_INTAGGR_0, CMPEVT9_INTAGGR_IN, TISCI_HOST_ID_M4_0);
-    */
 
     if (status != CFG_HOST_INTR_ERR_NERR) {
         UART_printf("\n\rError=%d", status);
@@ -127,8 +125,6 @@ int32_t configureInterrupts()
     }
 
     /* Configure Interrupt Aggregator (for M4 interrupt)*/
-    /* NOTICE: the following line is commented out until the sciclient APIs are updated to allow the M4 event/interrupt path mapping */
-    /*
     status = configureInterruptAggregator(0, 1500, 168, 0);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
@@ -136,7 +132,6 @@ int32_t configureInterrupts()
         System_printf("configureInterrupts InterruptAggregator: Error=%d: ", status);
         System_exit(-1);
     }
-    */
 
     return 0;
 }
