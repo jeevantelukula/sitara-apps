@@ -79,4 +79,3 @@ void Board_setDigOutput(uint8_t ledData)
     i2cLedtxBuf[1] = ledData;
     I2C_transfer(i2c0Handle, &i2cLedTransaction);
 }
-

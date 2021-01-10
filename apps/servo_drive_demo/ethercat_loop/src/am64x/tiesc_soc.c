@@ -242,9 +242,7 @@ void bsp_soc_evm_init()
 {
     int8_t phy_addr1, phy_addr2;
 
-#ifndef TIESC_EMULATION_PLATFORM
     GPIO_init();
-#endif
 
     if(icssgResetIsolated==FALSE)
     {

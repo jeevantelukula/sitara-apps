@@ -37,76 +37,30 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-#ifndef TIESC_EMULATION_PLATFORM
-
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include <ti/csl/soc.h>
-#include <ti/csl/csl_types.h>
 #include <ti/drv/gpio/GPIO.h>
 #include <ti/drv/gpio/soc/GPIO_soc.h>
-
+#include <ti/board/src/am64x_evm/include/board_cfg.h>
 #include <board_gpioLed.h>
+
+/*NOTE: Tri-color LEDs are not present on AM64x EVM. Toggling
+ *      AM64X_EVM_RED0_GPIO, AM64X_EVM_GREEN0_GPIO and AM64X_EVM_YELLOW0_GPIO
+ *      just toggles the TEST_LED2. Similarly AM64X_EVM_RED1_GPIO,
+ *      AM64X_EVM_GREEN1_GPIO and AM64X_EVM_YELLOW1_GPIO toggles TEST_LED1*/
 
 /***********************************************************************/
 /* Macros                                        */
 /***********************************************************************/
 
-/* Used for McSPI HVS */
-/* Port and pin number mask for GPIO Load pin.
-   Bits 7-0: Pin number  and Bits 15-8: Port number */
-#define AM57X_IDK_GPIO_LD_PIN    (0x0313)
-
 /* GPIO Driver board specific pin configuration structure */
 GPIO_PinConfig gpioPinConfigs[] =
 {
-    /* Output pin : ETH_LED1 */
-    GPIO_DEVICE_CONFIG(1, 46) |
+    /* Output pin : TEST_LED1 */
+    GPIO_DEVICE_CONFIG(BOARD_GPIO_TEST_LED1_PORT_NUM, BOARD_GPIO_TEST_LED1_PIN_NUM) |
     GPIO_CFG_OUTPUT ,
 
-    /* Output pin : ETH_LED2 */
-    GPIO_DEVICE_CONFIG(1, 66) |
+    /* Output pin : TEST_LED2 */
+    GPIO_DEVICE_CONFIG(BOARD_MCU_GPIO_TEST_LED2_PORT_NUM, BOARD_MCU_GPIO_TEST_LED2_PIN_NUM) |
     GPIO_CFG_OUTPUT,
-
-    /* Output pin : ETH_LED3 */
-    GPIO_DEVICE_CONFIG(1, 48) |
-    GPIO_CFG_OUTPUT,
-
-    /* Output pin : ETH_LED4 */
-    GPIO_DEVICE_CONFIG(1, 68) |
-    GPIO_CFG_OUTPUT,
-
-    /* Output pin : ETH_LED5 */
-    GPIO_DEVICE_CONFIG(0, 73) |
-    GPIO_CFG_OUTPUT,
-
-    /* Output pin : ETH_LED6 */
-    GPIO_DEVICE_CONFIG(0, 93) |
-    GPIO_CFG_OUTPUT,
-
-    /* Output pin : ETH_LED7 */
-    GPIO_DEVICE_CONFIG(0, 75) |
-    GPIO_CFG_OUTPUT,
-
-    /* Output pin : ETH_LED8 */
-    GPIO_DEVICE_CONFIG(0, 95) |
-    GPIO_CFG_OUTPUT,
-
-    /* Output pin : IDK_IOEXP_LDn_1V8 */
-    /* Used for McSPI HVS LDn */
-    GPIO_DEVICE_CONFIG(0, 65) |
-    GPIO_CFG_OUTPUT,
-
-    //    /* Output pin : GPIO_ETH0/1_RESETn */
-    //    GPIO_DEVICE_CONFIG(1, 58) |
-    //    GPIO_CFG_OUTPUT,
-    //
-    //    /* Output pin : GPIO_ETH2/3_RESETn */
-    //    GPIO_DEVICE_CONFIG(1, 38) |
-    //    GPIO_CFG_OUTPUT,
-
 };
 
 /* GPIO Driver call back functions */
@@ -125,54 +79,43 @@ GPIO_v0_Config GPIO_v0_config =
     0x2U,
 };
 
-#ifdef AM65XX_ALPHA_BOARD
-#define AM65XX_IDK_RED0_GPIO        0
-#define AM65XX_IDK_GREEN0_GPIO      1
-#define AM65XX_IDK_YELLOW0_GPIO     2
-#define AM65XX_IDK_RED1_GPIO        4
-#define AM65XX_IDK_GREEN1_GPIO      5
-#define AM65XX_IDK_YELLOW1_GPIO     6
-#else
-#define AM65XX_IDK_RED0_GPIO        1
-#define AM65XX_IDK_GREEN0_GPIO      0
-#define AM65XX_IDK_YELLOW0_GPIO     2
-#define AM65XX_IDK_RED1_GPIO        5
-#define AM65XX_IDK_GREEN1_GPIO      4
-#define AM65XX_IDK_YELLOW1_GPIO     6
-#endif
+#define AM64X_EVM_RED0_GPIO        1
+#define AM64X_EVM_GREEN0_GPIO      1
+#define AM64X_EVM_YELLOW0_GPIO     1
+#define AM64X_EVM_RED1_GPIO        0
+#define AM64X_EVM_GREEN1_GPIO      0
+#define AM64X_EVM_YELLOW1_GPIO     0
 
 void  Board_setTriColorLED(uint32_t gpioLeds, uint8_t value)
 {
     if(gpioLeds & BOARD_TRICOLOR0_RED)
     {
-        GPIO_write(AM65XX_IDK_RED0_GPIO, value);
+        GPIO_write(AM64X_EVM_RED0_GPIO, value);
     }
 
     if(gpioLeds & BOARD_TRICOLOR0_GREEN)
     {
-        GPIO_write(AM65XX_IDK_GREEN0_GPIO, value);
+        GPIO_write(AM64X_EVM_GREEN0_GPIO, value);
     }
 
     if(gpioLeds & BOARD_TRICOLOR0_YELLOW)
     {
-        GPIO_write(AM65XX_IDK_YELLOW0_GPIO, value);
+        GPIO_write(AM64X_EVM_YELLOW0_GPIO, value);
     }
 
     if(gpioLeds & BOARD_TRICOLOR1_RED)
 
     {
-        GPIO_write(AM65XX_IDK_RED1_GPIO, value);
+        GPIO_write(AM64X_EVM_RED1_GPIO, value);
     }
 
     if(gpioLeds & BOARD_TRICOLOR1_GREEN)
     {
-        GPIO_write(AM65XX_IDK_GREEN1_GPIO, value);
+        GPIO_write(AM64X_EVM_GREEN1_GPIO, value);
     }
 
     if(gpioLeds & BOARD_TRICOLOR1_YELLOW)
     {
-        GPIO_write(AM65XX_IDK_YELLOW1_GPIO, value);
+        GPIO_write(AM64X_EVM_YELLOW1_GPIO, value);
     }
 }
-
-#endif /* TIESC_EMULATION_PLATFORM */

@@ -43,80 +43,58 @@
 void bsp_ethphy_init(PRUICSS_Handle pruIcssHandle, uint8_t phy0addr,
                      uint8_t phy1addr, uint8_t enhancedlink_enable)
 {
-#ifndef TIESC_EMULATION_PLATFORM
+    uint32_t mdioBaseAddress = (uint32_t)(((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase);
+
     if(TIESC_MDIO_RX_LINK_ENABLE == enhancedlink_enable)
     {
-        Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
-        Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
+        Board_phyLedConfig(mdioBaseAddress, phy0addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
+        Board_phyLedConfig(mdioBaseAddress, phy1addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
     }
-#endif
 
-    while(!Board_getPhyIdentifyStat((((PRUICSS_HwAttrs *)(
-                                          pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr))
+    while(!Board_getPhyIdentifyStat(mdioBaseAddress, phy0addr))
     {
     }
 
-    while(!Board_getPhyIdentifyStat((((PRUICSS_HwAttrs *)(
-                                          pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr))
+    while(!Board_getPhyIdentifyStat(mdioBaseAddress, phy1addr))
     {
     }
 
-    //SWSCR2
-    //Bit2: Enable RXERR during IDLE detection
-    //Bit1: Disable detection of transmit error in odd-nibble boundary for odd nibble insertion)
-    //Bit5: Force Full-Duplex while working with link partner in forced 100B-TX. When the
-    //PHY is set to Auto-Negotiation or Force 100B-TX and the link partner is operated
-    //in Force 100B-TX, the link is always Full Duplex
-    //For EtherCAT : Disable enhanced LED link function
+    //Enable Extended Full-Duplex
+    Board_phyExtFDEnable(mdioBaseAddress, phy0addr);
+    Board_phyExtFDEnable(mdioBaseAddress, phy1addr);
 
-    Board_phyExtFDEnable((((PRUICSS_HwAttrs *)(
-                               pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr);
-    Board_phyExtFDEnable((((PRUICSS_HwAttrs *)(
-                               pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr);
-    Board_phyODDNibbleDetEnable((((PRUICSS_HwAttrs *)(
-                                      pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr);
-    Board_phyODDNibbleDetEnable((((PRUICSS_HwAttrs *)(
-                                      pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr);
-    Board_phyRxErrIdleEnable((((PRUICSS_HwAttrs *)(
-                                   pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr);
-    Board_phyRxErrIdleEnable((((PRUICSS_HwAttrs *)(
-                                   pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr);
+    //Enable Odd Nibble Detection
+    Board_phyODDNibbleDetEnable(mdioBaseAddress, phy0addr);
+    Board_phyODDNibbleDetEnable(mdioBaseAddress, phy1addr);
 
-    //Enable enhanced link detection in TLK110 for EtherCAT
+    //Enable detection of RXERR during IDLE
+    Board_phyEnhancedIPGDetEnable(mdioBaseAddress, phy0addr);
+    Board_phyEnhancedIPGDetEnable(mdioBaseAddress, phy1addr);
+
+    /* PHY pin LED_0 as link for fast link detection */
+    Board_phyLedConfig(mdioBaseAddress, phy0addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
+    Board_phyLedConfig(mdioBaseAddress, phy1addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
+
+    /* PHY pin LED_1 as 1G link established */
+    Board_phyLedConfig(mdioBaseAddress, phy0addr, DPPHY_LEDCR_LED1, DPPHY_LEDCR_MODE5);
+    Board_phyLedConfig(mdioBaseAddress, phy1addr, DPPHY_LEDCR_LED1, DPPHY_LEDCR_MODE5);
+
+    /* PHY pin LED_2 as Rx/Tx Activity */
+    Board_phyLedConfig(mdioBaseAddress, phy0addr, DPPHY_LEDCR_LED2, DPPHY_LEDCR_MODE11);
+    Board_phyLedConfig(mdioBaseAddress, phy1addr, DPPHY_LEDCR_LED2, DPPHY_LEDCR_MODE11);
+
+    /* PHY pin LED_3 as 100M link established */
+    Board_phyLedConfig(mdioBaseAddress, phy0addr, DPPHY_LEDCR_LED3, DPPHY_LEDCR_MODE8);
+    Board_phyLedConfig(mdioBaseAddress, phy1addr, DPPHY_LEDCR_LED3, DPPHY_LEDCR_MODE8);
+
+    Board_phyLedBlinkConfig(mdioBaseAddress, phy0addr, LED_BLINK_200);
+    Board_phyLedBlinkConfig(mdioBaseAddress, phy1addr, LED_BLINK_200);
+
+    //Enable fast link drop detection for EtherCAT
     //Bit3: Drop the link based on RX Error count of the MII interface, when a predefined number
     // of 32 RX Error occurrences in a 10us interval is reached, the link will be dropped
     // Bit0: Drop the link based on Signal/Energy loss indication, when the Energy detector
     //indicates Energy Loss, the link will be dropped. Typical reaction time is 10us.
-#ifndef TIESC_EMULATION_PLATFORM
-    /* PHY pin LED_0 as link for fast link detection */
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED0, DPPHY_LEDCR_MODE0);
-
-    /* PHY pin LED_1 as 1G link established */
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED1, DPPHY_LEDCR_MODE5);
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED1, DPPHY_LEDCR_MODE5);
-
-    /* PHY pin LED_2 as Rx/Tx Activity */
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED2, DPPHY_LEDCR_MODE11);
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED2, DPPHY_LEDCR_MODE11);
-
-    /* PHY pin LED_3 as 100M link established */
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, DPPHY_LEDCR_LED3, DPPHY_LEDCR_MODE8);
-    Board_phyLedConfig((((PRUICSS_HwAttrs *)(pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, DPPHY_LEDCR_LED3, DPPHY_LEDCR_MODE8);
-
-
-    Board_phyLedBlinkConfig((((PRUICSS_HwAttrs *)(
-                                  pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr, LED_BLINK_200);
-    Board_phyLedBlinkConfig((((PRUICSS_HwAttrs *)(
-                                  pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr, LED_BLINK_200);
-
-#endif /* TIESC_EMULATION_PLATFORM */
-
-    Board_phyFastLinkDownDetEnable((((PRUICSS_HwAttrs *)(
-                                         pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy0addr,
-                                   FAST_LINKDOWN_SIGENERGY | FAST_LINKDOWN_RXERR);
-    Board_phyFastLinkDownDetEnable((((PRUICSS_HwAttrs *)(
-                                         pruIcssHandle->hwAttrs))->prussMiiMdioRegBase), phy1addr,
-                                   FAST_LINKDOWN_SIGENERGY | FAST_LINKDOWN_RXERR);
+    Board_phyFastLinkDownDetEnable(mdioBaseAddress, phy0addr, FAST_LINKDOWN_SIGENERGY | FAST_LINKDOWN_RXERR);
+    Board_phyFastLinkDownDetEnable(mdioBaseAddress, phy1addr, FAST_LINKDOWN_SIGENERGY | FAST_LINKDOWN_RXERR);
 }
-

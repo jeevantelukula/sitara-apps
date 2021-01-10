@@ -44,9 +44,6 @@
 
 #define DPPHY_OP_MODE_DECODE_MII    (1u<<5)
 
-/*TODO: Remove this after verifying it to be working*/
-#if ! (defined(EIP_EMULATION_PLATFORM) || defined(PN_EMULATION_PLATFORM) || defined(TIESC_EMULATION_PLATFORM))
-
 /**
 * @brief Function does the  LED Configuration of DP83869 PHY
 *
@@ -89,8 +86,6 @@ void Board_phyLedConfig(uint32_t mdioBaseAddress, uint32_t phyNum,
 
     CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_LEDCR1_REG, phyregval);
 }
-#endif
-
 
 /**
 * @brief Function to configure PHY in MII mode

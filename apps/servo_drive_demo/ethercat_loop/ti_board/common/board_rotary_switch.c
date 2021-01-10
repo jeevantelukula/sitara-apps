@@ -35,8 +35,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
-#ifndef TIESC_EMULATION_PLATFORM
-
 #include <ti/drv/i2c/I2C.h>
 #include <ti/drv/uart/UART_stdio.h>
 #include <delay_us.h>
@@ -124,5 +122,3 @@ void Board_readRotarySwitch(uint8_t *readBuf)
         regRdBuf; //taking only the lower 4 bits which reflect the input ports
     return;
 }
-
-#endif

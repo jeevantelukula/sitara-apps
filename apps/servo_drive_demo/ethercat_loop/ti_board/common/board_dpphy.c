@@ -389,6 +389,11 @@ void Board_phyFastLinkDownDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum,
     MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_FLD_CFG_REG, phyregval);
 }
 
+void Board_phyFastLinkDownDetDisable(uint32_t mdioBaseAddress, uint32_t phyNum)
+{
+    MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_FLD_CFG_REG, 0);
+}
+
 void Board_phyExtFDEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
 {
     uint16_t phyregval = 0;
@@ -397,7 +402,6 @@ void Board_phyExtFDEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
     phyregval |= DPPHY_EXT_FD_ENABLE;
     CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, DPPHY_CFG3_REG, phyregval);
 }
-
 
 void Board_phyEnhLEDLinkEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
 {
@@ -416,16 +420,6 @@ void Board_phyODDNibbleDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
     MDIO_phyExtRegRead(mdioBaseAddress, phyNum, DPPHY_100CR_REG, &phyregval);
     phyregval |= (DPPHY_ODDNIBBLE_DET_ENABLE);
     MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_100CR_REG, phyregval);
-}
-
-void Board_phyRxErrIdleEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
-{
-    //TODO: Implement this function
-
-    //    uint16_t phyregval = 0;
-    //    CSL_MDIO_phyRegRead(mdioBaseAddress, phyNum, TLKPHY_CR2_REG, &phyregval);
-    //    phyregval |= RXERROR_IDLE_ENABLE;
-    //    CSL_MDIO_phyRegWrite(mdioBaseAddress, phyNum, TLKPHY_CR2_REG, phyregval);
 }
 
 uint8_t Board_getPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum)
@@ -697,4 +691,12 @@ uint8_t MDIO_getPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum)
     }
 
     return PHY_CONFIG_INVALID;
+}
+
+void Board_phyEnhancedIPGDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
+{
+    uint16_t phyregval = 0;
+    MDIO_phyExtRegRead(mdioBaseAddress, phyNum, DPPHY_100CR_REG, &phyregval);
+    phyregval |= (DPPHY_ENHANCED_IPG_DET_ENABLE);
+    MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_100CR_REG, phyregval);
 }

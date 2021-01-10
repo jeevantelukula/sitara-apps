@@ -101,9 +101,8 @@ ADDITIONAL_STATIC_LIBS += ti.csl.aer5f
 ADDITIONAL_STATIC_LIBS += ti.board.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aer5f
 ADDITIONAL_STATIC_LIBS += ti.drv.i2c.aer5f
-# FIXME : gpio library is not yet available from PDK. Once available, library will be included for AM64X and AM65X.
-ifeq ($(TARGET_PLATFORM),AM65X)
 ADDITIONAL_STATIC_LIBS += ti.drv.gpio.aer5f
+ifeq ($(TARGET_PLATFORM),AM65X)
 ADDITIONAL_STATIC_LIBS += ethercat_slave_fwhal_lib_AM65xx_r5f.lib
 endif
 ADDITIONAL_STATIC_LIBS += ti.drv.spi.aer5f

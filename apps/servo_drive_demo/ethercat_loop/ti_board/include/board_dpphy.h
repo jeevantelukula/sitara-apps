@@ -77,6 +77,7 @@
 
 #define DPPHY_EXT_FD_ENABLE         (1u<<11)
 
+#define DPPHY_ENHANCED_IPG_DET_ENABLE       (1u<<4)
 #define DPPHY_ODDNIBBLE_DET_ENABLE           (1u<<1)
 #define DPPHY_FASTRXDV_DET_ENABLE           (1u<<0)
 
@@ -361,19 +362,6 @@ extern void Board_phyEnhLEDLinkEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
 extern void Board_phyODDNibbleDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum);
 
 /**
-* @brief Enables Detection of Receive Symbol Error During IDLE State
-*
-*       Function is used to enable Receive Symbol Error During IDLE State
-*       MDIO init shall be done before using this function, The Sem handle need to be passed if the
-*       Thread safe MDIO read is used, Pass NULL otherwise
-*
-* @param mdioBaseAddress    [IN] MDIO Base Address
-* @param phyNum             [IN] Phy address of the port
-
-* @retval none
-*/
-extern void Board_phyRxErrIdleEnable(uint32_t mdioBaseAddress, uint32_t phyNum);
-/**
 * @brief Function does the  LED Configuration of PHY
 *
 * @param mdioBaseAddress MDIO Base Address
@@ -545,4 +533,23 @@ void MDIO_setPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum,
 */
 uint8_t MDIO_getPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum);
 
+/**
+* @brief Function to disable Fast Link Drop Detection
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+
+* @retval none
+*/
+extern void Board_phyFastLinkDownDetDisable(uint32_t mdioBaseAddress, uint32_t phyNum);
+
+/**
+* @brief Function to enable Enhanced Interpacket Gap Detection
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+
+* @retval none
+*/
+extern void Board_phyEnhancedIPGDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum);
 #endif

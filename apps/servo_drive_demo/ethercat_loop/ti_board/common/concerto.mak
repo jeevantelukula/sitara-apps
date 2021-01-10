@@ -6,12 +6,12 @@ include $(PRELUDE)
 TARGET      := app_servo_drive_ethcat_tiboard_common
 TARGETTYPE  := library
 ifeq ($(TARGET_PLATFORM),AM65X)
-CSOURCES    := board_dp83867.c
+CSOURCES    := board_dp83867.c board_rotary_switch.c
 endif
 ifeq ($(TARGET_PLATFORM),AM64X)
 CSOURCES    := board_dp83869.c
 endif
-CSOURCES    += board_dpphy.c board_misc.c delay_us.c board_rotary_switch.c
+CSOURCES    += board_dpphy.c board_misc.c delay_us.c
 
 # Define root directory
 LIBDIR := $(abspath $(SDIR)/../..)
