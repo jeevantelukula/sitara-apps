@@ -61,6 +61,12 @@
 /* Compare event router CFG base */
 #define CMPEVENT_INTRTR0_INTR_ROUTER_CFG_BASE ( CSL_CMP_EVENT_INTROUTER0_CFG_BASE )
 
+/* Interrupt Aggregator event/virtual interrupt numbers */
+#define INTAGGR_LOCAL_EVT_NUM		0
+#define INTAGGR_GLOBAL_EVT_NUM		1500
+#define INTAGGR_VINT_NUM		168
+#define INTAGGR_VINT_STATUS_BIT		0
+
 /* Configure interrupt aggregator */
 int32_t configureInterruptAggregator(
     int32_t iaLevi,

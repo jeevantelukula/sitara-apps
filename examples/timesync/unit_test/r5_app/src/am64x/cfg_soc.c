@@ -125,7 +125,7 @@ int32_t configureInterrupts()
     }
 
     /* Configure Interrupt Aggregator (for M4 interrupt)*/
-    status = configureInterruptAggregator(0, 1500, 168, 0);
+    status = configureInterruptAggregator(INTAGGR_LOCAL_EVT_NUM, INTAGGR_GLOBAL_EVT_NUM, INTAGGR_VINT_NUM, INTAGGR_VINT_STATUS_BIT);
     if (status != CFG_HOST_INTR_ERR_NERR) {
         status = TEST_TS_ERR_CFG_HOST_INTR;
         UART_printf("\n\rError=%d: ", status);
