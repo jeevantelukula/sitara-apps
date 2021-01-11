@@ -4,7 +4,6 @@
 
 # Filter based on OS so that concerto does not attempt any other
 # combinations.
-ifeq ($(TARGET_OS),NO_OS)
 ifeq ($(TARGET_CPU),R5F)
 
 include $(PRELUDE)
@@ -18,5 +17,4 @@ CSOURCES    := profile.c
 
 include $(FINALE)
 
-endif
 endif

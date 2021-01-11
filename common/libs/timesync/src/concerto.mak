@@ -2,10 +2,6 @@
 # Makefile system. This concerto.mak file specifies a target module in the
 # Ccncerto build system.
 
-# Filter based on OS so that concerto does not attempt any other
-# combinations.
-ifeq ($(TARGET_CPU),R5F)
-
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
@@ -30,5 +26,3 @@ CSOURCES    := icssgTimesyncDrv.c icssgTimesyncDrv_utils.c
 
 # End concerto module declarations
 include $(FINALE)
-
-endif
