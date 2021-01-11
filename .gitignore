@@ -4,7 +4,6 @@
 *.orig
 **/out/
 gen/
-*array.h
 **/build/src/
 .settings/
 .xdchelp

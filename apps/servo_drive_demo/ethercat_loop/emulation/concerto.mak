@@ -39,7 +39,7 @@ IDIRS+=$(APPDIR)/../common/libs/misc/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/misc/include
 IDIRS+=$(APPDIR)/beckhoff_ssc
 IDIRS+=$(EXAMPLEDIR)/timesync/driver/include
-IDIRS+=$(EXAMPLEDIR)/timesync/firmware
+IDIRS+=$(EXAMPLEDIR)/timesync/driver/firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl

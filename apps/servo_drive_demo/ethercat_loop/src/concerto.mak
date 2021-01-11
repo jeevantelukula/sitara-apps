@@ -65,7 +65,7 @@ IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 
 # Add this for time sync
 IDIRS+=$(EXAMPLEDIR)/timesync/driver/include
-IDIRS+=$(EXAMPLEDIR)/timesync/firmware
+IDIRS+=$(EXAMPLEDIR)/timesync/driver/firmware
 IDIRS+=$(APPDIR)/src/$(SITARA_DEMO_SOC)
 LDIRS+=$(EXAMPLEDIR)/timesync/out/$(TARGET_PLATFORM)/R5F/SYSBIOS/$(TARGET_BUILD)
 

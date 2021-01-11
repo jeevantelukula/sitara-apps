@@ -26,9 +26,8 @@ UNITTEST_PATH := $(APPDIR)/..
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
 IDIRS+=$(APPDIR)/include/$(SITARA_DEMO_SOC)
-IDIRS+=$(UNITTEST_PATH)/../firmware/include
 IDIRS+=$(UNITTEST_PATH)/../driver/include
-IDIRS+=$(UNITTEST_PATH)/../firmware
+IDIRS+=$(UNITTEST_PATH)/../driver/firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
