@@ -27,6 +27,12 @@ CSOURCES    := app_pslctrl.c $(SITARA_DEMO_SOC)/app_pslctrl_cfg.c app_pslctrl_mb
 APPDIR := $(abspath $(SDIR)/..)
 EXAMPLEDIR := $(abspath $(SDIR)/../../../../examples)
 
+# Define sitara_apps root directory
+SITARA_APPS_DIR := $(abspath $(SDIR)/../../../../)
+
+# common library dependencies
+COMMON_LIB = $(abspath $(SITARA_APPS_DIR)/common/libs)
+
 # Add directory to include search path
 IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include/$(SITARA_DEMO_SOC)
@@ -38,15 +44,15 @@ IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 IDIRS+=$(APPDIR)/../common/libs/misc/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/misc/include
 IDIRS+=$(APPDIR)/beckhoff_ssc
-IDIRS+=$(EXAMPLEDIR)/timesync/driver/include
-IDIRS+=$(EXAMPLEDIR)/timesync/driver/firmware
+IDIRS+=$(COMMON_LIB)/timesync/include
+IDIRS+=$(COMMON_LIB)/timesync/firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 
-# Add directory to library search path
-LDIRS+=$(EXAMPLEDIR)/timesync/out/$(TARGET_PLATFORM)/R5F/SYSBIOS/$(TARGET_BUILD)
+# Add directory to the search path
+LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/$(TARGET_CPU)/$(TARGET_OS)/$(TARGET_BUILD)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -69,7 +75,7 @@ STATIC_LIBS += app_libs_logs
 STATIC_LIBS += app_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_libs_misc
-STATIC_LIBS += ex_timesync_libs_driver
+STATIC_LIBS += common_libs_timesync
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f

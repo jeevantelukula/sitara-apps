@@ -4,14 +4,13 @@
 
 # Filter based on OS so that concerto does not attempt any other
 # combinations.
-ifeq ($(TARGET_OS), $(filter $(TARGET_OS), SYSBIOS NO_OS))
 ifeq ($(TARGET_CPU),R5F)
 
 # Begin the concerto module declarations by includng the "PRELUDE"
 include $(PRELUDE)
 
 # Define object name (TARGET) and type (TARGET_TYPE)
-TARGET      := ex_timesync_libs_driver
+TARGET      := common_libs_timesync
 TARGETTYPE  := library
 
 # Define library root directory
@@ -32,5 +31,4 @@ CSOURCES    := icssgTimesyncDrv.c icssgTimesyncDrv_utils.c
 # End concerto module declarations
 include $(FINALE)
 
-endif
 endif

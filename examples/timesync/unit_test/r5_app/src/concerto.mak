@@ -19,6 +19,12 @@ TARGETTYPE  := exe
 # Provide list of C files by using built-in macro
 CSOURCES    := main_timesync_test.c app_timesync.c cfg_host_intr.c test_utils.c $(SITARA_DEMO_SOC)/cfg_soc.c
 
+# Define sitara_apps root directory
+SITARA_APPS_DIR := $(abspath $(SDIR)/../../../../../)
+
+# common library dependencies
+COMMON_LIB = $(abspath $(SITARA_APPS_DIR)/common/libs)
+
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
 UNITTEST_PATH := $(APPDIR)/..
@@ -26,12 +32,15 @@ UNITTEST_PATH := $(APPDIR)/..
 # Add directory to include search path
 IDIRS+=$(APPDIR)/include
 IDIRS+=$(APPDIR)/include/$(SITARA_DEMO_SOC)
-IDIRS+=$(UNITTEST_PATH)/../driver/include
-IDIRS+=$(UNITTEST_PATH)/../driver/firmware
+IDIRS+=$(COMMON_LIB)/timesync/include
+IDIRS+=$(COMMON_LIB)/timesync/firmware
 
 # Add this for including private board headers
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
+
+# Add directory to the search path
+LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/$(TARGET_CPU)/$(TARGET_OS)/$(TARGET_BUILD)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -44,7 +53,7 @@ PDK_CORE_ID = mcu1_0
 # Append to STATIC_LIBS for common demo libraries
 # These must also be built using concerto, and concerto will handle the
 # dependencies
-STATIC_LIBS += ex_timesync_libs_driver
+STATIC_LIBS += common_libs_timesync
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.osal.aer5f

@@ -18,7 +18,10 @@ ifeq ($(TARGET_PLATFORM),AM64X)
 TARGET_COMBOS ?= AM64X:NO_OS:R5F:2:release:TIARMCGT \
                  AM64X:NO_OS:R5F:2:debug:TIARMCGT \
                  AM64X:SYSBIOS:R5F:2:release:TIARMCGT \
-                 AM64X:SYSBIOS:R5F:2:debug:TIARMCGT
+                 AM64X:SYSBIOS:R5F:2:debug:TIARMCGT \
+                 AM64X:NO_OS:M4F:2:release:TIARMCGT \
+                 AM64X:NO_OS:M4F:2:debug:TIARMCGT
+                 
 endif
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
