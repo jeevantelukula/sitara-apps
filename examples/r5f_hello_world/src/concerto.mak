@@ -44,7 +44,7 @@ IDIRS+=$(PDK_PATH)/packages/ti/board/src/$(PDK_BOARD)/include
 IDIRS+=$(PDK_PATH)/packages/ti/csl
 
 # Add directory to the search path
-LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)
+LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/$(TARGET_CPU)/$(TARGET_OS)/$(TARGET_BUILD)
 
 # Append to STATIC_LIBS for common demo libraries
 # These must also be built using concerto, and concerto will handle the
