@@ -39,12 +39,6 @@ ifeq ($(HOST_OS),Windows_NT)
 BUILD_LINUX_APPS = 0
 endif
 
-# Build variable to support a RTOS/BM only (non-Linux) demo build
-# Linux images will not be available in RTOS build flow
-# By default, set for RTOS + Linux build
-# Set RTOS_ONLY_BUILD=1 from console for RTOS only build
-RTOS_ONLY_BUILD ?= 1
-
 #Build Servo Drive Demo Combined App Image
 RTOS_BIN_PATH1=$(HOST_ROOT)/$(BUILD_OUTPUT)
 #Dummy parameter should be passed to the script
@@ -66,11 +60,6 @@ SYSFWVERSION=V3
 SYSFWFILE=sysfw.bin
 endif
 
-ifneq ($(RTOS_ONLY_BUILD),1)
-#TBD - app_img_build & clean with RTOS_Linux images
-app_img_build:
-app_img_build_clean:
-else
 app_img_build:
 			  $(MAKE) -C $(call PATH_CONV, $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage) IMG1=$(IMG1) IMG2=$(IMG2) IMG3=$(IMG3) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC) HLOS_BOOT=$(HLOS_BOOT)
 #Create Servo Drive Demo SD Card Image
@@ -87,7 +76,6 @@ app_img_build_clean:
 			  $(CLEANDIR) $(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/)
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/SDCardImage)
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage)
-endif
 
 ifeq ($(BUILD_LINUX_APPS),1)
 # Add targets for Linux cmake app
