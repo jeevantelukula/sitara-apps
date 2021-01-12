@@ -657,6 +657,17 @@ void common_main()
         Board_init(BOARD_INIT_ICSS_PINMUX | BOARD_INIT_PINMUX_CONFIG);
     }
 
+#ifdef SOC_AM64X
+    CSL_main_ctrl_mmr_cfg0Regs * mmrCtrlRegister = (CSL_main_ctrl_mmr_cfg0Regs *) CSL_CTRL_MMR0_CFG0_BASE;
+    uint32_t mmrMagicRegister = mmrCtrlRegister->RST_MAGIC_WORD;
+
+    /* Send a message to Partner M4F Core that R5F is up and running. */
+    if(mmrMagicRegister != 0)
+    {
+	    Send_BootComplete_Message_To_Partner();
+    }
+#endif
+
     TaskP_Params_init(&taskParams);
     taskParams.priority = 4;
     taskParams.stacksize = 2048*TIESC_TASK_STACK_SIZE_MUL;
@@ -693,18 +704,15 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 {
     uint32_t payload;
     ecat2mc_msg_obj_t *txobj;
-	static uint8_t msgsent=0U;
 	uint16_t axisIndex = pCiA402Axis->axisIndex;
 	float IncFactor    = (float)0.0010922 * (float) pCiA402Axis->u32CycleTime;
 	int32_t i32TargetVelocity = 0;
-	
-	if(msgsent == 0U)
-	{
-		/* Send a message to Partner Core that R5F is up and running. */
-		Send_BootComplete_Message_To_Partner();
-		msgsent = 1U;
-	}
- 
+
+#ifdef SOC_AM64X
+	/* Send a message to Partner M4F Core that R5F motor control is ready */
+	Send_STOControl_Message_To_Partner(false);
+#endif
+
 	axisIndex = pCiA402Axis->axisIndex;
 	ptrLocalAxes[axisIndex] = pCiA402Axis;
     if (axisIndex < MAX_NUM_AXES)

@@ -107,5 +107,6 @@ void * tiesc_memset(uint8_t *dst, int8_t val, uint32_t size_bytes);
 void Configure_Rat(void);
 void Configure_Mbox(void);
 void Send_BootComplete_Message_To_Partner(void);
+void Send_STOControl_Message_To_Partner(bool);
 
 #endif /* _TIESC_SOC_H_ */

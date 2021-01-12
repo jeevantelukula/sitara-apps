@@ -119,12 +119,12 @@ void Configure_Mbox(void)
 
 void Send_BootComplete_Message_To_Partner(void)
 {
-	uint32_t msg_status;
+    uint32_t msg_status;
 	
     Configure_Rat();
     Configure_Mbox();
 
-	/*Sending this data to test Black Channel data exchange only. This will not be used until FSoE is available on M4F. */
+    /*Sending this data to test Black Channel data exchange only. This will not be used until FSoE is available on M4F. */
     BlackChannel.num_bytes = 3U;    /* data size */
     BlackChannel.data[0] = 0xA0U;   /* data[0] */
     BlackChannel.data[1] = 0x55U;   /* data[1] */
@@ -132,8 +132,25 @@ void Send_BootComplete_Message_To_Partner(void)
 
     /* Send Message to M4F. */
     msg_status = MailboxSendMessage(MAILBOX_BASE_ADDRESS, MAILBOX_QUEUE_0, (uint32_t) CMD_MAILBOX_MSG_BOOT_COMPLETE);
-	/*To avoid compiler warning.*/
-	msg_status = msg_status;
+    /*To avoid compiler warning.*/
+    msg_status = msg_status;
+}
+
+void Send_STOControl_Message_To_Partner(bool enable)
+{
+    uint32_t msg_status;
+
+    /* Send Message to M4F. */
+    if (enable)
+    {
+        msg_status = MailboxSendMessage(MAILBOX_BASE_ADDRESS, MAILBOX_QUEUE_0, (uint32_t) CMD_MAILBOX_MSG_APPLY_STO);
+    }
+    else
+    {
+        msg_status = MailboxSendMessage(MAILBOX_BASE_ADDRESS, MAILBOX_QUEUE_0, (uint32_t) CMD_MAILBOX_MSG_LIFT_STO);
+    }
+    /*To avoid compiler warning.*/
+    msg_status = msg_status;
 }
 
 uint8_t isEtherCATDevice(void)
