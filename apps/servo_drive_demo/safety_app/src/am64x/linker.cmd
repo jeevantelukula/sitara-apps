@@ -45,7 +45,7 @@ SECTIONS
     .data          : {} palign(128)    > DRAM_M4F_MEM
     .boardcfg_data : {} palign(128)    > DRAM_M4F_MEM
     .sysmem        : {}                > DRAM_M4F_MEM
-    .safedata      : {} palign(8)      > OCSRAM5
+    .safedata      : {} palign(8)      > OCSRAM6
 
     .stack      : {} align(4)       > DRAM_M4F_MEM
     .irqStack   : {. = . + __IRQ_STACK_SIZE;} align(4)      > DRAM_M4F_MEM
