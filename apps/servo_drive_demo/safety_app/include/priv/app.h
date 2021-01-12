@@ -39,7 +39,7 @@
 
 void configure_interrupts();
 void configure_isolation();
-bool configure_ledPattern();
+int32_t configure_ledPattern();
 
 void main_warm_rst_req_isr();
 void mcu_esm_error_isr();

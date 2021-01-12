@@ -43,13 +43,13 @@
 #include "ratcfg.h"
 
 /* ti/csl/soc/am64x/src/cslr_soc_baseaddress.h */
-#define MAIN_ESM_MMR        (CSL_ESM0_CFG_BASE + MCU_RAT_OFFSET6)
-#define MCU_ESM_MMR         (CSL_MCU_ESM0_CFG_BASE + MCU_RAT_OFFSET0)
+#define MAIN_ESM_MMR        (CSL_ESM0_CFG_BASE + M4F_RAT_MODULES_OFFSET)
+#define MCU_ESM_MMR         (CSL_MCU_ESM0_CFG_BASE + M4F_RAT_MODULES_OFFSET)
 
-bool configure_esm()
+int32_t configure_esm()
 {
     /* return false on success */
-    bool retVal = false;
+    int32_t retVal = CSL_PASS;
 
     /* ti/csl/soc/am64x/src/cslr_intr_esm0.h */
     uint32_t error_list[] = {0,1,2,3,6,8,13,14,18,19,20,21,22,23,29,44,62,63,64,65,66,67,69,71,76,77,80,81,82,83,84,85,90,103,104,128,129,130,131,132,133,134,135};
@@ -96,10 +96,10 @@ bool configure_esm()
     return retVal;
 }
 
-bool main_esm_clear_error()
+int32_t main_esm_clear_error()
 {
     /* return false on success */
-    bool retVal = false;
+    int32_t retVal = CSL_PASS;
 
     uint32_t activeError, intrStatus;
     esmGroupIntrStatus_t groupStatus; 

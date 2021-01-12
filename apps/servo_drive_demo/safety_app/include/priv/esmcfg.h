@@ -34,9 +34,7 @@
 #ifndef ESMCFG_H_
 #define ESMCFG_H_
 
-#include <stdbool.h>
-
-bool configure_esm();
-bool main_esm_clear_error();
+int32_t configure_esm();
+int32_t main_esm_clear_error();
 
 #endif /* ESMCFG_H_*/

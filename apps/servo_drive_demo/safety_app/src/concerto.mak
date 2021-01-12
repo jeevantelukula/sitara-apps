@@ -45,8 +45,10 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 
 # Append to ADDITIONAL_STATIC_LIBS for external libraries (e.g. PDK)
 ADDITIONAL_STATIC_LIBS += ti.csl.aem4f
+ADDITIONAL_STATIC_LIBS += ti.board.aem4f
 ADDITIONAL_STATIC_LIBS += ti.csl.init.aem4f
 ADDITIONAL_STATIC_LIBS += ti.drv.uart.aem4f
+ADDITIONAL_STATIC_LIBS += sciclient.aem4f
 ADDITIONAL_STATIC_LIBS += ti.osal.aem4f
 
 # Add run-time libraries from toolchain

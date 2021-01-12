@@ -34,20 +34,13 @@
 #ifndef RATCFG_H_
 #define RATCFG_H_
 
-#include <stdbool.h>
-
 /* ti/csl/arch/m4/src/startup.c */
-/* MCU Domain Modules at 0x04000000, M4F accesses at 0x64000000 */
-#define MCU_RAT_OFFSET0     (uint32_t) 0x60000000
-/* MAIN Domain SRAM at 0x70000000, M4F accesses at 0x70000000 */
-#define MCU_RAT_OFFSET1     (uint32_t) 0x00000000
+/* MAIN Domain Modules range    0x00000000 to 0x04000000
+    M4F accesses at range       0x60000000 to 0x64000000 */
+/* MCU Domain Modules range     0x04000000 to 0x05000000
+    M4F accesses at range       0x64000000 to 0x65000000 */
+#define M4F_RAT_MODULES_OFFSET  (uint32_t) 0x60000000
 /* MAIN Mailbox at 0x29000000, M4F accesses at 0x69000000 */
-#define MCU_RAT_OFFSET7     (uint32_t) 0x40000000
-
-/* defined in configure_rat() */
-/* MAIN ESM at 0x00420000, M4F accesses 0x60420000 */
-#define MCU_RAT_OFFSET6     (uint32_t) 0x60000000
-
-bool configure_rat();
+#define M4F_RAT_MAILBOX_OFFSET  (uint32_t) 0x40000000
 
 #endif /* RATCFG_H_*/
