@@ -44,4 +44,5 @@ extern uint64_t gOverheadTime;
 extern uint64_t gStartTime, gEndTime, gTotalTime;
 
 void init_profiling(void);
+void resetPmuCnt(void);
 uint32_t readPmu(void);

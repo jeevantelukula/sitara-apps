@@ -213,8 +213,8 @@ static CSL_AppEpwmObj_t gAppPwmObj =
             CSL_EPWM_AQ_ACTION_DONOTHING,       /* prdAction */
             CSL_EPWM_AQ_ACTION_HIGH,            /* cmpAUpAction */
             CSL_EPWM_AQ_ACTION_LOW,             /* cmpADownAction */
-            CSL_EPWM_AQ_ACTION_HIGH,            /* cmpBUpAction */
-            CSL_EPWM_AQ_ACTION_LOW              /* cmpBDownAction */
+            CSL_EPWM_AQ_ACTION_LOW,             /* cmpBUpAction */
+            CSL_EPWM_AQ_ACTION_HIGH             /* cmpBDownAction */
         },
         /* CSL_EpwmDeadbandCfg_t */
         {
@@ -245,46 +245,14 @@ static CSL_AppEpwmObj_t gAppPwmObj =
     }
 };
 
+void appADCIntrISR(void *handle) __attribute__((aligned(8), section(".testInCode")));
 void appADCIntrISR(void *handle)
 {
     uint32_t status;
 
-    MCBENCH_log("\nIn ISR...\n");
-	gAdcPwmIntStat.pwmIsrErrCnt = 0;
     status = ADCGetIntrStatus(APP_ADC_MODULE);
     ADCClearIntrStatus(APP_ADC_MODULE, status);
-    if (ADC_INTR_SRC_END_OF_SEQUENCE == (status & ADC_INTR_SRC_END_OF_SEQUENCE))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_FIFO0_THRESHOLD == (status & ADC_INTR_SRC_FIFO0_THRESHOLD))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_FIFO0_OVERRUN == (status & ADC_INTR_SRC_FIFO0_OVERRUN))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_FIFO0_UNDERFLOW == (status & ADC_INTR_SRC_FIFO0_UNDERFLOW))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_FIFO1_THRESHOLD == (status & ADC_INTR_SRC_FIFO1_THRESHOLD))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_FIFO1_OVERRUN == (status & ADC_INTR_SRC_FIFO1_OVERRUN))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_FIFO1_UNDERFLOW == (status & ADC_INTR_SRC_FIFO1_UNDERFLOW))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
-    if (ADC_INTR_SRC_OUT_OF_RANGE == (status & ADC_INTR_SRC_OUT_OF_RANGE))
-    {
-        gAdcPwmIntStat.pwmIsrErrCnt++;
-    }
+
     gAdcPwmIntStat.adcIsrCnt++;
     ADCWriteEOI(APP_ADC_MODULE);
 }
@@ -450,8 +418,8 @@ void appADCPWMBenchInit(int32_t freq)
       break;
     case RUN_FREQ_50K:
       /* 25Mhz/25/5/4 = 50000hz */
-      adcConfig.sampleDelay      = 22U; /* 39-15-2 = 22 */
-      adcConfig.averaging        = ADC_AVERAGING_16_SAMPLES;
+      adcConfig.sampleDelay      = 8U; /* 25-15-2 = 8 */
+      adcConfig.averaging        = ADC_AVERAGING_4_SAMPLES;
       break;
     default:
       /* 25Mhz/39/5/16 = 8013hz */
@@ -511,6 +479,7 @@ void appADCPWMBenchInit(int32_t freq)
         MCBENCH_log("Error in ADC step configuration.\n");
         testErrCount++;
     }
+
     ADCStepIdTagEnable(APP_ADC_MODULE, TRUE);
     configStatus =
         ADCSetCPUFIFOThresholdLevel(APP_ADC_MODULE, ADC_FIFO_NUM_0,
@@ -554,14 +523,16 @@ void appADCPWMBenchDeInit(void)
 /* ----------------------------------------------------------------------
  * ADC/PWM benchmark
  * ------------------------------------------------------------------- */
+int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize) __attribute__((aligned(8), section(".testInCode")));
 int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
 {
   uint32_t        loopcnt, fifoWordCnt;
   int32_t         dutyCycle;
 
   init_profiling();
-  gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
-  gStartTime = readPmu();
+  do {
+   gStartTime = readPmu();
+  } while (gStartTime==0);
   gEndTime = readPmu();
   gOverheadTime = gEndTime - gStartTime;    
   MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
@@ -569,7 +540,7 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
   /* ----------------------------------------------------------------------
   ** Call the ADC/PWM process function
   ** ------------------------------------------------------------------- */
-
+  resetPmuCnt();
   gStartTime = readPmu();
 
   /*Get FIFO data */
@@ -577,7 +548,7 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
   *adcInDataSize = fifoWordCnt;
   for (loopcnt = 0U; loopcnt < fifoWordCnt; loopcnt++)
   {
-    adcInData[loopcnt] = ADCGetFIFOData(APP_ADC_MODULE, ADC_FIFO_NUM_0);
+    adcInData[loopcnt] = HW_RD_REG32(APP_ADC_MODULE + ADC_FIFODATA(ADC_FIFO_NUM_0));
   }
   
   /* change the EPWM duty cycle base on the ADC value */
@@ -593,9 +564,9 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
     /* Count per loop max */ 
     gCountPerLoopMax = gTotalTime;
   }
-  gCountPerLoopAve = ((int64_t)gCountPerLoopAve*(gTimerIntStat.isrCnt-1)+gTotalTime)/gTimerIntStat.isrCnt;
+  gCountPerLoopAve = ((int64_t)gCountPerLoopAve*(gAdcPwmIntStat.adcIsrCntPrev-1)+gTotalTime)/gAdcPwmIntStat.adcIsrCntPrev;
   /* populate the core stat */
-  gCoreStat.output.ave_count = gTimerIntStat.isrCnt;
+  gCoreStat.output.ave_count = gAdcPwmIntStat.adcIsrCntPrev;
   /* get Group and CPU ID */
   CSL_armR5GetCpuID(&cpuInfo);
   /* compute core number */
@@ -607,14 +578,15 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
   gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.ave = (int64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.max = (int64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;		
-  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;		
+  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;
+  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;
 
   MCBENCH_log("\n END FIR benchmark\n");
   return 0;
 }
 
-static void appEpwmIntrISR(void *handle)
+void appEpwmIntrISR(void *handle) __attribute__((aligned(8), section(".testInCode")));
+void appEpwmIntrISR(void *handle)
 {
     volatile uint16_t status = CSL_epwmEtIntrStatus(APP_EHRPWM_INST_BASE_ADDR);
     status = status;
@@ -752,6 +724,46 @@ static void appEpwmTimebaseModuleCfg(uint32_t baseAddr,
     return;
 }
 
+uint32_t cslEpwmCounterComparatorCfg(uint32_t baseAddr,
+                                      uint32_t cmpValA,
+                                      uint32_t cmpValB,
+                                      uint32_t enableShadowWrite,
+                                      uint32_t shadowToActiveLoadTrigger,
+                                      uint32_t overwriteShadow) __attribute__((aligned(8), section(".testInCode")));
+uint32_t cslEpwmCounterComparatorCfg(uint32_t baseAddr,
+                                      uint32_t cmpValA,
+                                      uint32_t cmpValB,
+                                      uint32_t enableShadowWrite,
+                                      uint32_t shadowToActiveLoadTrigger,
+                                      uint32_t overwriteShadow)
+{
+    uint32_t status = FALSE;
+    uint32_t regVal =
+        HW_RD_REG16((baseAddr + PWMSS_EPWM_OFFSET) + PWMSS_EPWM_CMPCTL);
+
+    if ((TRUE == overwriteShadow) ||
+        (PWMSS_EPWM_CMPCTL_SHDWAFULL_FIFO_NOT_FULL ==
+            HW_GET_FIELD(regVal, PWMSS_EPWM_CMPCTL_SHDWAFULL)))
+    {
+        HW_SET_FIELD32(regVal,
+            PWMSS_EPWM_CMPCTL_SHDWAMODE, enableShadowWrite);
+        HW_SET_FIELD32(regVal, PWMSS_EPWM_CMPCTL_LOADAMODE,
+            shadowToActiveLoadTrigger);
+        HW_WR_REG16(((baseAddr + PWMSS_EPWM_OFFSET) + PWMSS_EPWM_CMPCTL),
+            (uint16_t)regVal);
+
+        HW_WR_FIELD16(((baseAddr + PWMSS_EPWM_OFFSET) + PWMSS_EPWM_CMPA),
+            PWMSS_EPWM_CMPA, (uint16_t)cmpValA);
+
+        HW_WR_FIELD16(((baseAddr + PWMSS_EPWM_OFFSET) + PWMSS_EPWM_CMPB),
+            PWMSS_EPWM_CMPB, (uint16_t)cmpValB);
+
+            status = TRUE;
+    }
+
+    return status;
+}
+
 /**
  * \brief   This API configures the Counter-Comparator Sub-module.
  *
@@ -759,22 +771,16 @@ static void appEpwmTimebaseModuleCfg(uint32_t baseAddr,
  * \param   pCcCfg      Pointer to the Counter-Comparator Sub-module
  *                      configuration data structure
  */
-static void appEpwmCounterComparatorCfg(uint32_t baseAddr,
+
+void appEpwmCounterComparatorCfg(uint32_t baseAddr,
+                                        CSL_EpwmCounterCmpCfg_t *pCcCfg) __attribute__((aligned(8), section(".testInCode")));
+void appEpwmCounterComparatorCfg(uint32_t baseAddr,
                                         CSL_EpwmCounterCmpCfg_t *pCcCfg)
 {
     /* Counter Comparator A configuration */
-    CSL_epwmCounterComparatorCfg(
+    cslEpwmCounterComparatorCfg(
         baseAddr,
-        CSL_EPWM_CC_CMP_A,
         pCcCfg->cmpAValue,
-        CSL_EPWM_SHADOW_REG_CTRL_ENABLE,
-        CSL_EPWM_CC_CMP_LOAD_MODE_CNT_EQ_ZERO,
-        TRUE);
-
-    /* Counter Comparator B configuration */
-    CSL_epwmCounterComparatorCfg(
-        baseAddr,
-        CSL_EPWM_CC_CMP_B,
         pCcCfg->cmpBValue,
         CSL_EPWM_SHADOW_REG_CTRL_ENABLE,
         CSL_EPWM_CC_CMP_LOAD_MODE_CNT_EQ_ZERO,
@@ -808,7 +814,7 @@ static int32_t padConfig_prcmEnable(void)
 /* Configure EPWM pads */
 static void appEpwmCfgEPwmPads(void)
 {
-	/* Unlock all MMR */
+    /* Unlock all MMR */
     HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_LOCK0_KICK0, KICK0_UNLOCK_VAL);
     HW_WR_REG32(CSL_PADCFG_CTRL0_CFG0_BASE + CSL_MAIN_PADCFG_CTRL_MMR_CFG0_LOCK0_KICK1, KICK1_UNLOCK_VAL);
 
@@ -903,19 +909,19 @@ int32_t appEpwmSetOutFreq(int32_t freq)
     switch (freq)
     {
     case RUN_FREQ_8K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_8K;
+      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd = RUN_FREQ_8K;
       break;
     case RUN_FREQ_16K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_16K;
+      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd = RUN_FREQ_16K;
       break;
     case RUN_FREQ_32K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_32K;
+      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd = RUN_FREQ_32K;
       break;
     case RUN_FREQ_50K:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_50K;
+      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd = RUN_FREQ_50K;
       break;
     default:
-      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd	= RUN_FREQ_8K;
+      pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd = RUN_FREQ_8K;
     }
 
     /* Update object based on ePWM module frequency */
@@ -930,6 +936,7 @@ int32_t appEpwmSetOutFreq(int32_t freq)
     return 0;
 }
 
+int32_t appEpwmSetDutyCycle(int32_t dc) __attribute__((aligned(8), section(".testInCode")));
 int32_t appEpwmSetDutyCycle(int32_t dc)
 {
     CSL_AppEpwmObj_t *pObj = &gAppPwmObj;
@@ -937,15 +944,13 @@ int32_t appEpwmSetDutyCycle(int32_t dc)
     uint32_t baseAddr = pObj->instAddr;
     CSL_AppEpwmCfg_t *pPwmCfg = &pObj->pwmCfg;
 
-    /* Counter-Comparator Sub-Module Configuration */
-    appEpwmCounterComparatorCfg(baseAddr, &pPwmCfg->ccCfg);	
     /* Update object based on ePWM module frequency */
     prdVal = (pObj->pwmCfg.tbCfg.tbClk / pObj->pwmCfg.tbCfg.pwmtbCounterFreqPrd) / 2;
     pObj->pwmCfg.ccCfg.cmpAValue = prdVal - ((dc * prdVal)/ 100U);    
     pObj->pwmCfg.ccCfg.cmpBValue = pObj->pwmCfg.ccCfg.cmpAValue;
 
     /* Counter-Comparator Sub-Module Configuration */
-    appEpwmCounterComparatorCfg(baseAddr, &pPwmCfg->ccCfg);	
+    appEpwmCounterComparatorCfg(baseAddr, &pPwmCfg->ccCfg);
 
     return 0;
 }

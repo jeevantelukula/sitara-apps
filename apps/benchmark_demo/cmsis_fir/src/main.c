@@ -51,6 +51,9 @@
 #include "ipc_setup.h"
 #include "benchmark_timer_interrupt.h"
 
+extern CSL_ArmR5CPUInfo cpuInfo;
+uint32_t gCoreId __attribute__((section(".testInData")));;
+
 void main(void) 
 {
 #ifndef IO_CONSOLE
@@ -76,13 +79,16 @@ void main(void)
    MCBENCH_log("\n Set up the IPC RPMsg\n");
    ipc_rpmsg_init();
 #endif
-	
+
    /* Set up the timer interrupt */
-   benchmarkTimerInit();
+   CSL_armR5GetCpuID(&cpuInfo);
+   /* compute core number */
+   gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
+   benchmarkTimerInit(gCoreId);
 
    /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
-   gAppRunFreq = RUN_FREQ_1K;
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_8K);
+   gAppRunFreq = RUN_FREQ_8K;
 
    MCBENCH_log("\n START FIR benchmark\n");
    while (1)
@@ -110,8 +116,12 @@ void main(void)
             {
                if (gAppRunFreq!=gOption[gOptionSelect-1])
                {
+                 /* Set up the timer interrupt */
+                 CSL_armR5GetCpuID(&cpuInfo);
+                 /* compute core number */
+                 gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
                  /* set to selected frequency */
-                 benchmarkTimerSetFreq((Run_Freq_Sel)gOptionSelect);
+                 benchmarkTimerSetFreq(gCoreId, (Run_Freq_Sel)gOptionSelect);
                  gAppRunFreq = gOption[gOptionSelect-1];
                  gTimerIntStat.isrCnt = 0;
                  gTimerIntStat.isrCntPrev = 0;

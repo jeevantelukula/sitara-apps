@@ -203,8 +203,9 @@ int32_t fir_bench(int32_t firSize)
   float32_t  *inputF32, *outputF32;
 
   init_profiling();
-  gStartTime = readPmu(); // two initial reads are necessary for correct overhead time
-  gStartTime = readPmu();
+  do {
+   gStartTime = readPmu();
+  } while (gStartTime==0);
   gEndTime = readPmu();
   gOverheadTime = gEndTime - gStartTime;
   MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
@@ -221,6 +222,7 @@ int32_t fir_bench(int32_t firSize)
   ** Call the FIR process function for every blockSize samples
     ** ------------------------------------------------------------------- */
 
+  resetPmuCnt();
   gStartTime = readPmu();
 
   numBlocks = firSize/blockSize;
@@ -252,8 +254,8 @@ int32_t fir_bench(int32_t firSize)
   gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.ave = (int64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.max = (int64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;		
-  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;		
+  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;
+  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;
 
   MCBENCH_log("\n END FIR benchmark\n");
 

@@ -115,15 +115,17 @@ int32_t cfft_bench(int32_t fftSize)
             break;
     }
 
-    init_profiling();
-    gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
-    gStartTime = readPmu();
-    gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;
-    MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
-
     cfftInit();
 
+    init_profiling();
+    do {
+     gStartTime = readPmu();
+    } while (gStartTime==0);
+    gEndTime = readPmu();
+    gOverheadTime = gEndTime - gStartTime;    
+    MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
+
+    resetPmuCnt();
     gStartTime = readPmu();
 
     /* Process the data through the CFFT/CIFFT module */

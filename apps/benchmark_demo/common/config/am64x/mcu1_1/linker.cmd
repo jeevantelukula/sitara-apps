@@ -49,7 +49,7 @@
 --entry_point=_resetvectors		/* Default C RTS boot.asm	*/
 
 -stack  0x2000                              /* SOFTWARE STACK SIZE           */
--heap   0x2000                              /* HEAP AREA SIZE                */
+-heap   0x1000                              /* HEAP AREA SIZE                */
 
 /* Stack Sizes for various modes */
 __IRQ_STACK_SIZE = 0x1000;
@@ -80,7 +80,7 @@ SECTIONS
     .pinit   	: {} palign(8) 		> OCSRAM2
     .bss     	: {} align(4)  		> OCSRAM2
     .far     	: {} align(4)  		> OCSRAM2
-    .data    	: {} palign(128) 	> OCSRAM2
+    .data    	: {} palign(128) 	> R5F_BTCM
     .boardcfg_data        : {} palign(128)           > OCSRAM2
     .sysmem  	: {} 				> OCSRAM2
 
@@ -90,8 +90,8 @@ SECTIONS
     /* USB or any other LLD buffer for benchmarking */
     .benchmark_buffer (NOLOAD) {} ALIGN (8) > OCSRAM2
 
-    .stack  	: {} align(4)		> OCSRAM2  (HIGH)
-    .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
+    .stack  	: {} align(4)		> R5F_BTCM  (HIGH)
+    .irqStack  	: {. = . + __IRQ_STACK_SIZE;} align(4)		> R5F_BTCM  (HIGH)
     RUN_START(__IRQ_STACK_START)
     RUN_END(__IRQ_STACK_END)
     .fiqStack  	: {. = . + __FIQ_STACK_SIZE;} align(4)		> OCSRAM2  (HIGH)
@@ -111,6 +111,7 @@ SECTIONS
 
     .testInCode    	: {} palign(8) 		> R5F_ATCM
     .testInData    	: {} palign(8) 		> R5F_ATCM
+    .textHwiIsr     : {} palign(8)		> R5F_ATCM
     .resource_table : {
         __RESOURCE_TABLE = .;
     } > DDR_MCU1_1_RESOURCE_TABLE

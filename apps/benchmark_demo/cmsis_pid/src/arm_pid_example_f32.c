@@ -158,6 +158,8 @@
 /* ------------------------------------------------------------------
  * Global variables for PID Example
  * ------------------------------------------------------------------- */
+
+uint32_t gCoreId __attribute__((section(".testInData")));
 arm_pid_instance_f32 myPIDInstance __attribute__((section(".testInData")));
 /* declare the core statistic variables */
 CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
@@ -193,8 +195,9 @@ void pidLoop(uint16_t loopCnt)
   float pidOutput;
 
   init_profiling();
-  gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
-  gStartTime = readPmu(); 
+  do {
+   gStartTime = readPmu();
+  } while (gStartTime==0);
   gEndTime = readPmu();
   gOverheadTime = gEndTime - gStartTime;    
 
@@ -205,7 +208,8 @@ void pidLoop(uint16_t loopCnt)
   
   /* Call PID init function to initialize the instance structure. */
   arm_pid_init_f32(&myPIDInstance, 1);
-	
+
+  resetPmuCnt();
   gStartTime = readPmu();
   for (j=0; j<loopCnt; j++)
     for (i=0; i<NUM_PID_LOOP; i++)
@@ -268,11 +272,14 @@ int32_t main(void)
 #endif
 
    /* Set up the timer interrupt */
-   benchmarkTimerInit();
+   CSL_armR5GetCpuID(&cpuInfo);
+   /* compute core number */
+   gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
+   benchmarkTimerInit(gCoreId);
 
    /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
-   gAppRunFreq = RUN_FREQ_1K;
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_50K);
+   gAppRunFreq = RUN_FREQ_50K;
 
    MCBENCH_log("\n START PID benchmark\n");
    while (1)
@@ -302,8 +309,12 @@ int32_t main(void)
          {
            if (gAppRunFreq!=gOption[gOptionSelect-1])
            {
+             /* Set up the timer interrupt */
+             CSL_armR5GetCpuID(&cpuInfo);
+             /* compute core number */
+             gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
              /* set to selected frequency */
-             benchmarkTimerSetFreq((Run_Freq_Sel)gOptionSelect);
+             benchmarkTimerSetFreq(gCoreId, (Run_Freq_Sel)gOptionSelect);
              gAppRunFreq = gOption[gOptionSelect-1];
              gTimerIntStat.isrCnt = 0;
              gTimerIntStat.isrCntPrev = 0;

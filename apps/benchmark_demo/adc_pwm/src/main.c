@@ -49,10 +49,11 @@
 #include "profile.h"
 #include "app_adc_epwm.h"
 #include "ipc_setup.h"
-#include "benchmark_timer_interrupt.h"
 
-uint32_t gADCInputBuffer[1024] __attribute__((section(".testInData")));
+uint32_t gADCInputBuffer[32] __attribute__((section(".testInData")));
 int32_t  gADCInputBufferSize __attribute__((section(".testInData"))) = 0;
+
+uint32_t gCoreId = 0;
 
 void main(void) 
 {
@@ -79,22 +80,15 @@ void main(void)
    MCBENCH_log("\n Set up the IPC RPMsg\n");
    ipc_rpmsg_init();
 #endif
-   /* Set up the timer interrupt */
-   benchmarkTimerInit();
 
    /* Call ADC/PWM init function to initialize the instance structure. */
-   benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
-   gAppRunFreq = RUN_FREQ_8K;
+   gAppRunFreq = RUN_FREQ_50K;
    /* set the ADC smapling freqency to the selected frequency */
    appADCPWMBenchInit(gAppRunFreq);
-   
+
    MCBENCH_log("\n START ADC/PWM benchmark\n");
    while (1)
    {
-      if (gTimerIntStat.isrCnt>gTimerIntStat.isrCntPrev)
-      {
-        gTimerIntStat.isrCntPrev++;
-      }
       /* Check for new ADC interrupt */
       if (gAdcPwmIntStat.adcIsrCnt>gAdcPwmIntStat.adcIsrCntPrev)
       {
@@ -121,18 +115,15 @@ void main(void)
                if (gAppRunFreq!=gOption[gOptionSelect-1])
                {
                  /* set to selected frequency */
-                 benchmarkTimerSetFreq((Run_Freq_Sel)gOptionSelect);
                  gAppRunFreq = gOption[gOptionSelect-1];
                  /* de-initialize the existing ADC instance */
                  appADCPWMBenchDeInit();
-                 /* create and set the ADC instance to selected frequency */
-                 appADCPWMBenchInit(gAppRunFreq);
-                 gTimerIntStat.isrCnt = 0;
-                 gTimerIntStat.isrCntPrev = 0;
-                 gTimerIntStat.intLatencyMax = 0;
-                 gTimerIntStat.intLatencyAve = 0;
                  gCountPerLoopAve = 0;
                  gCountPerLoopMax = 0;
+                 gAdcPwmIntStat.adcIsrCnt = 0;
+                 gAdcPwmIntStat.adcIsrCntPrev = 0;
+                 /* create and set the ADC instance to selected frequency */
+                 appADCPWMBenchInit(gAppRunFreq);
                }
             }
          }

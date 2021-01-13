@@ -41,13 +41,17 @@
 
 //#include <stdint.h>
 #include "ti/csl/arch/r5/csl_arm_r5_pmu.h"
-
 #include "arm_math.h"
 #include "profile.h"
 
+#pragma DATA_SECTION(gOverheadTime, ".testInData")
+#pragma DATA_SECTION(gStartTime, ".testInData")
+#pragma DATA_SECTION(gEndTime, ".testInData")
+#pragma DATA_SECTION(gTotalTime, ".testInData")
 uint64_t gOverheadTime;
 uint64_t gStartTime, gEndTime, gTotalTime;
 
+#pragma CODE_SECTION(init_profiling, ".testInCode")
 void init_profiling(void)
 {
     CSL_armR5PmuEnableAllCntrs(1);  /* Set/clear PMCR E-bit */
@@ -55,6 +59,12 @@ void init_profiling(void)
     CSL_armR5PmuResetCycleCnt();    /* Set PMCR C-bit */
     CSL_armR5PmuEnableCntr(CSL_ARM_R5_PMU_CYCLE_COUNTER_NUM, 1);    /* Set PMCNTENSET for event */
     CSL_armR5PmuClearCntrOverflowStatus(0x80000007);
+}
+
+#pragma CODE_SECTION(readPmu, ".testInCode")
+void resetPmuCnt(void)
+{
+    CSL_armR5PmuResetCntrs();
 }
 
 uint32_t readPmu(void)

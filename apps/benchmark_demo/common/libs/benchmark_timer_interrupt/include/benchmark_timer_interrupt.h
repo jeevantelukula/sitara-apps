@@ -57,8 +57,8 @@ typedef struct
 
 extern timer_int_stat gTimerIntStat;
 
-void benchmarkTimerInit(void);
+void benchmarkTimerInit(uint32_t coreId);
 
-int32_t benchmarkTimerSetFreq(Run_Freq_Sel sel);
+int32_t benchmarkTimerSetFreq(uint32_t coreId, Run_Freq_Sel sel);
 
 #endif /* _BENCHMARK_TIMER_INT_H_ */

@@ -34,7 +34,8 @@ ifeq ($(TARGET_PLATFORM),AM64X)
 DIRECTORIES = $(HOST_ROOT) $(RPMSG_DIR)
 
 # Targe combos supported in this demo
-TARGET_COMBOS ?= AM64X:NO_OS:R5F:4:release:TIARMCGT
+TARGET_COMBOS ?= AM64X:NO_OS:R5F:4:release:TIARMCGT \
+                 AM64X:NO_OS:R5F:4:debug:TIARMCGT
 endif
 
 # "Invoke concerto"

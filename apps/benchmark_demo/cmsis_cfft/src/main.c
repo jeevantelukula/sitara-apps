@@ -52,6 +52,9 @@
 #include "ipc_setup.h"
 #include "benchmark_timer_interrupt.h"
 
+extern CSL_ArmR5CPUInfo cpuInfo;
+uint32_t gCoreId __attribute__((section(".testInData")));;
+
 void main(void) 
 {
 #ifndef IO_CONSOLE
@@ -79,10 +82,13 @@ void main(void)
 #endif
 
    /* Set up the timer interrupt */
-   benchmarkTimerInit();
+   CSL_armR5GetCpuID(&cpuInfo);
+   /* compute core number */
+   gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
+   benchmarkTimerInit(gCoreId);
 
    /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(RUN_FREQ_SEL_1K);
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_1K);
    gAppRunFreq = RUN_FREQ_1K;
 
    MCBENCH_log("\n START CFFT benchmark\n");
@@ -92,7 +98,7 @@ void main(void)
       if (gTimerIntStat.isrCnt>gTimerIntStat.isrCntPrev)
       {
         /* Execute CFFT loop with the selected size */
-        cfft_bench(gOption[gOptionSelect-1]);			 
+        cfft_bench(gOption[gOptionSelect-1]);
         gTimerIntStat.isrCntPrev++;
       }
 

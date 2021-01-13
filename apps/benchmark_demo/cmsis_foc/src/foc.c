@@ -169,46 +169,46 @@ void focLoopInit(void)
 {
     gAdcSampCnt = 0;      /* initialize ADC sample count */
     gSvGenOutCnt = 0;     /* initialize  SVGen output count */ 
-	gInvClarkeOutCnt = 0; /* initialize Inverse Clarke count */
-    
+    gInvClarkeOutCnt = 0; /* initialize Inverse Clarke count */
+
     gRampGen.StepAngleMax = _IQ(BASE_FREQ * T);
-    
+
     /* Initialize speed estimator */
     gSpeedMeasQep.K1 = _IQ21(1 / (BASE_FREQ * T));
     gSpeedMeasQep.K2 = _IQ(1 / (1 + T * 2 * PI * 5));  /* low-pass filter cutoff frequency */
     gSpeedMeasQep.K3 = _IQ(1) - gSpeedMeasQep.K2;
     gSpeedMeasQep.BaseRpm = BASE_FREQ * 60 * (2 / NUM_POLES);
-    
+
     /* Initialize PI Speed */
     gPiSpd.Kp = _IQ(PI_SPD_KP);
     gPiSpd.Ki = _IQ(PI_SPD_KI);
     gPiSpd.Umin = _IQ(PI_SPD_UMIN);
     gPiSpd.Umax = _IQ(PI_SPD_UMAX);
-    
+
     /* Initialize PI Id */
     gPiId.Kp = _IQ(PI_ID_KP);
     gPiId.Ki = _IQ(PI_ID_KI);
     gPiId.Umin = _IQ(PI_ID_UMIN);
     gPiId.Umax = _IQ(PI_ID_UMAX);
-    
+
     /* Initialize PI Iq */
     gPiIq.Kp = _IQ(PI_IQ_KP);
     gPiIq.Ki = _IQ(PI_IQ_KI);
     gPiIq.Umin = _IQ(PI_IQ_UMIN);
     gPiIq.Umax = _IQ(PI_IQ_UMAX);
-    
+
     /* Initialize CMSIS PI Speed */
     gCmsisPiSpd.Kp = PI_SPD_KP;
     gCmsisPiSpd.Ki = PI_SPD_KI;
     gCmsisPiSpd.Kd = 0;
     arm_pid_init_f32(&gCmsisPiSpd, 1);
-    
+
     /* Initialize CMSIS PI Id */
     gCmsisPiId.Kp = PI_ID_KP;
     gCmsisPiId.Ki = PI_ID_KI;
     gCmsisPiId.Kd = 0;
     arm_pid_init_f32(&gCmsisPiId, 1);
-    
+
     /* Initialize CMSIS PI Iq */
     gCmsisPiIq.Kp = PI_IQ_KP;
     gCmsisPiIq.Ki = PI_IQ_KI;
@@ -222,39 +222,41 @@ void focLoop(uint16_t loopCnt)
 {
     /* Initialize FOC loop */
     focLoopInit();
-	
+
     init_profiling();
-    gStartTime = readPmu(); /* two initial reads are necessary for correct overhead time */
-    gStartTime = readPmu();
+    do {
+     gStartTime = readPmu();
+    } while (gStartTime==0);
     gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;
+    gOverheadTime = gEndTime - gStartTime;    
 
     /* Get ADC samples */
     readAdcSamps(gInData);
-	
+
+    resetPmuCnt();
     /* Ramp controller smoothly ramps speed to SpeedRef */
     gStartTime = readPmu();
     gRmpCntl.TargetValue = gSpeedRef;
     RC_MACRO(gRmpCntl);
-       
+
     /* Calculate electrical angle based on EnDat position feedback */
     /* calcElecTheta(&gElecTheta); */
     /* Ramp generator simulates electrical angle output from encoder */
     gRampGen.Freq = gRmpCntl.SetpointValue;
     RG_MACRO(gRampGen);
     gElecTheta = gRampGen.Out;
-    
+
     /* Connect inputs to speed calculation macro, 
        call speed calculation macro */
     gSpeedMeasQep.ElecTheta = gElecTheta;
     SPEED_FR_MACRO(gSpeedMeasQep);
-    
+
     /* Connect inputs to Clarke transform macro, call macro */
     gClarke.As = gInData[0];
     gClarke.Bs = gInData[1];    
     /* CMSIS library call clarke */
     arm_clarke_f32((float32_t)gInData[0], (float32_t)gInData[1], &gCmsisClarkeAlphaOut, &gCmsisClarkeBetaOut);
-    
+
     /* Compute sin/cos of electrical angle using CMSIS-DSPLIB */
     gCmsisElecTheta = gElecTheta*360;
     if (gCmsisElecTheta > 180.0)
@@ -274,19 +276,19 @@ void focLoop(uint16_t loopCnt)
 
     /* CMSIS library call park */
     arm_park_f32(gCmsisClarkeAlphaOut, gCmsisClarkeBetaOut, &gCmsisParkDsOut, &gCmsisParkQsOut, gCmsisSinElecThetaOut, gCmsisCosElecThetaOut);
-        
+
     /* CMSIS library call pid */
     gCmsisPiSpdOut = arm_pid_f32(&gCmsisPiSpd, gSpeedRef-gSpeedMeasQep.Speed);
-    
+
     /* CMSIS library call pid */
     gCmsisPiIqOut = arm_pid_f32(&gCmsisPiIq, gCmsisPiSpdOut-gCmsisParkQsOut);
 
     /* CMSIS library call pid */
     gCmsisPiIdOut = arm_pid_f32(&gCmsisPiId, gIdRef-gCmsisParkDsOut);
-    
+
     /* CMSIS library call inv-park */
     arm_inv_park_f32(gCmsisPiIdOut, gCmsisPiIqOut, &gCmsisParkAlphaOut, &gCmsisParkBetaOut, gCmsisSinElecThetaOut, gCmsisCosElecThetaOut);
-    
+
     /* CMSIS library call inv-clarke */
     /* Connect inputs to Inverse Clark transform */
     /* Note: only purpose is benchmarking inverse Clarke transform in CMSIS-DSPLIB.
@@ -296,7 +298,7 @@ void focLoop(uint16_t loopCnt)
     writeSvGenOut(gSvgenDq);
     writeInvClarkeOut(gCmsisInvClarkeIaOut, gCmsisInvClarkeIbOut);
 
-	gEndTime = readPmu();
+    gEndTime = readPmu();
     gTotalTime = gEndTime - gStartTime - gOverheadTime;      
 
     /* Compute the average and max of count per loop */
@@ -343,7 +345,7 @@ static void readAdcSamps(_iq inData[4])
     sampI = sampI - ADC_SAMP_OFFSET;    /* remove DC offset */
     sampF = (float)sampI/32768.0 * ADC_SAMP_SCALEF;
     inData[1] = _IQ(sampF);
-    
+
     gAdcSampCnt++;
 }
 
@@ -353,7 +355,7 @@ static void writeSvGenOut(SVGENDQ svGenDq)
     gTestOutSvGenTa[gSvGenOutCnt] = svGenDq.Ta;
     gTestOutSvGenTb[gSvGenOutCnt] = svGenDq.Tb;
     gTestOutSvGenTc[gSvGenOutCnt] = svGenDq.Tc;
-    
+
     gSvGenOutCnt++;
 }
 
@@ -362,6 +364,6 @@ static void writeInvClarkeOut(float32_t Ia, float32_t Ib)
 {
     gTestOutInvClarkeIa[gInvClarkeOutCnt] = Ia;
     gTestOutInvClarkeIb[gInvClarkeOutCnt] = Ib;
-    
+
     gInvClarkeOutCnt++;
 }
