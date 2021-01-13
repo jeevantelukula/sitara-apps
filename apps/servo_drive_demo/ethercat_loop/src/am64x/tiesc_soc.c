@@ -191,7 +191,7 @@ uint32_t getSpinlockLockReg0Offset()
 
 void bsp_soft_reset()
 {
-    //Device Reset not supported on AM64x
+    Sciclient_pmDeviceReset(0xFFFFFFFFU);
     return;
 }
 
@@ -246,20 +246,19 @@ void bsp_soc_evm_init()
 
     if(icssgResetIsolated==FALSE)
     {
-	/*This configuration is required only after poweron reset. Is not required after a warm reset.*/
-        Board_init(BOARD_INIT_ICSS_ETH_PHY | BOARD_INIT_UNLOCK_MMR);
-    }
+		/*This configuration is required only after poweron reset. Is not required after a warm reset.*/
+        Board_init(BOARD_INIT_ICSS_ETH_PHY);
 
 #ifndef ECAT_RGMII
-    Board_PinmuxConfig_t icssPinmux;
+		Board_PinmuxConfig_t icssPinmux;
 
-    Board_pinmuxGetCfg(&icssPinmux);
-    icssPinmux.muxCfg = BOARD_PINMUX_CUSTOM;
-    icssPinmux.icssMux = BOARD_PINMUX_ICSS_MII;
-    Board_pinmuxSetCfg(&icssPinmux);
+		Board_pinmuxGetCfg(&icssPinmux);
+		icssPinmux.muxCfg = BOARD_PINMUX_CUSTOM;
+		icssPinmux.icssMux = BOARD_PINMUX_ICSS_MII;
+		Board_pinmuxSetCfg(&icssPinmux);
 #endif
-    Board_init(BOARD_INIT_PINMUX_CONFIG);
-
+		Board_init(BOARD_INIT_PINMUX_CONFIG);
+	}
     pruIcss1Handle = PRUICSS_create(pruss_config, PRUICSS_INSTANCE);
 
     if(icssgResetIsolated==FALSE)
