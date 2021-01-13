@@ -47,6 +47,12 @@ include $(CONCERTO_ROOT)/rules.mak
 # Set RTOS_ONLY_BUILD=1 from console for RTOS only build
 RTOS_ONLY_BUILD ?= 0
 
+# When RTOS_ONLY_BUILD is set to 0, this build variable is
+# used to determine the type of linux boot
+# 0: Optimized
+# 1: Development
+LINUX_BUILD_TYPE ?= 0
+
 ifeq ($(BUILD_LINUX_APPS),1)
 all: rpmsg_json_app app_img_build
 clean:: rpmsg_json_app_clean app_img_build_clean
@@ -67,13 +73,12 @@ clean:: app_img_build_clean
 endif
 
 RTOS_BIN_PATH=$(HOST_ROOT)/$(BUILD_OUTPUT)
-IMG1=mcu1_0,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_0_cmsis_cfft.out
+IMG1=mcu1_0,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_0_adc_pwm.out
 IMG2=mcu1_1,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu1_1_cmsis_cfft.out
-IMG3=
-IMG4=
+IMG3=mcu2_0,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu2_0_cmsis_fir.out
+IMG4=mcu2_1,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)/app_no_os_mcu2_1_cmsis_foc.out
 
 ifeq ($(RTOS_ONLY_BUILD),0)
-HLOS_BOOT="optimized"
 HLOS_BIN_PATH=$(PSDK_PATH)/linux/board-support/prebuilt-images
 ATF_IMG=mpu1_0,$(HLOS_BIN_PATH)/bl31.bin,0x70020000,0x70020000
 OPTEE_IMG=load_only,$(HLOS_BIN_PATH)/bl32.bin,0x9e800000
@@ -85,12 +90,20 @@ ifeq ($(TARGET_PLATFORM),AM64X)
 KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am6x-evm.bin,0x80080000
 DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am64-base-board.dtb,0x82000000
 endif
+ifeq ($(LINUX_BUILD_TYPE),0)
+HLOS_BOOT="optimized"
+SPL_IMG=
+else
+HLOS_BOOT="development"
+SPL_IMG=ADD THIS
+endif
 else
 HLOS_BOOT=
 ATF_IMG=
 OPTEE_IMG=
 KERNEL_IMG=
 DTB_IMG=
+SPL_IMG=
 endif
 
 ifeq ($(TARGET_PLATFORM),AM65X)
@@ -108,27 +121,27 @@ export GCC_LINUX_ARM_PATH=$(PSDK_PATH)/rtos/gcc-arm-9.2-2019.12-mingw-w64-i686-a
 endif
 
 app_img_build:
-	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
+	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) SPL_IMG=$(SPL_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) IMG3=$(IMG3) IMG4=$(IMG4) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
 #Create Benchmark Demo SD Card Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/app)"
-ifeq ($(TARGET_PLATFORM),AM64X)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
-endif
-ifeq ($(TARGET_PLATFORM),AM65X)
-	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
-endif
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/sysfw.bin)"
+ifeq ($(RTOS_ONLY_BUILD),0)
+ifeq ($(LINUX_BUILD_TYPE),1)
+	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/u-boot.img)"
+endif
+endif
 #Create Benchmark Demo OSPI Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/app)"
-ifeq ($(TARGET_PLATFORM),AM64X)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
-endif
-ifeq ($(TARGET_PLATFORM),AM65X)
-	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
-endif
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/sysfw.bin)"
+ifeq ($(RTOS_ONLY_BUILD),0)
+ifeq ($(LINUX_BUILD_TYPE),1)
+        $(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/u-boot.img)"
+endif
+endif
 	
 app_img_build_clean:
 	$(CLEANDIR) $(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/)
