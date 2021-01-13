@@ -32,13 +32,6 @@ endif
 # "Invoke concerto"
 include $(CONCERTO_ROOT)/rules.mak
 
-# By default, only build linux userspace apps if we are not on Windows, but also
-# allow users to choose on commandline.
-BUILD_LINUX_APPS ?= 1
-ifeq ($(HOST_OS),Windows_NT)
-BUILD_LINUX_APPS = 0
-endif
-
 #Build Servo Drive Demo Combined App Image
 RTOS_BIN_PATH1=$(HOST_ROOT)/$(BUILD_OUTPUT)
 #Dummy parameter should be passed to the script
@@ -77,37 +70,6 @@ app_img_build_clean:
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/SDCardImage)
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage)
 
-ifeq ($(BUILD_LINUX_APPS),1)
-# Add targets for Linux cmake app
-all: opc_ua_app app_img_build
-clean:: opc_ua_app_clean app_img_build_clean
-scrub:: opc_ua_app_scrub
-.PHONY: opc_ua_app app_img_build
-OC_UA_APP_BUILDDIR = $(BUILD_OUTPUT)/opc_ua_app
-
-opc_ua_app_builddir:
-	$(MKDIR) $(OC_UA_APP_BUILDDIR)
-
-opc_ua_app_config: opc_ua_app_builddir
-	. $(LINUX_ENV_SETUP); \
-	. $(dir $(LINUX_ENV_SETUP))/sysroots/x86_64-arago-linux/environment-setup.d/cmake.sh; \
-	cd $(OC_UA_APP_BUILDDIR); \
-	cmake $(HOST_ROOT)/opc_ua_app
-
-opc_ua_app: opc_ua_app_config
-	. $(LINUX_ENV_SETUP); \
-	. $(dir $(LINUX_ENV_SETUP))/sysroots/x86_64-arago-linux/environment-setup.d/cmake.sh; \
-	make -C $(OC_UA_APP_BUILDDIR)
-
-opc_ua_app_clean: opc_ua_app_config
-	. $(LINUX_ENV_SETUP); \
-	. $(dir $(LINUX_ENV_SETUP))/sysroots/x86_64-arago-linux/environment-setup.d/cmake.sh; \
-	make -C $(OC_UA_APP_BUILDDIR) clean
-
-opc_ua_app_scrub:
-	$(CLEANDIR) $(OC_UA_APP_BUILDDIR)
-else
 all:  app_img_build
 clean::  app_img_build_clean
 .PHONY: app_img_build
-endif
