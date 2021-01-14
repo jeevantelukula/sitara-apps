@@ -22,6 +22,10 @@ endif
 
 # Define application's root directory
 APPDIR := $(abspath $(SDIR)/..)
+SITARA_APPS_DIR := $(abspath $(SDIR)/../../../..)
+
+# common library dependencies
+COMMON_LIB = $(abspath $(SITARA_APPS_DIR)/common/libs)
 
 # Provide list of C files by using built-in macro
 CSOURCES    := ./main.c ./cfft.c
@@ -31,6 +35,7 @@ CSOURCES    += ../../common/src/r5f_mpu_default_mcu$(MCUNUM).c
 IDIRS+=$(APPDIR)/include
 IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/DSP/Include
 IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/Core/Include
+IDIRS+=$(COMMON_LIB)/profile/include
 IDIRS+=$(APPDIR)/../common/include/r5f
 IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/benchmark_timer_interrupt/include
@@ -40,6 +45,7 @@ IDIRS+=$(APPDIR)/../../common/ipc_rpmsg_lib/include/$(SITARA_DEMO_SOC)
 
 # Add directory to library search path
 LDIRS+=$(CMSIS_LIB)/lib_prebuild/release
+LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,
@@ -53,7 +59,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 # Append to STATIC_LIBS for common demo libraries
 # These must also be built using concerto, and concerto will handle the
 # dependencies
-STATIC_LIBS += profile
+STATIC_LIBS += common_libs_profile
 STATIC_LIBS += benchmark_timer_interrupt
 STATIC_LIBS += ipc_rpmsg_lib_mcu$(MCUNUM)
 

@@ -222,7 +222,7 @@ int32_t fir_bench(int32_t firSize)
   ** Call the FIR process function for every blockSize samples
     ** ------------------------------------------------------------------- */
 
-  resetPmuCnt();
+  resetPmuEventCounters();
   gStartTime = readPmu();
 
   numBlocks = firSize/blockSize;

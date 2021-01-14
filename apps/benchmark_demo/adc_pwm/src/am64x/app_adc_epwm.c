@@ -540,7 +540,7 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
   /* ----------------------------------------------------------------------
   ** Call the ADC/PWM process function
   ** ------------------------------------------------------------------- */
-  resetPmuCnt();
+  resetPmuEventCounters();
   gStartTime = readPmu();
 
   /*Get FIFO data */

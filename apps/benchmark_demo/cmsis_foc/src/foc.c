@@ -233,7 +233,7 @@ void focLoop(uint16_t loopCnt)
     /* Get ADC samples */
     readAdcSamps(gInData);
 
-    resetPmuCnt();
+    resetPmuEventCounters();
     /* Ramp controller smoothly ramps speed to SpeedRef */
     gStartTime = readPmu();
     gRmpCntl.TargetValue = gSpeedRef;

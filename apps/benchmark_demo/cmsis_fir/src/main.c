@@ -47,6 +47,8 @@
 
 #include "benchmark_log.h"
 #include "profile.h"
+#include "math_helper.h"
+#include "arm_math.h"
 #include "fir.h"
 #include "ipc_setup.h"
 #include "benchmark_timer_interrupt.h"

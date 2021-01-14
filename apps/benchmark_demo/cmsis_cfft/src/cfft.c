@@ -125,7 +125,7 @@ int32_t cfft_bench(int32_t fftSize)
     gOverheadTime = gEndTime - gStartTime;    
     MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
 
-    resetPmuCnt();
+    resetPmuEventCounters();
     gStartTime = readPmu();
 
     /* Process the data through the CFFT/CIFFT module */

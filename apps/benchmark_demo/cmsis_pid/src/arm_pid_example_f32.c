@@ -209,7 +209,7 @@ void pidLoop(uint16_t loopCnt)
   /* Call PID init function to initialize the instance structure. */
   arm_pid_init_f32(&myPIDInstance, 1);
 
-  resetPmuCnt();
+  resetPmuEventCounters();
   gStartTime = readPmu();
   for (j=0; j<loopCnt; j++)
     for (i=0; i<NUM_PID_LOOP; i++)

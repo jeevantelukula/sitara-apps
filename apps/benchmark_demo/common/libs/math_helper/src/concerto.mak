@@ -2,7 +2,7 @@ ifeq ($(TARGET_OS),NO_OS)
 ifeq ($(TARGET_CPU),R5F)
 
 include $(PRELUDE)
-TARGET      := profile
+TARGET      := math_helper
 TARGETTYPE  := library
 
 # Define local compiler options
@@ -18,7 +18,7 @@ IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/Core/Include
 IDIRS+=$(APPDIR)/../../include/r5f
 IDIRS+=$(APPDIR)/../../include
 
-CSOURCES    := profile.c math_helper.c
+CSOURCES    := math_helper.c
 
 include $(FINALE)
 
