@@ -73,7 +73,7 @@ IMG4=
 
 ifeq ($(RTOS_ONLY_BUILD),0)
 HLOS_BOOT="optimized"
-HLOS_BIN_PATH=$(PSDK_PATH)/linux/prebuilt-images
+HLOS_BIN_PATH=$(PSDK_PATH)/linux/board-support/prebuilt-images
 ATF_IMG=mpu1_0,$(HLOS_BIN_PATH)/bl31.bin,0x70020000,0x70020000
 OPTEE_IMG=load_only,$(HLOS_BIN_PATH)/bl32.bin,0x9e800000
 ifeq ($(TARGET_PLATFORM),AM65X)
