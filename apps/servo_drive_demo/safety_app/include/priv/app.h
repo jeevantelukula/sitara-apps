@@ -35,7 +35,6 @@
 #define APP_H_
 
 #include <stdint.h>
-#include <stdbool.h>
 
 void configure_interrupts();
 void configure_isolation();
@@ -43,6 +42,7 @@ int32_t configure_ledPattern();
 
 void main_warm_rst_req_isr();
 void mcu_esm_error_isr();
+void gpio_button_isr();
 void pru_protocol_ack_isr();
 void pru_timeout_isr();
 void mailbox_isr();

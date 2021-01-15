@@ -45,6 +45,7 @@
 #include <ti/board/board.h>
 #include <ti/drv/uart/UART.h>
 #include <ti/drv/uart/UART_stdio.h>
+#include <ti/drv/sciclient/sciclient.h>
 #include <ti/osal/osal.h>
 
 #include "app.h"
@@ -71,7 +72,6 @@
 #define MAIN_WARMRST_MASK       (0xFFFFFFF6U)
 
 /* ti/csl/soc/am64x/src/cslr_intr_mcu_m4fss0_core0.h */
-#define MCU_GPIO6_INTRTR        CSLR_MCU_MCU_GPIOMUX_INTROUTER0_IN_MCU_GPIO0_GPIO_6             // 0 through 29
 #define MCU_GPIOMUX_INT4        CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_MCU_GPIOMUX_INTROUTER0_OUTP_4    // 4 through 7
 #define MCU_TIMER2_INT          CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_TIMER2_INTR_PEND_0               // 0 through 3
 #define MCU_TIMER3_INT          CSLR_MCU_M4FSS0_CORE0_NVIC_MCU_TIMER3_INTR_PEND_0               // 0 through 3
@@ -89,9 +89,10 @@
 #define GPIO_LED0           5
 #define GPIO_BUTTON0        6
 #define GPIO_OUTPUT0        7
+#define GPIOMUX_OUT4        4
 
 /* global variables */
-volatile uint32_t warm_rst_counter, esm_err_counter, pru_ack_counter, mbox_msg_counter;
+volatile uint32_t warm_rst_counter, esm_err_counter, button_counter, pru_ack_counter, mbox_msg_counter;
 volatile uint32_t reset_requested, pru_ack_received, pru_ack_timeout, fsoe_data_available;
 volatile uint32_t patternPhase, patternState;
 
@@ -99,6 +100,7 @@ void configure_interrupts()
 {
     Intc_Init();
 
+    Intc_IntClrPend(MCU_GPIOMUX_INT4);
     Intc_IntClrPend(MCU_TIMER3_INT);
     Intc_IntClrPend(MAIN_WARM_RSTz_INT);
     Intc_IntClrPend(MCU_ESM_HI_PRI_INT);
@@ -108,6 +110,7 @@ void configure_interrupts()
     Intc_IntClrPend(MAILBOX0_IPC_INT);
     Intc_IntClrPend(MAILBOX1_IPC_INT);
 
+    Intc_IntRegister(MCU_GPIOMUX_INT4, &gpio_button_isr, NULL);
     Intc_IntRegister(MCU_TIMER3_INT, &ledPattern_isr, NULL);
     Intc_IntRegister(MAIN_WARM_RSTz_INT, &main_warm_rst_req_isr, NULL);
     Intc_IntRegister(MCU_ESM_HI_PRI_INT, &mcu_esm_error_isr, NULL);
@@ -117,6 +120,7 @@ void configure_interrupts()
     Intc_IntRegister(MAILBOX0_IPC_INT, &mailbox_isr, NULL);
     Intc_IntRegister(MAILBOX1_IPC_INT, &mailbox_isr, NULL);
 
+    Intc_SystemEnable(MCU_GPIOMUX_INT4);
     Intc_SystemEnable(MCU_TIMER3_INT);
     Intc_SystemEnable(MAIN_WARM_RSTz_INT);
     Intc_SystemEnable(MCU_ESM_HI_PRI_INT);
@@ -128,10 +132,32 @@ void configure_interrupts()
 
     warm_rst_counter = 0;
     esm_err_counter = 0;
+    button_counter = 0;
     pru_ack_counter = 0;
     mbox_msg_counter = 0;
 
     Intc_IntEnable(0U);
+}
+
+void configure_gpiomux(uint16_t src_index, uint16_t dst_index)
+{
+    int32_t                             status;
+    struct tisci_msg_rm_irq_set_req     rmIrqReq;
+    struct tisci_msg_rm_irq_set_resp    rmIrqResp;
+
+    rmIrqReq.valid_params   = TISCI_MSG_VALUE_RM_DST_ID_VALID |
+                              TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID;
+    rmIrqReq.src_id         = TISCI_DEV_MCU_MCU_GPIOMUX_INTROUTER0;
+    rmIrqReq.dst_id         = TISCI_DEV_MCU_MCU_GPIOMUX_INTROUTER0;
+    rmIrqReq.src_index      = src_index;
+    rmIrqReq.dst_host_irq   = dst_index;
+
+    status = Sciclient_rmIrqSetRaw(&rmIrqReq, &rmIrqResp, SCICLIENT_SERVICE_WAIT_FOREVER);
+
+    if(status != CSL_PASS)
+    {
+        UART_printf("[Error] configure_gpiomux() failed.\n");
+    }
 }
 
 void configure_isolation()
@@ -217,13 +243,15 @@ int32_t configure_ledPattern()
 void set_EmergencyStop()
 {
     /* gpio call will power OFF the C2000 motor drive boosterpack  */
-    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_LOW);
+    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_DIRECTION_OUTPUT);
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_HIGH);
 }
 
 void unset_EmergencyStop()
 {
     /* gpio call will power ON the C2000 motor drive boosterpack  */
-    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_HIGH);
+    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_DIRECTION_OUTPUT);
+    GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_LOW);
 }
 
 void fsoe_stack_call()
@@ -318,6 +346,22 @@ void mcu_esm_error_isr()
     Intc_IntEnable(0U);
 }
 
+void gpio_button_isr()
+{
+    Intc_IntDisable();
+
+    /* stop motor immediately on reset signal */
+    set_EmergencyStop();
+
+    /* clear gpio source interrupt */
+    GPIOIntrClear_v0(MCU_GPIO_MMR, GPIO_BUTTON0);
+    while(GPIOIntrStatus_v0(MCU_GPIO_MMR, GPIO_BUTTON0));
+
+    button_counter++;
+    Intc_IntClrPend(MCU_GPIOMUX_INT4);
+    Intc_IntEnable(0U);
+}
+
 void pru_protocol_ack_isr()
 {
     pru_ack_counter++;
@@ -356,7 +400,6 @@ void mailbox_isr()
         Intc_SystemEnable(MAIN_WARM_RSTz_INT);
 
         configure_esm();
-        unset_EmergencyStop();
     }
     else if (msg_data == CMD_MAILBOX_MSG_APPLY_STO)
         set_EmergencyStop();
@@ -408,9 +451,12 @@ void application_loop()
     pru_ack_timeout = 0;
     pru_ack_received = 0;
 
-    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_DIRECTION_INPUT);
     GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_DIRECTION_OUTPUT);
     GPIOPinWrite_v0(MCU_GPIO_MMR, GPIO_OUTPUT0, GPIO_PIN_HIGH);
+
+    GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_DIRECTION_INPUT);
+    GPIOIntrEnable_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_INTR_MASK_FALL_EDGE);
+    configure_gpiomux(GPIO_BUTTON0, GPIOMUX_OUT4);
 
     UART_printf("[Info] Application loop started.\n");
     while(1U) {
