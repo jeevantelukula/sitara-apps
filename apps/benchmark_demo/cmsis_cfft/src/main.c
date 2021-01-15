@@ -116,10 +116,11 @@ void main(void)
            {
              if (gOptionSelect!=gCoreStatRcv.input.freq)
              {
-               gTimerIntStat.isrCnt = 0;
-               gTimerIntStat.isrCntPrev = 0;
+               gTimerIntStat.isrCnt = 0L;
+               gTimerIntStat.isrCntPrev = 0L;
                gTimerIntStat.intLatencyMax = 0;
                gTimerIntStat.intLatencyAve = 0;
+               gTimerIntStat.intLatencyTotal = 0L;
                gCountPerLoopAve = 0;
                gCountPerLoopMax = 0;
                gOptionSelect = gCoreStatRcv.input.freq;

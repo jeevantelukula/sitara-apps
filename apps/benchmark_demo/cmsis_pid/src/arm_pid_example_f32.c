@@ -239,8 +239,8 @@ void pidLoop(uint16_t loopCnt)
   gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.ave = (uint64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.max = (uint64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;		
-  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;		
+  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;
+  gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;
 
   /* MCBENCH_log is blank, if the DEBUG_PRINT is not defined in benchmark_log.h */ 
   /* supress the unused variable build warning */
@@ -316,10 +316,11 @@ int32_t main(void)
              /* set to selected frequency */
              benchmarkTimerSetFreq(gCoreId, (Run_Freq_Sel)gOptionSelect);
              gAppRunFreq = gOption[gOptionSelect-1];
-             gTimerIntStat.isrCnt = 0;
-             gTimerIntStat.isrCntPrev = 0;
+             gTimerIntStat.isrCnt = 0L;
+             gTimerIntStat.isrCntPrev = 0L;
              gTimerIntStat.intLatencyMax = 0;
              gTimerIntStat.intLatencyAve = 0;
+             gTimerIntStat.intLatencyTotal = 0L;
              gCountPerLoopAve = 0;
              gCountPerLoopMax = 0;
            }

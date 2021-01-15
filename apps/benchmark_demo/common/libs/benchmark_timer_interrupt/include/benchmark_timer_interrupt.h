@@ -53,6 +53,7 @@ typedef struct
     int64_t isrCntPrev;           /* previous timer interrupt counter */
     uint32_t intLatencyMax;       /* timer interrupt latency max */
     uint32_t intLatencyAve;       /* timer interrupt latency average */
+    uint64_t intLatencyTotal;     /* timer interrupt latency total */
 } timer_int_stat;
 
 extern timer_int_stat gTimerIntStat;

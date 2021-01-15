@@ -48,7 +48,7 @@
 extern CSL_ArmR5CPUInfo cpuInfo;
 extern uint32_t gCoreId;
 
-timer_int_stat gTimerIntStat __attribute__((section(".testInData"))) = {0, 0, 0, 0};
+timer_int_stat gTimerIntStat __attribute__((section(".testInData"))) = {0L, 0L, 0, 0, 0L};
 uint32_t reloadVal __attribute__((section(".testInData")));
 uint32_t curVal __attribute__((section(".testInData")));
 
@@ -337,7 +337,7 @@ int32_t csldmTimer_setCountVal(uint32_t coreId, uint32_t timerCount)
     uint32_t    key, countVal;
     uint32_t    status, postedStatus;
     uint32_t    baseAddr = gMcuTimerCfg[gCoreId].timerBaseAddr;
-	
+
     key        = Intc_SystemDisable();
     cslRet = csldmTimer_stop(coreId);
 
@@ -410,7 +410,8 @@ void benchmarkTimerISR(void)
       gTimerIntStat.intLatencyMax = latency;
    }
    /* compute average timer interrupt latency */
-   gTimerIntStat.intLatencyAve = (gTimerIntStat.intLatencyAve*gTimerIntStat.isrCnt+latency)/(gTimerIntStat.isrCnt+1);
+   gTimerIntStat.intLatencyTotal += latency;
+   gTimerIntStat.intLatencyAve = (uint32_t)(gTimerIntStat.intLatencyTotal/(gTimerIntStat.isrCnt+1));
 
    baseAddr = (uint32_t) (gMcuTimerCfg[cpuInfo.grpId*2 + cpuInfo.cpuID].timerBaseAddr);
    /* clear and acknowledge the timer interrupt */
