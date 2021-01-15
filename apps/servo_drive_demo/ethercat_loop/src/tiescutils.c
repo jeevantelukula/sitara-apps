@@ -704,13 +704,18 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 {
     uint32_t payload;
     ecat2mc_msg_obj_t *txobj;
+    static uint8_t msgsent=0U;
 	uint16_t axisIndex = pCiA402Axis->axisIndex;
 	float IncFactor    = (float)0.0010922 * (float) pCiA402Axis->u32CycleTime;
 	int32_t i32TargetVelocity = 0;
 
 #ifdef SOC_AM64X
-	/* Send a message to Partner M4F Core that R5F motor control is ready */
-	Send_STOControl_Message_To_Partner(false);
+    if(msgsent == 0U)
+    {
+        /* Send a message to Partner M4F Core that R5F motor control is ready */
+        Send_STOControl_Message_To_Partner(false);
+        msgsent = 1U;
+    }
 #endif
 
 	axisIndex = pCiA402Axis->axisIndex;
