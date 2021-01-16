@@ -46,7 +46,7 @@ IDIRS+=$(APPDIR)/../../common/ipc_rpmsg_lib/include/$(SITARA_DEMO_SOC)
 
 # Add directory to library search path
 LDIRS+=$(CMSIS_LIB)/lib_prebuild/release
-LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/R5F/NO_OS/$(TARGET_BUILD)
+LDIRS+=$(COMMON_LIB)/out/$(TARGET_PLATFORM)/$(TARGET_CPU)/$(TARGET_OS)/$(TARGET_BUILD)
 
 # Define core ID as each core will host an application that provides a unique
 # role in the system demo. This is beyond the concerto concept of TARGET_CPU,

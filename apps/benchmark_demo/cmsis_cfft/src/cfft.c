@@ -67,6 +67,8 @@ uint32_t gOption[NUM_CFFT_SIZE] __attribute__((section(".testInData")))  = {
   CFFT_SIZE_1024
 };
 uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+uint32_t dCacheMissNum __attribute__((section(".testInData"))) = 0;
+uint32_t iCacheMissNum __attribute__((section(".testInData"))) = 0;
 
 float32_t cfftInData[2048] __attribute__((aligned(128), section(".testInData")));
 float32_t cfftMagData[1024] __attribute__((aligned(128), section(".testInData")));
@@ -133,6 +135,9 @@ int32_t cfft_bench(int32_t fftSize)
 
     gEndTime = readPmu();
     gTotalTime = gEndTime - gStartTime - gOverheadTime;
+
+    iCacheMissNum = readPmuInstCacheMiss();
+    dCacheMissNum = readPmuDataCacheMiss();
 
     /* Compute the average and max of count per loop */
     if (gTotalTime>(int64_t)gCountPerLoopMax)

@@ -164,6 +164,9 @@ uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
   RUN_FREQ_50K  
 };
 uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+uint32_t dCacheMissNum __attribute__((section(".testInData"))) = 0;
+uint32_t iCacheMissNum __attribute__((section(".testInData"))) = 0;
+
 /* initialize FOC loop */
 void focLoopInit(void)
 {
@@ -300,6 +303,9 @@ void focLoop(uint16_t loopCnt)
 
     gEndTime = readPmu();
     gTotalTime = gEndTime - gStartTime - gOverheadTime;      
+
+    iCacheMissNum = readPmuInstCacheMiss();
+    dCacheMissNum = readPmuDataCacheMiss();
 
     /* Compute the average and max of count per loop */
     if (gTotalTime>(uint64_t)gCountPerLoopMax)

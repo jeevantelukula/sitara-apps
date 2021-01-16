@@ -177,6 +177,8 @@ uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
   RUN_FREQ_50K  
 };
 uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+uint32_t dCacheMissNum __attribute__((section(".testInData"))) = 0;
+uint32_t iCacheMissNum __attribute__((section(".testInData"))) = 0;
 
 /* EPWM related variables */
 /** \brief IP default configuration */
@@ -558,6 +560,10 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
   /*********** Compute benchmark in cycles ********/
   gEndTime = readPmu();
   gTotalTime = gEndTime - gStartTime - gOverheadTime;
+
+  iCacheMissNum = readPmuInstCacheMiss();
+  dCacheMissNum = readPmuDataCacheMiss();
+
   /* Compute the average and max of count per loop */
   if (gTotalTime>(int64_t)gCountPerLoopMax)
   {
