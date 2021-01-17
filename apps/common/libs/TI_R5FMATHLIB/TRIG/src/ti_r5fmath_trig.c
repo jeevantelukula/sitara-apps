@@ -32,7 +32,7 @@
  */
 
 #include <stdint.h>
-#include "ti_r5fmath_trig.h"
+#include "../include/ti_r5fmath_trig.h"
 
 float ti_r5fmath_sinCoef[4] = {
                                  0.999996615908002773079325846913220383f,
