@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include "../include/ti_r5fmath_trig.h"
 
+#pragma DATA_SECTION(ti_r5fmath_sinCoef, ".dataTrig")
 float ti_r5fmath_sinCoef[4] = {
                                  0.999996615908002773079325846913220383f,
                                 -0.16664828381895056829366054140948866f,
@@ -41,6 +42,7 @@ float ti_r5fmath_sinCoef[4] = {
                                 -0.00018363653976946785297280224158683484f
                               };
 
+#pragma DATA_SECTION(ti_r5fmath_cosCoef, ".dataTrig")
 float ti_r5fmath_cosCoef[5] = {
                                  0.999999953466670136306412430924463351f,
                                 -0.49999905347076729097546897993796764f,
@@ -50,6 +52,7 @@ float ti_r5fmath_cosCoef[5] = {
                                };
 
 /* 3PI/2, 2PI, PI/2, PI */
+#pragma DATA_SECTION(ti_r5fmath_PIconst, ".dataTrig")
 float ti_r5fmath_PIconst[4] =  {
                                   TI_R5FMATH_3PIOVER2,
                                   TI_R5FMATH_2PI,
@@ -59,6 +62,7 @@ float ti_r5fmath_PIconst[4] =  {
 
 
 /*  first 4 coef are for sin, second 4 are for cos  */
+#pragma DATA_SECTION(ti_r5fmath_sincosCoef, ".dataTrig")
 float ti_r5fmath_sincosCoef[8] = {
                                     1.0f,
                                    -0.166666507720947265625f,
@@ -70,11 +74,13 @@ float ti_r5fmath_sincosCoef[8] = {
                                    -1.35934352874755859375e-3f
                                   };
 /*  1/(PI/4), PI/2  */
+#pragma DATA_SECTION(ti_r5fmath_sincosPIconst, ".dataTrig")
 float ti_r5fmath_sincosPIconst[2] = {
                                     TI_R5FMATH_ONEOVERPIOVER4,
                                     TI_R5FMATH_PIOVER2
                                    };
 /* coef3, coef1, PI/2, coef5, PI/6, tan(PI/6), tan(PI/12)       */
+#pragma DATA_SECTION(ti_r5fmath_atan2_consts, ".dataTrig")
 float ti_r5fmath_atan_consts[7] = {
                                     -0.33298534f,
                                      0.9999986f,
@@ -85,6 +91,7 @@ float ti_r5fmath_atan_consts[7] = {
                                      TI_R5FMATH_TANPIOVER12
                                    };
 /* tan(PI/12), tan(PI/6), PI/6, PI/2, PI, coef1, coef3, coef5       */
+#pragma DATA_SECTION(ti_r5fmath_atan2_consts, ".dataTrig")
 float ti_r5fmath_atan2_consts[8] = {
                                     TI_R5FMATH_TANPIOVER12,
                                     TI_R5FMATH_TANPIOVER6,
@@ -96,6 +103,7 @@ float ti_r5fmath_atan2_consts[8] = {
                                     0.183986365795135498046875f
                                 };
 
+#pragma DATA_SECTION(ti_r5fmath_atanFast_consts, ".dataTrig")
 float ti_r5fmath_atanFast_consts[4] = {
                                         TI_R5FMATH_PI,
                                         TI_R5FMATH_PIOVER2,
