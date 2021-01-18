@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2020, Texas Instruments Incorporated
+ * Copyright (c) 2015, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,5 +58,7 @@
 void Board_i2cLedInit();
 
 void Board_setDigOutput(uint8_t ledData);
+
+void Board_setTestLED1(uint8_t value);
 
 #endif /* _BOARD_I2CLED_H_*/

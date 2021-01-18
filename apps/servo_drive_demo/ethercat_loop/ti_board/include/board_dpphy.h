@@ -6,7 +6,7 @@
 */
 
 /*
- * Copyright (c) 2020, Texas Instruments Incorporated
+ * Copyright (c) 2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@
 #define DPPHY_GEN_CTRL          0x1F
 #define DPPHY_FLD_CFG_REG       0x2D
 #define DPPHY_RGMIICTL          0x32
+#define DPPHY_RGMIICTL2         0x33
 #define DPPHY_100CR_REG         0x43
 #define DPPHY_GPIO_MUX_CTRL2    0x172
 
@@ -160,6 +161,11 @@
 #define PHY_SPEEDSEL_100        (1<<13)
 #define PHY_SPEEDSEL_100_MSB    (1<<6)
 #define PHY_DUPLEXMODE_FULL     (1<<8)
+
+#define PHY_LOW_LATENCY_10_100_ENABLE       (1<<2)
+
+#define PHY_RGMII_TX_HALF_FULL_THR_SHIFT    (3)
+#define PHY_RGMII_RX_HALF_FULL_THR_SHIFT    (5)
 
 #ifdef INCLUDE_DPPHY_WORKAROUND
 
@@ -538,7 +544,7 @@ uint8_t MDIO_getPhyConfig(uint32_t mdioBaseAddress, uint32_t phyNum);
 *
 * @param mdioBaseAddress MDIO Base Address
 * @param phyNum Phy address of the port
-
+*
 * @retval none
 */
 extern void Board_phyFastLinkDownDetDisable(uint32_t mdioBaseAddress, uint32_t phyNum);
@@ -548,8 +554,42 @@ extern void Board_phyFastLinkDownDetDisable(uint32_t mdioBaseAddress, uint32_t p
 *
 * @param mdioBaseAddress MDIO Base Address
 * @param phyNum Phy address of the port
-
+*
 * @retval none
 */
 extern void Board_phyEnhancedIPGDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum);
+
+/**
+* @brief Function to enable low latency in 10/100M operation. This is applicable
+*        for RGMII configuration only.
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+*
+* @retval none
+*/
+extern void Board_phyRgmiiLowLatencyEnable(uint32_t mdioBaseAddress, uint32_t phyNum);
+
+/**
+* @brief Function to set RGMII transmit FIFO half full threshold
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+* @param val Value to be set. Only Bit[1:0] will be used, as this is a 2 bit
+*            field in register*
+* @retval none
+*/
+extern void Board_setPhyRgmiiTxHalfFullThreshold(uint32_t mdioBaseAddress, uint32_t phyNum, uint16_t val);
+
+/**
+* @brief Function to set RGMII receive FIFO half full threshold
+*
+* @param mdioBaseAddress MDIO Base Address
+* @param phyNum Phy address of the port
+* @param val Value to be set. Only Bit[1:0] will be used, as this is a 2 bit
+*            field in register
+*
+* @retval none
+*/
+extern void Board_setPhyRgmiiRxHalfFullThreshold(uint32_t mdioBaseAddress, uint32_t phyNum, uint16_t val);
 #endif

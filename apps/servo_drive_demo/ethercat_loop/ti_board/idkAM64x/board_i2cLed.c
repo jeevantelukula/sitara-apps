@@ -37,13 +37,16 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
+#include <board_i2cLed.h>
 #include <ti/drv/i2c/I2C.h>
 #include <ti/board/src/am64x_evm/include/board_cfg.h>
 
 
 I2C_Handle i2cLedhandle = NULL;
 static I2C_Transaction i2cLedTransaction;
+static I2C_Transaction i2cTestLedTransaction;
 static char i2cLedtxBuf[2] = {0x44 , 0x00};
+static char i2cTestLedtxBuf[2];
 
 void Board_i2cLedInit()
 {
@@ -58,6 +61,23 @@ void Board_i2cLedInit()
     i2cLedTransaction.slaveAddress = BOARD_I2C_LED_ADDR;
     i2cLedTransaction.writeBuf = (uint8_t *)&i2cLedtxBuf[0];
     i2cLedTransaction.writeCount = 2;
+
+    i2cTestLedTransaction.slaveAddress = BOARD_I2C_IOEXP_DEVICE1_ADDR;
+    i2cTestLedTransaction.writeBuf = (uint8_t *)&i2cTestLedtxBuf[0];
+    i2cTestLedTransaction.writeCount = 2;
+
+    /* Configure P20 (corresponding to TEST_LED1) as output pin */
+    /* Command Byte for Configuration Port 2 register */
+    i2cTestLedtxBuf[0] = 0x0E;
+    /* Set last bit (corresponding to P20) to 0 */  
+    i2cTestLedtxBuf[1] = 0xFE;
+    I2C_transfer(i2cLedhandle, &i2cTestLedTransaction);
+
+    /* Command byte for Output Port 2 register. Needed for subsequent calls to 
+       control LED */
+    i2cTestLedtxBuf[0] = 0x06;
+    /* Default value of output bit is 1. Set it to 0*/
+    Board_setTestLED1(0);
 }
 
 void Board_setDigOutput(uint8_t ledData)
@@ -66,3 +86,14 @@ void Board_setDigOutput(uint8_t ledData)
     I2C_transfer(i2cLedhandle, &i2cLedTransaction);
 }
 
+void Board_setTestLED1(uint8_t value)
+{
+    /*NOTE: For controlling LED, we need to control the LSB in Output Port 2 
+            register. The operation needed is read-modify-write, but that is
+            expensive as it needs two I2C transactions. In EVM design, P21 to 
+            P27 (corresponding to other bits in Output Port 2 register) are 
+            connected to TP, so sending just one transaction(for write) works.*/
+
+    i2cTestLedtxBuf[1] = value;
+    I2C_transfer(i2cLedhandle, &i2cTestLedTransaction);
+}

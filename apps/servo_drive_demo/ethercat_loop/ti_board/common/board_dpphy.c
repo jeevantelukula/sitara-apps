@@ -700,3 +700,37 @@ void Board_phyEnhancedIPGDetEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
     phyregval |= (DPPHY_ENHANCED_IPG_DET_ENABLE);
     MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_100CR_REG, phyregval);
 }
+
+void Board_phyRgmiiLowLatencyEnable(uint32_t mdioBaseAddress, uint32_t phyNum)
+{
+    uint16_t phyregval = 0;
+    MDIO_phyExtRegRead(mdioBaseAddress, phyNum, DPPHY_RGMIICTL2, &phyregval);
+    phyregval |= (PHY_LOW_LATENCY_10_100_ENABLE);
+    MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_RGMIICTL2, phyregval);
+}
+
+void Board_setPhyRgmiiTxHalfFullThreshold(uint32_t mdioBaseAddress, uint32_t phyNum, uint16_t val)
+{
+    uint16_t phyregval = 0;
+    MDIO_phyExtRegRead(mdioBaseAddress, phyNum, DPPHY_RGMIICTL, &phyregval);
+
+    /*Only Bit[1:0] of val will be used, as this is a 2 bit  field in register*/
+    val &= 0x3;
+    /* Set val in Bits[4:3] */
+    phyregval |=  (val << PHY_RGMII_TX_HALF_FULL_THR_SHIFT);
+
+    MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_RGMIICTL, phyregval);
+}
+
+void Board_setPhyRgmiiRxHalfFullThreshold(uint32_t mdioBaseAddress, uint32_t phyNum, uint16_t val)
+{
+    uint16_t phyregval = 0;
+    MDIO_phyExtRegRead(mdioBaseAddress, phyNum, DPPHY_RGMIICTL, &phyregval);
+
+    /*Only Bit[1:0] of val will be used, as this is a 2 bit  field in register*/
+    val &= 0x3;
+    /* Set val in Bits[6:5] */
+    phyregval |=  (val << PHY_RGMII_RX_HALF_FULL_THR_SHIFT);
+
+    MDIO_phyExtRegWrite(mdioBaseAddress, phyNum, DPPHY_RGMIICTL, phyregval);
+}

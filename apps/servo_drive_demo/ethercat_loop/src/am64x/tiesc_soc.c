@@ -49,14 +49,12 @@
 #include <ti/drv/gpio/GPIO.h>
 #include <board_gpioLed.h>
 
-#include <board_misc.h>
 #include <board_eeprom.h>
 #include <board_phy.h>
 #include <board_dpphy.h>
 #include <delay_us.h>
 #include <board_spi.h>
 
-#include <board_rotary_switch.h>
 #include <board_i2cLed.h>
 
 #include <version.h>

@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (c) 2020, Texas Instruments Incorporated
+ * Copyright (c) 2015, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,13 +81,14 @@
  */
 #define BOARD_AMIC_ERROR_LED                    (1u << (7u))
 
-
+#ifndef SOC_AM64X
 #ifdef iceAMIC11x
 #define BOARD_RUN_LED       BOARD_AMIC_RUN_LED
 #define BOARD_ERROR_LED     BOARD_AMIC_ERROR_LED
 #else
 #define BOARD_RUN_LED       BOARD_TRICOLOR0_GREEN
 #define BOARD_ERROR_LED     BOARD_TRICOLOR1_RED
+#endif
 #endif
 
 #ifdef TIESC_SPI_SLAVE_MODE
@@ -125,5 +126,7 @@ void gpioLedPinmuxConfig();
  * @param value set or reset
  */
 void  Board_setTriColorLED(uint32_t gpioLeds, uint8_t value);
+
+void  Board_setTestLED2(uint8_t value);
 
 #endif /* _BOARD_GPIOLED_H_*/

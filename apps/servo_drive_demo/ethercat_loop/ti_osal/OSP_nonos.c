@@ -3,8 +3,7 @@
  */
 
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
- * All rights reserved.
+ * Copyright (C) 2018 Texas Instruments Incorporated - http://www.ti.com/
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

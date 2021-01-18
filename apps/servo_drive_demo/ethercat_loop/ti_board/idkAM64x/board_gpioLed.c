@@ -42,22 +42,15 @@
 #include <ti/board/src/am64x_evm/include/board_cfg.h>
 #include <board_gpioLed.h>
 
-/*NOTE: Tri-color LEDs are not present on AM64x EVM. Toggling
- *      AM64X_EVM_RED0_GPIO, AM64X_EVM_GREEN0_GPIO and AM64X_EVM_YELLOW0_GPIO
- *      just toggles the TEST_LED2. Similarly AM64X_EVM_RED1_GPIO,
- *      AM64X_EVM_GREEN1_GPIO and AM64X_EVM_YELLOW1_GPIO toggles TEST_LED1*/
-
 /***********************************************************************/
 /* Macros                                        */
 /***********************************************************************/
 
+#define AM64X_EVM_TEST_LED2      0
+
 /* GPIO Driver board specific pin configuration structure */
 GPIO_PinConfig gpioPinConfigs[] =
 {
-    /* Output pin : TEST_LED1 */
-    GPIO_DEVICE_CONFIG(BOARD_GPIO_TEST_LED1_PORT_NUM, BOARD_GPIO_TEST_LED1_PIN_NUM) |
-    GPIO_CFG_OUTPUT ,
-
     /* Output pin : TEST_LED2 */
     GPIO_DEVICE_CONFIG(BOARD_MCU_GPIO_TEST_LED2_PORT_NUM, BOARD_MCU_GPIO_TEST_LED2_PIN_NUM) |
     GPIO_CFG_OUTPUT,
@@ -79,43 +72,7 @@ GPIO_v0_Config GPIO_v0_config =
     0x2U,
 };
 
-#define AM64X_EVM_RED0_GPIO        1
-#define AM64X_EVM_GREEN0_GPIO      1
-#define AM64X_EVM_YELLOW0_GPIO     1
-#define AM64X_EVM_RED1_GPIO        0
-#define AM64X_EVM_GREEN1_GPIO      0
-#define AM64X_EVM_YELLOW1_GPIO     0
-
-void  Board_setTriColorLED(uint32_t gpioLeds, uint8_t value)
+void Board_setTestLED2(uint8_t value)
 {
-    if(gpioLeds & BOARD_TRICOLOR0_RED)
-    {
-        GPIO_write(AM64X_EVM_RED0_GPIO, value);
-    }
-
-    if(gpioLeds & BOARD_TRICOLOR0_GREEN)
-    {
-        GPIO_write(AM64X_EVM_GREEN0_GPIO, value);
-    }
-
-    if(gpioLeds & BOARD_TRICOLOR0_YELLOW)
-    {
-        GPIO_write(AM64X_EVM_YELLOW0_GPIO, value);
-    }
-
-    if(gpioLeds & BOARD_TRICOLOR1_RED)
-
-    {
-        GPIO_write(AM64X_EVM_RED1_GPIO, value);
-    }
-
-    if(gpioLeds & BOARD_TRICOLOR1_GREEN)
-    {
-        GPIO_write(AM64X_EVM_GREEN1_GPIO, value);
-    }
-
-    if(gpioLeds & BOARD_TRICOLOR1_YELLOW)
-    {
-        GPIO_write(AM64X_EVM_YELLOW1_GPIO, value);
-    }
+    GPIO_write(AM64X_EVM_TEST_LED2, value);
 }

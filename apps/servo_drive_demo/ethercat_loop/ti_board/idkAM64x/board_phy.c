@@ -37,21 +37,8 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
-
-
-#include "stdio.h"
-#include "string.h"
-#include <stdlib.h>
-
-#include <ti/csl/soc.h>
-#include <ti/csl/src/ip/gpio/V0/gpio.h>
-#include <soc_icss_header.h>
-
-#include <ti/board/board.h>
+#include <stdint.h>
 #include <board_phy.h>
-
-#include <board_misc.h>
-#include <board_gpioLed.h>
 
 /* TODO: Following to be added after confirmation*/
 /*

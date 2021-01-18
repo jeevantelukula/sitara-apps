@@ -747,15 +747,21 @@ void Send_BootComplete_Message_To_Partner()
 
 void tiesc_boardConfig(void)
 {
-    Board_IDInfo boardInfo;
+    Board_IDInfo_v2 boardInfo;
+    Board_STATUS status;
 
 #ifndef DISABLE_UART_PRINT
-    Board_getIDInfo(&boardInfo);
+    memset(&boardInfo, 0, sizeof(Board_IDInfo_v2));
+    status = Board_getIDInfo_v2(&boardInfo, BOARD_APP_EEPROM_ADDR);
+    if(status != BOARD_SOK)
+    {
+        UART_printf("Board_getIDInfo_v2 returned error = %d",status);
+    }
 
     UART_printf("\nBoard name \t: ");
-    UART_printf(boardInfo.boardName);
+    UART_printf(boardInfo.boardInfo.boardName);
 
     UART_printf("\nBoard Revision \t: ");
-    UART_printf(boardInfo.version);
+    UART_dataWrite((char *)&boardInfo.boardInfo.designRev, BOARD_DESIGN_REV_LEN);
 #endif
 }
