@@ -14,8 +14,8 @@ TARGETTYPE  := library
 # Define local compiler options
 DEFS+=__COMPILER_BARRIER
 
-CSOURCES    := ti_r5fmath_trig.c
-ASSEMBLY    := ti_r5fmath_trig_assy.S
+CSOURCES    := ./TRIG/ti_r5fmath_trig.c
+ASSEMBLY    := ./TRIG/ti_r5fmath_trig_assy.S
 
 include $(FINALE)
 

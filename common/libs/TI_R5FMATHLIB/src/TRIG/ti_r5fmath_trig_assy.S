@@ -1,5 +1,5 @@
 
- ; Copyright (C) 2017-2020 Texas Instruments Incorporated - http://www.ti.com/
+ ; Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
  ;
  ;
  ; Redistribution and use in source and binary forms, with or without
