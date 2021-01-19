@@ -123,6 +123,9 @@ export GCC_LINUX_ARM_PATH=$(PSDK_PATH)/rtos/gcc-arm-9.2-2019.12-mingw-w64-i686-a
 endif
 
 app_img_build:
+ifeq ($(BUILD_LINUX_APPS),1)
+	$(DEMO_ROOT)/../../bin/dtb_boot_args.sh
+endif
 ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
 	$(COPY) "$(call PATH_CONV,$(SPL_FILE))" "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-spl.bin)"
 	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) SPL_IMG=$(SPL_TYPE),$(HLOS_BIN_PATH)/u-boot-spl.bin,$(SPL_ADDRESS) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) IMG3=$(IMG3) IMG4=$(IMG4) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)

@@ -8,7 +8,7 @@ export TARGET_PLATFORM ?= AM64X
 PRSDK_PATH = $(PSDK_PATH)/rtos
 
 # Derive path to Linux board support pacakge
-PLSDK_PATH = $(PSDK_PATH)/linux
+export PLSDK_PATH = $(PSDK_PATH)/linux
 
 # Assume concerto is in this directory
 export CONCERTO_ROOT = $(abspath ./concerto)
