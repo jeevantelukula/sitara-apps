@@ -95,7 +95,9 @@ HLOS_BOOT="optimized"
 SPL_IMG=
 else
 HLOS_BOOT="development"
-SPL_IMG=ADD THIS
+SPL_TYPE=load_only
+SPL_FILE=$(HLOS_BIN_PATH)/u-boot-spl.bin-am6x-evm
+SPL_ADDRESS=0x80080000
 endif
 else
 HLOS_BOOT=
@@ -121,26 +123,27 @@ export GCC_LINUX_ARM_PATH=$(PSDK_PATH)/rtos/gcc-arm-9.2-2019.12-mingw-w64-i686-a
 endif
 
 app_img_build:
+ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
+	$(COPY) "$(call PATH_CONV,$(SPL_FILE))" "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-spl.bin)"
+	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) SPL_IMG=$(SPL_TYPE),$(HLOS_BIN_PATH)/u-boot-spl.bin,$(SPL_ADDRESS) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) IMG3=$(IMG3) IMG4=$(IMG4) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
+else
 	$(MAKE) -C $(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage ATF_IMG=$(ATF_IMG) OPTEE_IMG=$(OPTEE_IMG) KERNEL_IMG=$(KERNEL_IMG) DTB_IMG=$(DTB_IMG) SPL_IMG=$(SPL_IMG) HLOS_BOOT=$(HLOS_BOOT) IMG1=$(IMG1) IMG2=$(IMG2) IMG3=$(IMG3) IMG4=$(IMG4) BOARD=$(PDK_BOARD) SOC=$(PDK_SOC)
+endif
 #Create Benchmark Demo SD Card Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/app)"
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/sysfw.bin)"
-ifeq ($(RTOS_ONLY_BUILD),0)
-ifeq ($(LINUX_BUILD_TYPE),1)
+ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
 	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/u-boot.img)"
-endif
 endif
 #Create Benchmark Demo OSPI Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage)
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/tools/combined_appimage/bin/$(PDK_BOARD)/combined.appimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/app)"
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/sysfw.bin)"
-ifeq ($(RTOS_ONLY_BUILD),0)
-ifeq ($(LINUX_BUILD_TYPE),1)
-        $(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/u-boot.img)"
-endif
+ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
+	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/u-boot.img)"
 endif
 	
 app_img_build_clean:
