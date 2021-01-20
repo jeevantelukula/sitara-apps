@@ -124,7 +124,10 @@ int32_t cfft_bench(int32_t fftSize)
      gStartTime = readPmu();
     } while (gStartTime==0);
     gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;    
+    if (gEndTime >= gStartTime)
+      gOverheadTime = gEndTime - gStartTime;
+    else
+      gOverheadTime = 0; /* in case of PMU timer wrapped around */
     MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
 
     resetPmuEventCounters();
@@ -134,7 +137,10 @@ int32_t cfft_bench(int32_t fftSize)
     arm_cfft_f32(S, cfftInData, 0, 1);
 
     gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;
+    if (gEndTime >= (gStartTime+gOverheadTime))
+      gTotalTime = gEndTime - gStartTime - gOverheadTime;
+    else
+      gTotalTime = 0;
 
     iCacheMissNum = readPmuInstCacheMiss();
     dCacheMissNum = readPmuDataCacheMiss();

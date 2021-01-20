@@ -112,6 +112,8 @@ SECTIONS
     .testInCode    	: {} palign(8) 		> R5F_ATCM
     .testInData    	: {} palign(8) 		> R5F_ATCM
     .textHwiIsr     : {} palign(8)		> R5F_ATCM
+    .textTrig       : {} palign(8)		> R5F_ATCM
+    .dataTrig       : {} palign(8)		> R5F_ATCM
     .resource_table : {
         __RESOURCE_TABLE = .;
     } > DDR_MCU1_1_RESOURCE_TABLE

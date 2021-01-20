@@ -403,7 +403,15 @@ void benchmarkTimerISR(void)
    curVal = HW_RD_REG32(gMcuTimerCfg[cpuInfo.grpId*2 + cpuInfo.cpuID].timerBaseAddr + TIMER_TCRR);
    reloadVal = HW_RD_REG32(gMcuTimerCfg[cpuInfo.grpId*2 + cpuInfo.cpuID].timerBaseAddr + TIMER_TLDR);
 #endif
-   latency = (curVal-reloadVal)*BENCHMARK_TIMER_TICK_PRD;
+   if (curVal>=reloadVal)
+   {
+      latency = (curVal-reloadVal)*BENCHMARK_TIMER_TICK_PRD;
+   } else
+   {
+      /* if the timer counter is messed up use average */
+      latency = gTimerIntStat.intLatencyAve;
+   }
+   
    if (latency>gTimerIntStat.intLatencyMax)
    {
       /* timer interrupt latency in ns */ 
@@ -510,6 +518,18 @@ int32_t benchmarkTimerSetFreq(uint32_t coreId, Run_Freq_Sel sel)
 
       case RUN_FREQ_SEL_50K:
       timerCount = 25000000/RUN_FREQ_50K;
+      break;
+
+      case RUN_FREQ_SEL_100K:
+      timerCount = 25000000/RUN_FREQ_100K;
+      break;
+
+      case RUN_FREQ_SEL_500K:
+      timerCount = 25000000/RUN_FREQ_500K;
+      break;
+
+      case RUN_FREQ_SEL_1M:
+      timerCount = 25000000/RUN_FREQ_1M;
       break;
 
       default:

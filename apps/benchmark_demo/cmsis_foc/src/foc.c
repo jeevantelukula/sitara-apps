@@ -38,6 +38,7 @@
  *
  */
 
+#define USE_TI_MATHLIB
 
 #include <stdint.h>
 
@@ -56,6 +57,10 @@
 #include "ipark.h"
 #include "pi.h"
 #include "svgen_dq.h"
+
+#if defined(USE_TI_MATHLIB)
+#include "ti_r5fmath_trig.h"
+#endif
 
 #include "foc.h"
 
@@ -123,6 +128,9 @@ float32_t gCmsisClarkeBetaOut __attribute__((section(".testInData")));
 float32_t gCmsisElecTheta __attribute__((section(".testInData")));          /* electrical theta expressed degrees for CMSIS */
 float32_t gCmsisSinElecThetaOut __attribute__((section(".testInData")));    /* CMSIS sin output */
 float32_t gCmsisCosElecThetaOut __attribute__((section(".testInData")));    /* CMSIS cos output */
+#if defined(USE_TI_MATHLIB)
+float32_t gTiSinCosElecThetaOut[2] __attribute__((section(".testInData")));    /* TI Mathlib sin cos output */
+#endif
 
 /* CMSIS Park transform output */
 float32_t gCmsisParkDsOut __attribute__((section(".testInData"))); 
@@ -154,14 +162,11 @@ core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
 uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
 uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
 uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
-uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
-  RUN_FREQ_1K,
-  RUN_FREQ_2K,
-  RUN_FREQ_4K,
-  RUN_FREQ_8K,
-  RUN_FREQ_16K,
-  RUN_FREQ_32K,
-  RUN_FREQ_50K  
+uint32_t gOption[NUM_OPTIONS] __attribute__((section(".testInData")))  = {
+  RUN_FREQ_50K,  
+  RUN_FREQ_100K,  
+  RUN_FREQ_500K,  
+  RUN_FREQ_1M  
 };
 uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
 uint32_t dCacheMissNum __attribute__((section(".testInData"))) = 0;
@@ -231,7 +236,10 @@ void focLoop(uint16_t loopCnt)
      gStartTime = readPmu();
     } while (gStartTime==0);
     gEndTime = readPmu();
-    gOverheadTime = gEndTime - gStartTime;    
+    if (gEndTime >= gStartTime)
+      gOverheadTime = gEndTime - gStartTime;
+    else
+      gOverheadTime = 0; /* in case of PMU timer wrapped around */
 
     /* Get ADC samples */
     readAdcSamps(gInData);
@@ -267,8 +275,13 @@ void focLoop(uint16_t loopCnt)
         gCmsisElecTheta = gCmsisElecTheta - 360.0;
     }
 
+#if defined(USE_TI_MATHLIB)
+    /* TI_R5FMATHLIB library call sin_cos */
+    ti_r5fmath_sincos(gCmsisElecTheta, ti_r5fmath_PIconst, ti_r5fmath_sincosCoef, gTiSinCosElecThetaOut);
+#else
     /* CMSIS library call sin_cos */
     arm_sin_cos_f32(gCmsisElecTheta, &gCmsisSinElecThetaOut, &gCmsisCosElecThetaOut);
+#endif
 
     /* Connect inputs to Park transform macro, call macro */
     gPark.Alpha = gClarke.Alpha;
@@ -302,7 +315,10 @@ void focLoop(uint16_t loopCnt)
     writeInvClarkeOut(gCmsisInvClarkeIaOut, gCmsisInvClarkeIbOut);
 
     gEndTime = readPmu();
-    gTotalTime = gEndTime - gStartTime - gOverheadTime;      
+    if (gEndTime >= (gStartTime+gOverheadTime))
+      gTotalTime = gEndTime - gStartTime - gOverheadTime;
+    else
+      gTotalTime = 0;
 
     iCacheMissNum = readPmuInstCacheMiss();
     dCacheMissNum = readPmuDataCacheMiss();

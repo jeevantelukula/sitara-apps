@@ -114,7 +114,7 @@ void main(void)
          {
             gOptionSelect = gCoreStatRcv.input.freq;
             /* set the running frequency to the selected one */
-            if ((gOptionSelect>0)&&(gOptionSelect<=NUM_RUN_FREQS))
+            if ((gOptionSelect>0)&&(gOptionSelect<=NUM_OPTIONS))
             {
                if (gAppRunFreq!=gOption[gOptionSelect-1])
                {

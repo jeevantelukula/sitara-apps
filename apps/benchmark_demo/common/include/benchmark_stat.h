@@ -41,8 +41,7 @@ File name:       benchmark_stat.h
 
 #define NUM_CORES             4
 #define NUM_APPS              5
-#define NUM_RUN_FREQS         7
-#define RUN_FREQS_OFFSET      3
+#define NUM_OPTIONS           4
 #define NUM_CFFT_SIZE         4
 
 /*!
@@ -68,7 +67,10 @@ typedef enum Run_Freq_Sel_e {
     RUN_FREQ_SEL_8K          = 4,
     RUN_FREQ_SEL_16K         = 5,
     RUN_FREQ_SEL_32K         = 6,
-    RUN_FREQ_SEL_50K         = 7
+    RUN_FREQ_SEL_50K         = 7,
+    RUN_FREQ_SEL_100K         = 8,
+    RUN_FREQ_SEL_500K         = 9,
+    RUN_FREQ_SEL_1M         = 10
 } Run_Freq_Sel;
 
 /*!
@@ -82,7 +84,10 @@ typedef enum Run_Freq_e {
     RUN_FREQ_8K          = 8000,
     RUN_FREQ_16K         = 16000,
     RUN_FREQ_32K         = 32000,
-    RUN_FREQ_50K         = 50000
+    RUN_FREQ_50K         = 50000,
+    RUN_FREQ_100K        = 100000,
+    RUN_FREQ_500K        = 500000,
+    RUN_FREQ_1M          = 1000000
 } Run_Freq;
 
 /*!

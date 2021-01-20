@@ -37,6 +37,7 @@ IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/DSP/Include
 IDIRS+=$(CMSIS_LIB)/CMSIS_5/CMSIS/Core/Include
 IDIRS+=$(SDIR)/control_suite/math_blocks
 IDIRS+=$(COMMON_LIB)/profile/include
+IDIRS+=$(COMMON_LIB)/TI_R5FMATHLIB/include
 IDIRS+=$(APPDIR)/../common/include/r5f
 IDIRS+=$(APPDIR)/../common/include
 IDIRS+=$(APPDIR)/../common/libs/benchmark_timer_interrupt/include
@@ -61,6 +62,7 @@ COMMON_CONFIG = $(abspath $(APPDIR)/../common/config/$(SITARA_DEMO_SOC))
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 STATIC_LIBS += common_libs_profile
+STATIC_LIBS += ti_r5fmathlib
 STATIC_LIBS += benchmark_timer_interrupt
 STATIC_LIBS += ipc_rpmsg_lib_mcu$(MCUNUM)
 

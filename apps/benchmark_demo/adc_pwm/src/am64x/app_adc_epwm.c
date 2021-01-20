@@ -167,10 +167,7 @@ core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
 uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
 uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
 uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
-uint32_t gOption[NUM_RUN_FREQS] __attribute__((section(".testInData")))  = {
-  RUN_FREQ_1K,
-  RUN_FREQ_2K,
-  RUN_FREQ_4K,
+uint32_t gOption[NUM_OPTIONS] __attribute__((section(".testInData")))  = {
   RUN_FREQ_8K,
   RUN_FREQ_16K,
   RUN_FREQ_32K,
@@ -536,7 +533,10 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
    gStartTime = readPmu();
   } while (gStartTime==0);
   gEndTime = readPmu();
-  gOverheadTime = gEndTime - gStartTime;    
+  if (gEndTime >= gStartTime)
+    gOverheadTime = gEndTime - gStartTime;
+  else
+    gOverheadTime = 0; /* in case of PMU timer wrapped around */
   MCBENCH_log("\n %d overhead cycles\n", (uint32_t)gOverheadTime);
 
   /* ----------------------------------------------------------------------
@@ -559,7 +559,10 @@ int32_t appADCPWMBench(uint32_t *adcInData, int32_t *adcInDataSize)
   
   /*********** Compute benchmark in cycles ********/
   gEndTime = readPmu();
-  gTotalTime = gEndTime - gStartTime - gOverheadTime;
+  if (gEndTime >= (gStartTime+gOverheadTime))
+    gTotalTime = gEndTime - gStartTime - gOverheadTime;
+  else
+    gTotalTime = 0;
 
   iCacheMissNum = readPmuInstCacheMiss();
   dCacheMissNum = readPmuDataCacheMiss();

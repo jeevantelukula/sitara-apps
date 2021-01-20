@@ -89,8 +89,8 @@ void main(void)
    benchmarkTimerInit(gCoreId);
 
    /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_50K);
-   gAppRunFreq = RUN_FREQ_50K;
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_1M);
+   gAppRunFreq = RUN_FREQ_1M;
 
    MCBENCH_log("\n START FOC benchmark\n");
    while (1)
@@ -113,10 +113,8 @@ void main(void)
          if (gCoreStatRcv.input.app==APP_SEL_FOC)
          {
             gOptionSelect = gCoreStatRcv.input.freq;
-            /* add ferquency selection offset */
-            gOptionSelect += RUN_FREQS_OFFSET;
             /* set the running frequency to the selected one */
-            if ((gOptionSelect>0)&&(gOptionSelect<=NUM_RUN_FREQS))
+            if ((gOptionSelect>0)&&(gOptionSelect<=NUM_OPTIONS))
             {
                if (gAppRunFreq!=gOption[gOptionSelect-1])
                {
