@@ -3,26 +3,21 @@ __TI_STACK_SIZE = __STACK_SIZE;
 
 MEMORY
 {
-    /* am64x MCMS3 locations                                                  */
-
-    /* Reserved for SBL code/data */
-    SBL_RSVD	(X)            : ORIGIN = 0x70000000, LENGTH = 0x80000
+    /* Reserved for SBL code and data (OC-SRAM bank 0) */
+    SBL_RSVD	(X)            : ORIGIN = 0x70000000, LENGTH = 0x40000
 
     /* am64x Reserved Memory for ARM Trusted Firmware                        */
-    MSMC3_ARM_STARTUP	(RWIX)   : ORIGIN = 0x000070080000, LENGTH = 0x800
-    MSMC_MPU2	(RWX)	    : ORIGIN = 0x000070080800, LENGTH = 0x800
-    MSMC_MPU1	(RWX)	    : ORIGIN = 0x000070081000, LENGTH = 0x40000-0x1000
+    OCSRAM_ARM_STARTUP  (RWIX) : ORIGIN = 0x000070080000, LENGTH = 0x800
+    OCSRAM_MPU2         (RWX)  : ORIGIN = 0x000070080800, LENGTH = 0x800
+    OCSRAM_MPU1         (RWX)  : ORIGIN = 0x000070081000, LENGTH = 0x40000-0x1000
 
-    /* Reserved for SYSFW Secure Proxy */
-    MSMC3_H	(RWIX)          : ORIGIN = 0x700C0000, LENGTH = 0x100000   
-
-    /* Reserved by ROM for SYSFW */
-    SYSFW_RSVD_1	(X)      : ORIGIN = 0x71C00000, LENGTH = 0x20000 
-    SYSFW_RSVD_2	(X)      : ORIGIN = 0x71E00000, LENGTH = 0x20000 
+    /* Reserved by ROM for SYSFW (OC-SRAM bank 6 & 7) */
+    SYSFW_RSVD_1	(X)     : ORIGIN = 0x70180000, LENGTH = 0x40000
+    SYSFW_RSVD_2	(X)     : ORIGIN = 0x701C0000, LENGTH = 0x40000
 
     DDR_MPU1	(RWX)	    : ORIGIN =  0x80000000, LENGTH = 0x80000000
-
 }
+
 REGION_ALIAS("REGION_TEXT_EL3", DDR_MPU1);
 REGION_ALIAS("BOOTVECTOR_EL3", DDR_MPU1);
 REGION_ALIAS("BOOTVECTOR", DDR_MPU1);
@@ -114,7 +109,7 @@ SECTIONS {
     } > REGION_ARM_EXTAB AT> REGION_ARM_EXTAB
 
     .bss:extMemCache:ramdisk : {
-    } > DDR_MPU1  /* MSMC_MPU1 */
+    } > DDR_MPU1  /* OCSRAM_MPU1 */
 
     /* USB or any other LLD buffer for benchmarking */
     .benchmark_buffer (NOLOAD) : ALIGN (32) {
@@ -202,3 +197,4 @@ SECTIONS {
     .note.gnu.arm.ident 0 : { KEEP (*(.note.gnu.arm.ident)) }
     /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 }
+
