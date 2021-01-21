@@ -40,7 +40,7 @@
 #include <ti/drv/i2c/I2C.h>
 #include <ti/drv/i2c/soc/I2C_soc.h>
 #include <board_i2c_io_exp.h>
-#include <logs/include/app_log.h>
+#include <app_log.h>
 #include "motor_ctrl_settings.h"
 #include "multi_axis_master_lead.h"
 #include "multi_axis_master_ctrl.h"

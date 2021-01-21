@@ -15,7 +15,17 @@ LIBDIR := $(abspath $(SDIR)/..)
 # Add directory to include search path
 IDIRS+=$(LIBDIR)/include
 
+ifeq ($(TARGET_OS),SYSBIOS)
+CSOURCES    := app_log_writer.c app_log_sysbios.c
+endif
+
+ifeq ($(TARGET_OS),NO_OS)
 CSOURCES    := app_log_writer.c app_log_no_os.c
+endif
+
+ifeq ($(TARGET_OS),LINUX)
+CSOURCES    := app_log_writer.c app_log_linux.c
+endif
 
 # End concerto module declarations
 include $(FINALE)

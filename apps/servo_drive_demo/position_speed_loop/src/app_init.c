@@ -39,8 +39,8 @@
 
 #include <app_misc.h>
 #include <app_misc_soc.h>
-#include <sciclient/include/app_sciclient.h>
-#include <logs/include/app_log.h>
+#include <app_sciclient.h>
+#include <app_log.h>
 
 #include "app_psl_mbxipc.h"
 #include "app_cfg_soc.h"

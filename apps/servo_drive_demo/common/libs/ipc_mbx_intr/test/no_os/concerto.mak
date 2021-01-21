@@ -38,8 +38,8 @@ CSOURCES    += ../app_mbx_ipc_test.c
 APPDIR := $(abspath $(SDIR)/../../../../..)
 
 # Add directory to include search path
-IDIRS+=$(APPDIR)/common/libs/logs/include
-IDIRS+=$(APPDIR)/common/libs/sciclient/include
+IDIRS+=$(APPDIR)/../../common/libs/logs/include
+IDIRS+=$(APPDIR)/../../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/include
 IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test/$(SITARA_DEMO_SOC)
@@ -48,11 +48,14 @@ IDIRS+=$(APPDIR)/common/libs/ipc_mbx_intr/test
 # common "config" dependencies
 COMMON_CONFIG = $(abspath $(APPDIR)/common/config/$(SITARA_DEMO_SOC))
 
+# Add directory to the search path
+LDIRS+=$(APPDIR)/../../common/libs/out/$(TARGET_PLATFORM)/$(TARGET_CPU)/$(TARGET_OS)/$(TARGET_BUILD)
+
 # Append to STATIC_LIBS for common demo libraries
 # These must also be built using concerto, and concerto will handle the
 # dependencies
-STATIC_LIBS += app_libs_logs
-STATIC_LIBS += app_libs_sciclient
+STATIC_LIBS += common_libs_logs
+STATIC_LIBS += common_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_libs_r5f_no_os_mpu_cfg
 

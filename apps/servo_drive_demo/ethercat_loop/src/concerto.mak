@@ -57,8 +57,8 @@ IDIRS+=$(APPDIR)/beckhoff_ssc
 IDIRS+=$(APPDIR)/ti_board/include
 IDIRS+=$(APPDIR)/../common/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include
-IDIRS+=$(APPDIR)/../common/libs/logs/include
-IDIRS+=$(APPDIR)/../common/libs/sciclient/include
+IDIRS+=$(APPDIR)/../../../common/libs/logs/include
+IDIRS+=$(APPDIR)/../../../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 # Path for files where common info is shared between M4F and other cores.
@@ -94,8 +94,8 @@ IDIRS+=$(COMMON_CONFIG)/mem_map
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 #STATIC_LIBS += app_common_mcu1_0
-STATIC_LIBS += app_libs_logs
-STATIC_LIBS += app_libs_sciclient
+STATIC_LIBS += common_libs_logs
+STATIC_LIBS += common_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_servo_drive_ethcat_beckhoff_ssc
 STATIC_LIBS += app_servo_drive_ethcat_tiboard_common

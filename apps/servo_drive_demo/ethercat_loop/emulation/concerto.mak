@@ -37,8 +37,8 @@ COMMON_LIB = $(abspath $(SITARA_APPS_DIR)/common/libs)
 IDIRS+=$(SDIR)/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/include
-IDIRS+=$(APPDIR)/../common/libs/logs/include
-IDIRS+=$(APPDIR)/../common/libs/sciclient/include
+IDIRS+=$(APPDIR)/../../../common/libs/logs/include
+IDIRS+=$(APPDIR)/../../../common/libs/sciclient/include
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(APPDIR)/../common/libs/ipc_mbx_intr/include
 IDIRS+=$(APPDIR)/../common/libs/misc/include/$(SITARA_DEMO_SOC)
@@ -71,8 +71,8 @@ IDIRS+=$(COMMON_CONFIG)/mem_map
 # These must also be built using concerto, and concerto will handle the
 # dependencies
 #STATIC_LIBS += app_common_mcu1_0
-STATIC_LIBS += app_libs_logs
-STATIC_LIBS += app_libs_sciclient
+STATIC_LIBS += common_libs_logs
+STATIC_LIBS += common_libs_sciclient
 STATIC_LIBS += app_servo_drive_common_ipc_mbx_intr
 STATIC_LIBS += app_libs_misc
 STATIC_LIBS += common_libs_timesync

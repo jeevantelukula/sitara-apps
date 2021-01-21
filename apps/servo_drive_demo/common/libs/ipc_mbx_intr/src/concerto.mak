@@ -16,7 +16,7 @@ LIBDIR := $(abspath $(SDIR)/..)
 
 IDIRS+=$(LIBDIR)/include/$(SITARA_DEMO_SOC)
 IDIRS+=$(LIBDIR)/include
-IDIRS+=$(LIBDIR)/../logs/include
+IDIRS+=$(LIBDIR)/../../../../../common/libs/logs/include
 IDIRS+=$(LIBDIR)/src/$(SITARA_DEMO_SOC)
 
 include $(FINALE)

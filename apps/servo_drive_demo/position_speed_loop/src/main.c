@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <logs/include/app_log.h>
+#include <app_log.h>
 #include "app_init.h"
 #include "position_speed_loop_if.h"
 

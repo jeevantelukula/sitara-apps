@@ -35,7 +35,7 @@
 #include <xdc/runtime/Types.h>
 #include <ti/osal/HwiP.h>
 #include <ti/sysbios/knl/Clock.h>
-#include <logs/include/app_log.h>
+#include <app_log.h>
 
 int32_t appUtilsSetCpuHz(uint32_t freq)
 {
