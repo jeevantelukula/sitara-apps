@@ -87,7 +87,7 @@ KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am65xx-evm.bin,0x80080000
 DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am654-base-board.dtb,0x82000000
 endif
 ifeq ($(TARGET_PLATFORM),AM64X)
-KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am6x-evm.bin,0x80080000
+KERNEL_IMG=load_only,$(HLOS_BIN_PATH)/Image-am64xx-evm.bin,0x80080000
 DTB_IMG=load_only,$(HLOS_BIN_PATH)/k3-am64-base-board.dtb,0x82000000
 endif
 ifeq ($(LINUX_BUILD_TYPE),0)
