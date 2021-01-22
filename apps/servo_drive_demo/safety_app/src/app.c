@@ -216,7 +216,7 @@ int32_t stop_timer(uint32_t timer_base, uint32_t timer_int)
 
     /* this should clear everything */
     retVal |= TIMERIntStatusClear(timer_base, TIMER_INT_MAT_IT_FLAG);
-    retVal |= TIMERResetConfigure(timer_base, TIMER_SFT_RESET_ENABLE);
+    retVal |= TIMERReset(timer_base);
 
     Intc_SystemDisable(timer_int);
     Intc_IntClrPend(timer_int);
