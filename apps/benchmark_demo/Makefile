@@ -124,7 +124,7 @@ endif
 
 app_img_build:
 ifeq ($(BUILD_LINUX_APPS),1)
-	$(DEMO_ROOT)/../../bin/dtb_boot_args.sh
+	$(DEMO_ROOT)/../../bin/dtb_boot_args.sh $(DTB_IMG)
 endif
 ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
 	$(COPY) "$(call PATH_CONV,$(SPL_FILE))" "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-spl.bin)"
