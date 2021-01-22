@@ -49,8 +49,9 @@
 #include <ti/drv/uart/UART_stdio.h>
 #include <ti/drv/udma/udma.h>
 #include <ti/drv/udma/examples/udma_apputils/udma_apputils.h>
+#include "board_utils.h"
 
-#define App_getGTCTimerTicks()  CSL_REG64_RD(CSL_GTC0_GTC_CFG0_BASE + 0x8U)
+#define App_getGTCTimerTicks()  CSL_REG64_RD(CSL_GTC0_GTC_CFG1_BASE + 0x8U)
 volatile uint64_t gTickDelay = 0;
 volatile uint64_t gClockGTC = 0;
 
@@ -95,7 +96,7 @@ int32_t App_getGTCClk(uint32_t moduleId,
     App_printNum("GTC Clk running at %d Hz.\n", (uint32_t)gClockGTC);
 
     /* Enable GTC */
-    CSL_REG64_WR(CSL_GTC0_GTC_CFG0_BASE + 0x0U, 0x1);
+    CSL_REG64_WR(CSL_GTC0_GTC_CFG1_BASE + 0x0U, 0x1);
 
     /* Measure and store the time spent to do a getTime operation */
     gTickDelay = App_getGTCTimerTicks();
@@ -111,6 +112,13 @@ int main(void)
 {
     Board_initCfg boardCfg;
     int status;
+
+#if defined(am64x_evm)
+    Board_initParams_t boardInitParams;
+    Board_getInitParams(&boardInitParams);
+    boardInitParams.uartInst = BOARD_UART3_INSTANCE;
+    Board_setInitParams(&boardInitParams);
+#endif
 
     boardCfg =
 #ifndef SBL_BOOT

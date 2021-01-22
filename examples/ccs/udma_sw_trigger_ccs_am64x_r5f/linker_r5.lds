@@ -62,6 +62,7 @@ MEMORY
 {
     /* Reserved for SBL code and data (OC-SRAM bank 0) */
     SBL_RSVD (X)            : origin=0x70000000 length=0x40000
+    /* Utilized by application (OC-SRAM bank 1 through 5) */
     OCSRAM   (X)            : origin=0x70040100 length=0x140000 - 0x1100
     /* Reserved by ROM for SYSFW (OC-SRAM bank 6 & 7) */
     SYSFW_RSVD_1 (X)        : origin=0x70180000 length=0x40000
@@ -69,7 +70,7 @@ MEMORY
 
     /*  Reset Vectors base address(RESET_VECTORS) should be 64 bytes aligned  */
     RESET_VECTORS (X)       : origin=0x70040000 length=0x100	/* start of bank 1 */
-    VECTORS (X)             : origin=0x7007F000 length=0x1000	/* end of bank 1 */
+    VECTORS (X)             : origin=0x7017F000 length=0x1000	/* end of bank 5 */
 
     DDR0    (RWIX)          : origin=0x80000000 length=0x80000000  /* 2GB */
 }

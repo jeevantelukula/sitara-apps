@@ -135,7 +135,7 @@ int main(void)
     configure_intc();
 
     GPIOSetDirMode_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_DIRECTION_INPUT);
-    GPIOIntrEnable_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_INTR_MASK_FALL_EDGE);
+    GPIOIntrEnable_v0(MCU_GPIO_MMR, GPIO_BUTTON0, GPIO_INTR_MASK_RISE_EDGE);
     configure_gpiomux(GPIO_BUTTON0_INTRTR_IN, GPIO_BUTTON0_INTRTR_OUT);
 
     gInterruptCounter = 0;
