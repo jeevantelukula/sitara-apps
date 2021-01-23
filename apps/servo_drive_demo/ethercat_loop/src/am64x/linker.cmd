@@ -46,7 +46,7 @@ SECTIONS
 {
     .vecs       : {
          *(.vecs)
-    } palign(256) > R5F_ATCM_SBL_RSVD
+    } palign(256) > R5F_BTCM_SBL_RSVD
     .text_boot {
         *boot.aer5f*<*boot.o*>(.text)
      }  palign(8)   > MCU0_R5F0_BTCM
@@ -66,7 +66,7 @@ SECTIONS
 
     .safedata   : {} palign(8)  > OCSRAM6
 
-    .bss:ipcMCBuffSection > R5F_ATCM_IPC_RSVD
+    .bss:ipcMCBuffSection > R5F_BTCM_IPC_RSVD
     .bss:taskStackSection > OCSRAM5
     .resource_table : {
         __RESOURCE_TABLE = .;
