@@ -157,8 +157,8 @@ static void appEpwmTbClockEnable(uint32_t pwmId);
  /* ADC related global variables */
 adcpwm_int_stat gAdcPwmIntStat __attribute__((section(".testInData"))) = {0, 0, 0, 0, 0};;
 
-int32_t gCountPerLoopMax = 0;
-int32_t gCountPerLoopAve = 0;
+int32_t gCountPerLoopMax __attribute__((aligned(8), section(".testInData")))= 0;
+int32_t gCountPerLoopAve __attribute__((aligned(8), section(".testInData")))= 0;
 
 /* declare the core statistic variables */
 CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;

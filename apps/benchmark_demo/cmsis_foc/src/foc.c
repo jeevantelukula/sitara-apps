@@ -152,8 +152,8 @@ float32_t gCmsisParkBetaOut __attribute__((section(".testInData")));
 float32_t gCmsisInvClarkeIaOut __attribute__((section(".testInData")));
 float32_t gCmsisInvClarkeIbOut __attribute__((section(".testInData")));
  
-int32_t gCountPerLoopMax = 0;
-int32_t gCountPerLoopAve = 0;
+int32_t gCountPerLoopMax __attribute__((aligned(8), section(".testInData")))= 0;
+int32_t gCountPerLoopAve __attribute__((section(".testInData"))) = 0;
 
 /* declare the core statistic variables */
 CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;

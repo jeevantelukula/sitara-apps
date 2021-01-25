@@ -102,7 +102,7 @@ const struct soc_data socs[NUM_SOC_FAMILY] = {
 		.num_rprocs = (sizeof(j7200_map) / sizeof(struct rproc_map)),
 	},
 	{
-		.family_name = "AM64",
+		.family_name = "AM64X",
 		.map = am64x_map,
 		.num_rprocs = (sizeof(am64x_map) / sizeof(struct rproc_map)),
 	},

@@ -178,8 +178,8 @@ uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
 uint32_t dCacheMissNum __attribute__((section(".testInData"))) = 0;
 uint32_t iCacheMissNum __attribute__((section(".testInData"))) = 0;
 
-int32_t gCountPerLoopMax = 0;
-int32_t gCountPerLoopAve = 0;
+int32_t gCountPerLoopMax __attribute__((aligned(8), section(".testInData")))= 0;
+int32_t gCountPerLoopAve __attribute__((aligned(8), section(".testInData")))= 0;
 
 /* ----------------------------------------------------------------------
  * PID loop

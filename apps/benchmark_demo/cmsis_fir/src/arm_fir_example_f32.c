@@ -167,13 +167,13 @@ const float32_t firCoeffs32[NUM_TAPS] __attribute__((section(".testInData"))) = 
  * Global variables for FIR LPF Example
  * ------------------------------------------------------------------- */
 
-uint32_t blockSize = BLOCK_SIZE;
-uint32_t numBlocks = TEST_LENGTH_SAMPLES/BLOCK_SIZE;
+uint32_t blockSize __attribute__((aligned(8), section(".testInData"))) = BLOCK_SIZE;
+uint32_t numBlocks __attribute__((aligned(8), section(".testInData"))) = TEST_LENGTH_SAMPLES/BLOCK_SIZE;
 
-float32_t  snr;
+float32_t  snr __attribute__((aligned(8), section(".testInData")));
 
-int32_t gCountPerLoopMax = 0;
-int32_t gCountPerLoopAve = 0;
+int32_t gCountPerLoopMax __attribute__((aligned(8), section(".testInData")))= 0;
+int32_t gCountPerLoopAve __attribute__((aligned(8), section(".testInData")))= 0;
 
 /* declare the core statistic variables */
 CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
