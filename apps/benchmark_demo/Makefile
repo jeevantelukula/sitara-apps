@@ -96,7 +96,7 @@ SPL_IMG=
 else
 HLOS_BOOT="development"
 SPL_TYPE=load_only
-SPL_FILE=$(HLOS_BIN_PATH)/u-boot-spl.bin-am6x-evm
+SPL_FILE=$(HLOS_BIN_PATH)/u-boot-spl.bin-am64xx-evm
 SPL_ADDRESS=0x80080000
 endif
 else
@@ -138,7 +138,7 @@ endif
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/mmcsd/bin/sbl_mmcsd_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/tiboot3.bin)"
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/sysfw.bin)"
 ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
-	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/u-boot.img)"
+	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am64xx-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/SDCardImage/u-boot.img)"
 endif
 #Create Benchmark Demo OSPI Image
 	$(MKDIR) $(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage)
@@ -146,7 +146,7 @@ endif
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/boot/sbl/binary/$(PDK_BOARD)/ospi/bin/sbl_ospi_img_hlos_mcu1_0_release.tiimage)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/tiboot3.bin)"
 	$(COPY) "$(call PATH_CONV,$(PDK_PATH)/packages/ti/drv/sciclient/soc/$(SYSFWVERSION)/$(SYSFWFILE))" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/sysfw.bin)"
 ifeq ($(RTOS_ONLY_BUILD)$(LINUX_BUILD_TYPE),01)
-	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am6x-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/u-boot.img)"
+	$(COPY) "$(call PATH_CONV,$(HLOS_BIN_PATH)/u-boot-am64xx-evm.img)" "$(call PATH_CONV,$(RTOS_BIN_PATH)/$(TARGET_PLATFORM)/OSPIImage/u-boot.img)"
 endif
 	
 app_img_build_clean:
