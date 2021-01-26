@@ -161,7 +161,7 @@ int main(void)
             /* Send back MC parameters to ECAT R5F */
             if (appMbxIpcGetSelfCpuId()==IPC_PSL_MC_CPU_ID)
             {
-                appMbxIpcSendNotify(IPC_ETHERCAT_CPU_ID, CPU1_ATCM_SOCVIEW(payload));
+                appMbxIpcSendNotify(IPC_ETHERCAT_CPU_ID, CPU1_BTCM_SOCVIEW(payload));
             }
         }
         else

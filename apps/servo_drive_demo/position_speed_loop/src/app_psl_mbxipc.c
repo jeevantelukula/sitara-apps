@@ -228,7 +228,7 @@ int32_t appPslMbxIpcTxMsg(
         
         /* Translate the ATCM local view addr to SoC view addr */
         payload = (uint32_t)txobj;
-        payload = CPU1_ATCM_SOCVIEW(payload);
+        payload = CPU1_BTCM_SOCVIEW(payload);
         /* Tx address of payload */
         appMbxIpcSendNotify(IPC_ETHERCAT_CPU_ID, payload);
     }

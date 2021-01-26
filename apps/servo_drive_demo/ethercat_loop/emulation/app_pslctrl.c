@@ -122,7 +122,7 @@ void simSync0IrqHandler(uintptr_t arg)
 
             /* Translate the ATCM local view addr to SoC view addr */
             payload = (uint32_t)txobj;
-            payload = CPU0_ATCM_SOCVIEW(payload);
+            payload = CPU0_BTCM_SOCVIEW(payload);
             /* Tx address of payload */
             appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, payload);
         }

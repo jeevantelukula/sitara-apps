@@ -138,9 +138,9 @@ int32_t ipcTestRun(int32_t iterationCnt)
 		
         /* Translate the ATCM local view addr to SoC view addr */
         if (MBXIPC_TEST_CPU_1 == appMbxIpcGetSelfCpuId())
-            payload = CPU0_ATCM_SOCVIEW(payload);
+            payload = CPU0_BTCM_SOCVIEW(payload);
         if (MBXIPC_TEST_CPU_2 == appMbxIpcGetSelfCpuId())
-            payload = CPU1_ATCM_SOCVIEW(payload);
+            payload = CPU1_BTCM_SOCVIEW(payload);
 
         appMbxIpcSendNotify(remoteId, payload);
     }

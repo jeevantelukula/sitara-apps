@@ -40,8 +40,10 @@
 #define IPC_ETHERCAT_CPU_ID    (MAILBOX_IPC_CPUID_MCU1_0)
 #define IPC_PSL_MC_CPU_ID      (MAILBOX_IPC_CPUID_MCU2_0)
 
-/* Translate the ATCM local view addr to SoC view addr */
+/* Translate the TCM local view addr to SoC view addr */
 #define CPU0_ATCM_SOCVIEW(x)   (CSL_R5FSS0_CORE0_ATCM_BASE+(x))
 #define CPU1_ATCM_SOCVIEW(x)   (CSL_R5FSS1_CORE0_ATCM_BASE+(x))
+#define CPU0_BTCM_SOCVIEW(x)   (CSL_R5FSS0_CORE0_BTCM_BASE+(x - CSL_R5FSS0_BTCM_BASE))
+#define CPU1_BTCM_SOCVIEW(x)   (CSL_R5FSS1_CORE0_BTCM_BASE+(x - CSL_R5FSS1_BTCM_BASE))
 
 #endif /* _IPC_MOTORCONTROL_IF_SOC_H_ */

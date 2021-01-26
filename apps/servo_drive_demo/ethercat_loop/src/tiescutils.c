@@ -800,7 +800,7 @@ void TI_CiA402_3axisMotionControl(TCiA402Axis *pCiA402Axis)
 
         if (appMbxIpcGetSelfCpuId()==IPC_ETHERCAT_CPU_ID)
         {
-            appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, CPU0_ATCM_SOCVIEW(payload));
+            appMbxIpcSendNotify(IPC_PSL_MC_CPU_ID, CPU0_BTCM_SOCVIEW(payload));
         }
     }
     else
