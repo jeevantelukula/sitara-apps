@@ -88,9 +88,9 @@ void main(void)
    gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
    benchmarkTimerInit(gCoreId);
 
-   /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_1M);
-   gAppRunFreq = RUN_FREQ_1M;
+   /* set to RUN_FREQ_16K */
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_16K);
+   gAppRunFreq = RUN_FREQ_16K;
 
    MCBENCH_log("\n START FOC benchmark\n");
    while (1)
@@ -123,8 +123,8 @@ void main(void)
                  /* compute core number */
                  gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
                  /* set to selected frequency */
-                 benchmarkTimerSetFreq(gCoreId, (Run_Freq_Sel)gOptionSelect);
                  gAppRunFreq = gOption[gOptionSelect-1];
+                 benchmarkTimerSetFreq(gCoreId, gAppRunFreq);
                  gTimerIntStat.isrCnt = 0L;
                  gTimerIntStat.isrCntPrev = 0L;
                  gTimerIntStat.intLatencyMax = 0;

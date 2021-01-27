@@ -88,7 +88,7 @@ void main(void)
    benchmarkTimerInit(gCoreId);
 
    /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_1K);
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_1K);
    gAppRunFreq = RUN_FREQ_1K;
 
    MCBENCH_log("\n START CFFT benchmark\n");

@@ -181,7 +181,7 @@ core_stat gCoreStat __attribute__((section(".testInData"))) ;
 core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
 uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
 uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
-uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1;
 uint32_t gOption[NUM_OPTIONS] __attribute__((section(".testInData")))  = {
   RUN_FREQ_1K,
   RUN_FREQ_2K,
@@ -259,11 +259,11 @@ int32_t fir_bench(int32_t firSize)
   gCoreStat.output.app = gAppSelect;
   gCoreStat.output.freq = gOptionSelect;
   gCoreStat.output.ccploop.ave = gCountPerLoopAve;
-  gCoreStat.output.ccploop.max = gCountPerLoopMax;
+  gCoreStat.output.ccploop.max = 0; /* gCountPerLoopMax; */
   gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.ave = (int64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.cload.max = (int64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;
+  gCoreStat.output.cload.max = 0L; /* (int64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY; */
+  gCoreStat.output.ilate.max = 0; /* gTimerIntStat.intLatencyMax; */
   gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;
 
   MCBENCH_log("\n END FIR benchmark\n");

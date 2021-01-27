@@ -61,16 +61,10 @@ typedef enum App_Sel_e {
  */
 typedef enum Run_Freq_Sel_e {
     RUN_FREQ_SEL_DEF         = 0,
-    RUN_FREQ_SEL_1K          = 1,
-    RUN_FREQ_SEL_2K          = 2,
-    RUN_FREQ_SEL_4K          = 3,
-    RUN_FREQ_SEL_8K          = 4,
-    RUN_FREQ_SEL_16K         = 5,
-    RUN_FREQ_SEL_32K         = 6,
-    RUN_FREQ_SEL_50K         = 7,
-    RUN_FREQ_SEL_100K         = 8,
-    RUN_FREQ_SEL_500K         = 9,
-    RUN_FREQ_SEL_1M         = 10
+    RUN_FREQ_SEL_1          = 1,
+    RUN_FREQ_SEL_2          = 2,
+    RUN_FREQ_SEL_3          = 3,
+    RUN_FREQ_SEL_4          = 4
 } Run_Freq_Sel;
 
 /*!
@@ -82,12 +76,15 @@ typedef enum Run_Freq_e {
     RUN_FREQ_2K          = 2000,
     RUN_FREQ_4K          = 4000,
     RUN_FREQ_8K          = 8000,
+    RUN_FREQ_10K         = 10000,
     RUN_FREQ_16K         = 16000,
+    RUN_FREQ_20K         = 20000,
     RUN_FREQ_32K         = 32000,
+    RUN_FREQ_40K         = 40000,
     RUN_FREQ_50K         = 50000,
     RUN_FREQ_100K        = 100000,
-    RUN_FREQ_500K        = 500000,
-    RUN_FREQ_1M          = 1000000
+    RUN_FREQ_160K        = 160000,
+    RUN_FREQ_250K        = 250000
 } Run_Freq;
 
 /*!

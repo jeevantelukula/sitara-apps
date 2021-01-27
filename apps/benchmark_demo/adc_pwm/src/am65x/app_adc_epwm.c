@@ -188,14 +188,14 @@ core_stat gCoreStat __attribute__((section(".testInData"))) ;
 core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
 uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
 uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
-uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1;
 uint32_t gOption[NUM_OPTIONS] __attribute__((section(".testInData")))  = {
   RUN_FREQ_8K,
   RUN_FREQ_16K,
   RUN_FREQ_32K,
   RUN_FREQ_50K  
 };
-uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_8K;
 
 /* EPWM related variables */
 /** \brief IP default configuration */

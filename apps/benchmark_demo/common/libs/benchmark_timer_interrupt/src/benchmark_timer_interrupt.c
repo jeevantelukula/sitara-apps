@@ -485,56 +485,17 @@ void benchmarkTimerInit(uint32_t coreId)
 }
 
 /* set the timer interrupt to designated frequency */
-int32_t benchmarkTimerSetFreq(uint32_t coreId, Run_Freq_Sel sel)
+int32_t benchmarkTimerSetFreq(uint32_t coreId, uint32_t freq)
 {
    int32_t timerCount = 0;
    int32_t status = 0;
 
-   switch (sel)
+   if ((freq>=RUN_FREQ_1K) && (freq<=RUN_FREQ_250K))
    {
-      case RUN_FREQ_SEL_1K:
+      timerCount = 25000000/freq;
+   } else
+   {
       timerCount = 25000000/RUN_FREQ_1K;
-      break;
-      
-      case RUN_FREQ_SEL_2K:
-      timerCount = 25000000/RUN_FREQ_2K;
-      break;
-      
-      case RUN_FREQ_SEL_4K:
-      timerCount = 25000000/RUN_FREQ_4K;
-      break;
-
-      case RUN_FREQ_SEL_8K:
-      timerCount = 25000000/RUN_FREQ_8K;
-      break;
-
-      case RUN_FREQ_SEL_16K:
-      timerCount = 25000000/RUN_FREQ_16K;
-      break;
-
-      case RUN_FREQ_SEL_32K:
-      timerCount = 25000000/RUN_FREQ_32K;
-      break;
-
-      case RUN_FREQ_SEL_50K:
-      timerCount = 25000000/RUN_FREQ_50K;
-      break;
-
-      case RUN_FREQ_SEL_100K:
-      timerCount = 25000000/RUN_FREQ_100K;
-      break;
-
-      case RUN_FREQ_SEL_500K:
-      timerCount = 25000000/RUN_FREQ_500K;
-      break;
-
-      case RUN_FREQ_SEL_1M:
-      timerCount = 25000000/RUN_FREQ_1M;
-      break;
-
-      default:
-      timerCount = 25000000/RUN_FREQ_1K;
-      break;
    }
 
    status = csldmTimer_setCountVal(coreId, timerCount);

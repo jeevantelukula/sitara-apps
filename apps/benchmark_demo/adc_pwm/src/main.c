@@ -82,7 +82,7 @@ void main(void)
 #endif
 
    /* Call ADC/PWM init function to initialize the instance structure. */
-   gAppRunFreq = RUN_FREQ_50K;
+   gAppRunFreq = RUN_FREQ_8K;
    /* set the ADC smapling freqency to the selected frequency */
    appADCPWMBenchInit(gAppRunFreq);
 

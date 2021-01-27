@@ -166,15 +166,15 @@ CSL_ArmR5CPUInfo cpuInfo __attribute__((section(".testInData"))) ;
 core_stat gCoreStat __attribute__((section(".testInData"))) ;
 core_stat_rcv gCoreStatRcv __attribute__((section(".testInData"))) ;
 uint16_t gCoreStatRcvSize __attribute__((section(".testInData")))  = 0;
-uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_FIR;
-uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1K;
+uint32_t gAppSelect __attribute__((section(".testInData")))  = APP_SEL_PID;
+uint32_t gOptionSelect __attribute__((section(".testInData")))  = RUN_FREQ_SEL_1;
 uint32_t gOption[NUM_OPTIONS] __attribute__((section(".testInData")))  = {
   RUN_FREQ_8K,
   RUN_FREQ_16K,
   RUN_FREQ_32K,
   RUN_FREQ_50K  
 };
-uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_1K;
+uint32_t gAppRunFreq __attribute__((section(".testInData")))  = RUN_FREQ_8K;
 uint32_t dCacheMissNum __attribute__((section(".testInData"))) = 0;
 uint32_t iCacheMissNum __attribute__((section(".testInData"))) = 0;
 
@@ -244,11 +244,11 @@ void pidLoop(uint16_t loopCnt)
   gCoreStat.output.app = gAppSelect;
   gCoreStat.output.freq = gOptionSelect;
   gCoreStat.output.ccploop.ave = gCountPerLoopAve;
-  gCoreStat.output.ccploop.max = gCountPerLoopMax;
+  gCoreStat.output.ccploop.max = 0; /* gCountPerLoopMax; */
   gCoreStat.output.cload.cur = gTotalTime*gAppRunFreq*100/CPU_FREQUENCY;
   gCoreStat.output.cload.ave = (uint64_t)gCountPerLoopAve*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.cload.max = (uint64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY;
-  gCoreStat.output.ilate.max = gTimerIntStat.intLatencyMax;
+  gCoreStat.output.cload.max = 0L; /* (uint64_t)gCountPerLoopMax*gAppRunFreq*100/CPU_FREQUENCY; */
+  gCoreStat.output.ilate.max = 0; /* gTimerIntStat.intLatencyMax; */
   gCoreStat.output.ilate.ave = gTimerIntStat.intLatencyAve;
 
   /* MCBENCH_log is blank, if the DEBUG_PRINT is not defined in benchmark_log.h */ 
@@ -286,9 +286,9 @@ int32_t main(void)
    gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
    benchmarkTimerInit(gCoreId);
 
-   /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_50K);
-   gAppRunFreq = RUN_FREQ_50K;
+   /* set to RUN_FREQ_8K */
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_8K);
+   gAppRunFreq = RUN_FREQ_8K;
 
    MCBENCH_log("\n START PID benchmark\n");
    while (1)
@@ -321,8 +321,8 @@ int32_t main(void)
              /* compute core number */
              gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
              /* set to selected frequency */
-             benchmarkTimerSetFreq(gCoreId, (Run_Freq_Sel)gOptionSelect);
              gAppRunFreq = gOption[gOptionSelect-1];
+             benchmarkTimerSetFreq(gCoreId, gAppRunFreq);
              gTimerIntStat.isrCnt = 0L;
              gTimerIntStat.isrCntPrev = 0L;
              gTimerIntStat.intLatencyMax = 0;

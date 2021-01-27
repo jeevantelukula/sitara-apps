@@ -89,8 +89,8 @@ void main(void)
    benchmarkTimerInit(gCoreId);
 
    /* set to RUN_FREQ_1K */
-   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_SEL_8K);
-   gAppRunFreq = RUN_FREQ_8K;
+   benchmarkTimerSetFreq(gCoreId, RUN_FREQ_1K);
+   gAppRunFreq = RUN_FREQ_1K;
 
    MCBENCH_log("\n START FIR benchmark\n");
    while (1)
@@ -123,8 +123,8 @@ void main(void)
                  /* compute core number */
                  gCoreId = cpuInfo.grpId*2 + cpuInfo.cpuID;
                  /* set to selected frequency */
-                 benchmarkTimerSetFreq(gCoreId, (Run_Freq_Sel)gOptionSelect);
                  gAppRunFreq = gOption[gOptionSelect-1];
+                 benchmarkTimerSetFreq(gCoreId, gAppRunFreq);
                  gTimerIntStat.isrCnt = 0L;
                  gTimerIntStat.isrCntPrev = 0L;
                  gTimerIntStat.intLatencyMax = 0;
