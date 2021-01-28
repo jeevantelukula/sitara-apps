@@ -70,6 +70,6 @@ app_img_build_clean:
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/SDCardImage)
 			  $(CLEANDIR) $(call PATH_CONV,$(RTOS_BIN_PATH1)/$(TARGET_PLATFORM)/OSPIImage)
 
-all:  app_img_build_clean app_img_build
+all:  app_img_build
 clean::  app_img_build_clean
 .PHONY: app_img_build

@@ -54,7 +54,7 @@ RTOS_ONLY_BUILD ?= 0
 LINUX_BUILD_TYPE ?= 0
 
 ifeq ($(BUILD_LINUX_APPS),1)
-all: rpmsg_json_app app_img_build_clean app_img_build
+all: rpmsg_json_app app_img_build
 clean:: rpmsg_json_app_clean app_img_build_clean
 .PHONY: rpmsg_json_app app_img_build
 RPMSG_JSON_APP_BUILDDIR = webserver_app/linux_app/
@@ -67,7 +67,7 @@ rpmsg_json_app_clean:
 	. $(LINUX_ENV_SETUP); \
 	make -C $(RPMSG_JSON_APP_BUILDDIR) clean
 else
-all: app_img_build_clean app_img_build
+all: app_img_build
 clean:: app_img_build_clean
 .PHONY: app_img_build
 endif
