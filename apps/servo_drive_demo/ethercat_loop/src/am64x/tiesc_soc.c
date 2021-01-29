@@ -257,7 +257,8 @@ void bsp_soc_evm_init()
 {
     int8_t phy_addr1, phy_addr2;
 
-    GPIO_init();
+    /* commented-out to avoid the GPIO clash with M4F safty SW */
+    /* GPIO_init(); */
 
     if(icssgResetIsolated==FALSE)
     {
