@@ -112,7 +112,7 @@ long loopCounter = 0;
 #define PAYLOAD_SIZE    12
 #define PAYLOAD_MAX_SIZE    (MAX_RPMSG_BUFF_SIZE - 24)
 #define RPMSG_BUS_SYS "/sys/bus/rpmsg"
-#define REMOTE_ENDPT	14
+#define REMOTE_ENDPT	12
 #define DEVICE_NAME "rpmsg_chrdev"
 #define FLAGS 0
 
