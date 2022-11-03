@@ -66,8 +66,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 						$('#ti_widget_label40').attr('label', json_file.core0.output.int_latency.max);
 						$('#ti_widget_label83').attr('label', json_file.core0.output.cycles_per_loop.average);
 						$('#ti_widget_label84').attr('label', json_file.core0.output.cycles_per_loop.max);
-						$('#ti_widget_label14').attr('label', json_file.core0.output.sram_label);
-						$('#sram_1').attr('value', json_file.core0.output.sram);
 						$('#gauge2').attr('value', json_file.core1.output.cpu_load.current);
 						$('#ti_widget_label45').attr('label', json_file.core1.output.cpu_load.average);
 						$('#ti_widget_label44').attr('label', json_file.core1.output.cpu_load.max);
@@ -75,8 +73,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 						$('#ti_widget_label48').attr('label', json_file.core1.output.int_latency.max);
 						$('#ti_widget_label87').attr('label', json_file.core1.output.cycles_per_loop.average);
 						$('#ti_widget_label88').attr('label', json_file.core1.output.cycles_per_loop.max);
-						$('#ti_widget_label15').attr('label', json_file.core1.output.sram_label);
-						$('#sram_2').attr('value', json_file.core1.output.sram);
 						$('#gauge3').attr('value', json_file.core2.output.cpu_load.current);
 						$('#ti_widget_label53').attr('label', json_file.core2.output.cpu_load.average);
 						$('#ti_widget_label52').attr('label', json_file.core2.output.cpu_load.max);
@@ -84,8 +80,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 						$('#ti_widget_label56').attr('label', json_file.core2.output.int_latency.max);
 						$('#ti_widget_label91').attr('label', json_file.core2.output.cycles_per_loop.average);
 						$('#ti_widget_label92').attr('label', json_file.core2.output.cycles_per_loop.max);
-						$('#ti_widget_label16').attr('label', json_file.core2.output.sram_label);
-						$('#sram_3').attr('value', json_file.core2.output.sram);
 						$('#gauge4').attr('value', json_file.core3.output.cpu_load.current);
 						$('#ti_widget_label61').attr('label', json_file.core3.output.cpu_load.average);
 						$('#ti_widget_label60').attr('label', json_file.core3.output.cpu_load.max);
@@ -93,8 +87,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 						$('#ti_widget_label64').attr('label', json_file.core3.output.int_latency.max);
 						$('#ti_widget_label95').attr('label', json_file.core3.output.cycles_per_loop.average);
 						$('#ti_widget_label96').attr('label', json_file.core3.output.cycles_per_loop.max);
-						$('#ti_widget_label17').attr('label', json_file.core3.output.sram_label);
-						$('#sram_4').attr('value', json_file.core3.output.sram);
 						$('#gauge5').attr('value', json_file.a53.output.cpu_load.current);
 						$('#ti_widget_label79').attr('label', json_file.a53.output.cpu_load.average);
 						$('#ti_widget_label68').attr('label', json_file.a53.output.cpu_load.max);
@@ -102,8 +94,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 						$('#ti_widget_label99').attr('label', json_file.a53.output.int_latency.max);
 						$('#ti_widget_label101').attr('label', json_file.a53.output.cycles_per_loop.average);
 						$('#ti_widget_label102').attr('label', json_file.a53.output.cycles_per_loop.max);
-						$('#ti_widget_label18').attr('label', json_file.a53.output.sram_label);
-						$('#sram_5').attr('value', json_file.a53.output.sram);
 					});
 			}
 			setInterval(update_data, 1000);
@@ -573,13 +563,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     top: 0px;
     position: absolute;
   }
-    #ti_widget_label18 {
-        position: absolute;
-        left: 21px;
-        top: 259px;
-        width: 237px;
-        height: 19px;
-    }
   #ti_widget_tilecontainer1 {
     height: 700px;
     width: 100%;
@@ -790,17 +773,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         visibility: visible;
         top: -15px;
     }
-    #sram_1 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
-    }
     #ti_widget_label26 {
         text-align: left;
         text-decoration: none;
@@ -831,13 +803,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         border-bottom: 1px solid rgb(204, 204, 204);
         z-index: 1;
         padding: 10px;
-    }
-    #ti_widget_label14 {
-        position: absolute;
-        left: 21px;
-        top: 259px;
-        width: 237px;
-        height: 19px
     }
     #ti_widget_label33 {
         position: absolute;
@@ -1043,24 +1008,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         left: 311px;
         z-index: 0;
     }
-    #ti_widget_label15 {
-        position: absolute;
-        left: 21px;
-        top: 259px;
-        width: 237px;
-        height: 19px;
-    }
-    #sram_2 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
-    }
     #ti_widget_label88 {
         position: absolute;
         left: 210px;
@@ -1189,24 +1136,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         position: absolute;
         left: 601px;
         z-index: 0;
-    }
-    #ti_widget_label16 {
-        position: absolute;
-        left: 21px;
-        top: 259px;
-        width: 237px;
-        height: 19px;
-    }
-    #sram_3 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
     }
     #ti_widget_label92 {
         position: absolute;
@@ -1337,24 +1266,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         left: 891px;
         z-index: 0;
     }
-    #ti_widget_label17 {
-        position: absolute;
-        left: 21px;
-        top: 259px;
-        width: 237px;
-        height: 19px;
-    }
-    #sram_4 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
-    }
     #ti_widget_label96 {
         position: absolute;
         left: 210px;
@@ -1457,17 +1368,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         position: absolute;
         left: 1181px;
         z-index: 0;
-    }
-    #sram_5 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
     }
     #ti_widget_label102 {
         position: absolute;
@@ -1599,17 +1499,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         width: 237px;
         height: 19px;
     }
-    #sram_6 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
-    }
     #ti_widget_label112 {
         position: absolute;
         left: 235px;
@@ -1702,17 +1591,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         top: 259px;
         width: 237px;
         height: 19px;
-    }
-    #sram_7 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
     }
     #ti_widget_label124 {
         position: absolute;
@@ -1807,17 +1685,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         width: 237px;
         height: 19px;
     }
-    #sram_8 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
-    }
     #ti_widget_label136 {
         position: absolute;
         left: 235px;
@@ -1911,17 +1778,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         width: 237px;
         height: 19px;
     }
-    #sram_9 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
-    }
     #ti_widget_label148 {
         position: absolute;
         left: 235px;
@@ -2014,17 +1870,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         top: 259px;
         width: 237px;
         height: 19px;
-    }
-    #sram_10 {
-        position: absolute;
-        width: 241px;
-        height: 34px;
-        background-color: #AAAAAA;
-        left: 19px;
-        top: 252px;
-        box-shadow: 0px 0px 7px black;
-        background: linear-gradient(0.25turn, #0066ff, #33ccff);
-        transform: rotate(180deg);
     }
     #ti_widget_label160 {
         position: absolute;
@@ -2254,8 +2099,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <ti-widget-label id="ti_widget_label82" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
             <ti-widget-label id="ti_widget_label83" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
             <ti-widget-label id="ti_widget_label84" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
-            <ti-widget-progressbar id="sram_1" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
-            <ti-widget-label id="ti_widget_label14" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
         </ti-widget-container>
         <ti-widget-container id="int_box_2"  auto-scroll>
             <ti-widget-gauge id="gauge2" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
@@ -2271,8 +2114,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <ti-widget-label id="ti_widget_label86" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
             <ti-widget-label id="ti_widget_label87" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
             <ti-widget-label id="ti_widget_label88" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
-            <ti-widget-progressbar id="sram_2" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
-            <ti-widget-label id="ti_widget_label15" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
         </ti-widget-container>
         <ti-widget-container id="int_box_3"  auto-scroll>
             <ti-widget-gauge id="gauge3" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
@@ -2288,8 +2129,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <ti-widget-label id="ti_widget_label90" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
             <ti-widget-label id="ti_widget_label91" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
             <ti-widget-label id="ti_widget_label92" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
-            <ti-widget-progressbar id="sram_3" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
-            <ti-widget-label id="ti_widget_label16" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
         </ti-widget-container>
         <ti-widget-container id="int_box_5"  auto-scroll>
             <ti-widget-gauge id="gauge5" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
@@ -2305,8 +2144,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <ti-widget-label id="ti_widget_label100" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
             <ti-widget-label id="ti_widget_label101" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
             <ti-widget-label id="ti_widget_label102" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
-            <ti-widget-progressbar id="sram_5" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
-            <ti-widget-label id="ti_widget_label18" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
         </ti-widget-container>
         <ti-widget-container id="int_box_4"  auto-scroll>
             <ti-widget-gauge id="gauge4" value="0" title-label="CPU Usage" decimal-places="0" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" units="%" value-font-size="x-large"></ti-widget-gauge>
@@ -2322,8 +2159,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <ti-widget-label id="ti_widget_label94" label="Cycle Count Per Loop:" text-align="right" font-size="small" font-color="#4c4c4c" font-weight="700" wrap></ti-widget-label>
             <ti-widget-label id="ti_widget_label95" label="0" text-align="center" font-size="large" font-color="#4e4e4e" font-weight="normal"></ti-widget-label>
             <ti-widget-label id="ti_widget_label96" label="0" text-align="center" font-size="large" font-color="#494949" font-weight="normal"></ti-widget-label>
-            <ti-widget-progressbar id="sram_4" value="100" progress-percent="15" color="#ececec"></ti-widget-progressbar>
-            <ti-widget-label id="ti_widget_label17" label="OC-SRAM: 0%" text-align="center" font-size="large" font-color="#404040" font-weight="700"></ti-widget-label>
         </ti-widget-container>
         <ti-widget-container id="core_0_1_container" auto-scroll></ti-widget-container>
         <ti-widget-container id="core_2_3_container" auto-scroll></ti-widget-container>
