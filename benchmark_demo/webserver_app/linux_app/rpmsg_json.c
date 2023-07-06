@@ -959,11 +959,11 @@ int main(int argc, char *argv[])
       */
       sprintf(eptdev_name, "rpmsg-char-%d-%d", j, getpid());
 #ifdef AM65X
-      rcdev = rpmsg_char_open(R5F_MCU0_0+j, DEVICE_NAME, REMOTE_ENDPT,
-                eptdev_name, FLAGS);
+      rcdev = rpmsg_char_open(R5F_MCU0_0+j, DEVICE_NAME, RPMSG_ADDR_ANY, 
+                REMOTE_ENDPT, eptdev_name, FLAGS);
 #else
-      rcdev = rpmsg_char_open(R5F_MAIN0_0+j, DEVICE_NAME, REMOTE_ENDPT,
-                eptdev_name, FLAGS);
+      rcdev = rpmsg_char_open(R5F_MAIN0_0+j, DEVICE_NAME, RPMSG_ADDR_ANY,
+                REMOTE_ENDPT, eptdev_name, FLAGS);
 #endif
       if (!rcdev) {
         perror("Can't create an endpoint device");
