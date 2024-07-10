@@ -71,7 +71,6 @@ struct rpmsg_char_endpt {
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static bool inited = false;
-static int soc_id = -1;
 static struct soc_rprocs soc_data;
 static struct rpmsg_char_endpt *ghead = NULL;
 static struct rpmsg_char_endpt *gtail = NULL;
@@ -215,7 +214,7 @@ static int _rpmsg_char_find_rproc(struct rpmsg_char_endpt *ept,
 }
 
 static int _rpmsg_char_find_ctrldev(struct rpmsg_char_endpt *ept,
-				    char *dev_name, int remote_port)
+				    char *dev_name, unsigned int remote_port)
 {
 	char virtio[16] = { 0 };
 	struct dirent *iter;
@@ -318,7 +317,8 @@ free_rpath:
 }
 
 static int _rpmsg_char_create_eptdev(struct rpmsg_char_endpt *ept,
-				     char *eptdev_name, int local_port, int remote_port)
+				     char *eptdev_name, unsigned int local_port,
+				     unsigned int remote_port)
 {
 	int fd, ret;
 	char ctrldev_path[32] = { 0 };
@@ -332,7 +332,7 @@ static int _rpmsg_char_create_eptdev(struct rpmsg_char_endpt *ept,
 		return fd;
 	}
 
-	if ((local_port != (int) RPMSG_ADDR_ANY) && (local_port <
+	if ((local_port != RPMSG_ADDR_ANY) && (local_port <
 					       RPMSG_RESERVED_ADDRESSES)) {
 		fprintf(stderr, "%s: invalid local address %d, should be more \
 			than %d \n", __func__, local_port,
@@ -373,7 +373,6 @@ static int _rpmsg_char_destroy_eptdev(int fd)
 static int _rpmsg_char_get_rpmsg_id(struct rpmsg_char_endpt *ept,
 				    char *eptdev_name)
 {
-	const struct rproc_map *r = ept->map;
 	bool found = false;
 	char rpmsg[16] = { 0 };
 	char fpath[512];
@@ -420,7 +419,6 @@ static int _rpmsg_char_get_rpmsg_id(struct rpmsg_char_endpt *ept,
 
 static int _rpmsg_char_get_local_endpt(struct rpmsg_char_endpt *ept)
 {
-	const struct rproc_map *r = ept->map;
 	char fpath[512] = { 0 };
 	char rpmsg[16] = { 0 };
 	char *rpath;
@@ -509,7 +507,7 @@ static void _rpmsg_char_cleanup(void)
 		next = iter->next;
 		ret = rpmsg_char_close(&iter->rcdev);
 		if (ret) {
-			fprintf(stderr, "rpmsg_char_close failed during cleanup, rcdev = 0x%x, ret = %d\n",
+			fprintf(stderr, "rpmsg_char_close failed during cleanup, rcdev = %p, ret = %d\n",
 				&iter->rcdev, ret);
 		}
 	}
@@ -553,8 +551,9 @@ static int _rpmsg_char_register_signal_handlers(void)
 }
 
 rpmsg_char_dev_t *rpmsg_char_open(enum rproc_id id, char *dev_name,
-				  int local_endpt, int remote_endpt, char *eptdev_name,
-				  int flags)
+				  unsigned int local_endpt,
+				  unsigned int remote_endpt,
+				  char *eptdev_name, int flags)
 {
 	struct rpmsg_char_endpt *ept = NULL;
 	char *def_dev_name = "rpmsg_chrdev";
@@ -625,7 +624,7 @@ int rpmsg_char_close(rpmsg_char_dev_t *rcdev)
 
 	ept = to_rpmsg_char_endpt(rcdev);
 	if (!_list_is_present(ept)) {
-		fprintf(stderr, "%s: invalid handle passed in rcdev = 0x%x\n",
+		fprintf(stderr, "%s: invalid handle passed in rcdev = %p\n",
 			__func__, rcdev);
 		ret = -ENOENT;
 		goto out;
