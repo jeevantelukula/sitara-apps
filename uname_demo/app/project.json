@@ -1,0 +1,19 @@
+{
+	"template":"AM64x EVM",
+	"description":"Multipage application for uname demo",
+	"version":"1.0.0",
+	"theme":"ti-analogevm-theme",
+	"projectName":"AM64x_EVM",
+	"applicationName":"AM64x EVM",
+	"applicationIcon":"",
+	"windowIcon":"",
+	"splashImage":"",
+	"tiBrandingEnabled":true,
+	"disableAutoConnect":false,
+	"vendorName":"",
+	"technologyName":"",
+	"customLicense":"",
+	"customManifest":"",
+	"customAppInfo":"",
+	"nosplash":true
+}

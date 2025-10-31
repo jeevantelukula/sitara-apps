@@ -1,0 +1,10 @@
+[Unit]
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+EnvironmentFile=/etc/uname_server.conf
+ExecStart=/usr/bin/uname_server $APP_DIR
+
+[Install]
+WantedBy=multi-user.target
