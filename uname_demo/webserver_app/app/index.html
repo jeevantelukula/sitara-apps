@@ -122,6 +122,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <link rel="import" href="components/ti-core-databind/ti-transport-network.html">
 <link rel="import" href="components/ti-model-http/ti-model-http.html">
 <link rel="import" href="components/ti-model-http/ti-route-http.html">
+<link rel="import" href="components/ti-widget-terminal/ti-widget-terminal.html">
 
 
   <template id="template_obj" is="dom-bind">
@@ -2002,6 +2003,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 </ti-widget-container>
             </ti-widget-tab>
         </ti-widget-tabcontainer>
+        <ti-widget-button id="open_terminal_button" label="Open Terminal" raised center-justified center wrap style="margin-top: 20px;"></ti-widget-button>
     </ti-widget-vtab>
     <ti-widget-vtab id="ti_widget_vtab_uname_demo" name="Uname Demo" caption="Run uname -a and display output" icon="icons:info" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
         <ti-widget-banner id="ti_widget_banner_uname" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
@@ -2034,6 +2036,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </ti-tile-container>
         </ti-widget-container>
 
+    </ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_terminal" name="Terminal" caption="Interactive Terminal" icon="icons:code" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
+        <ti-widget-banner id="ti_widget_banner_terminal" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
+        <ti-widget-container id="terminal_container" style="width: 100%; height: calc(100% - 50px);">
+            <ti-widget-terminal id="terminal" style="width: 100%; height: 100%;"></ti-widget-terminal>
+        </ti-widget-container>
     </ti-widget-vtab>
 </ti-widget-vtabcontainer>
 

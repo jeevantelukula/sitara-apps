@@ -8,6 +8,8 @@ const { execFile } = require('child_process');
 const serveStatic = require('serve-static');
 const path = require('path');
 const http = require('http');
+const WebSocket = require('ws');
+const pty = require('node-pty');
 
 /*
  * Definitions
@@ -37,6 +39,31 @@ app.get("/run-uname", (request, response) => {
       return;
     }
     response.send(stdout);
+  });
+});
+
+/* Create a websocket server for the terminal */
+const wss = new WebSocket.Server({ port: 8082 });
+
+wss.on('connection', (ws) => {
+  const term = pty.spawn('/bin/bash', [], {
+    name: 'xterm-color',
+    cols: 80,
+    rows: 30,
+    cwd: process.env.HOME,
+    env: process.env
+  });
+
+  term.on('data', (data) => {
+    ws.send(data);
+  });
+
+  ws.on('message', (message) => {
+    term.write(message);
+  });
+
+  ws.on('close', () => {
+    term.kill();
   });
 });
 

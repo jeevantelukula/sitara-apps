@@ -141,6 +141,25 @@ var init = function() {
                 });
             }
 
+            // Terminal specific logic
+            const openTerminalButton = templateObj.$.open_terminal_button;
+            const terminalVtab = templateObj.$.ti_widget_vtab_terminal;
+            const terminalWidget = templateObj.$.terminal;
+
+            if (openTerminalButton && terminalVtab && terminalWidget) {
+                openTerminalButton.addEventListener('click', function() {
+                    templateObj.$.ti_widget_vtabcontainer.selectedItem = terminalVtab;
+                    // Initialize terminal when tab is selected
+                    if (!terminalWidget._initialized) {
+                        terminalWidget.initTerminal(); // Assuming ti-widget-terminal has an initTerminal method
+                        terminalWidget._initialized = true;
+                    }
+                });
+
+                // Connect terminal to WebSocket
+                terminalWidget.socketUrl = "ws://" + window.location.hostname + ":8082";
+            }
+
         }, 1);
 
     });
