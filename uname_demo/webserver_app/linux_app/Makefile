@@ -1,9 +1,10 @@
 INCLUDE=../../common/include
-CFLAGS=-I${INCLUDE} -I./ti-rpmsg-char/include
+CFLAGS=-I${INCLUDE}
 
-all: rpmsg_json
-rpmsg_json: rpmsg_json.o
-	$(CC) $(CFLAGS) rpmsg_json.c ./ti-rpmsg-char/src/rpmsg_char.c ./ti-rpmsg-char/src/soc.c ./ti-rpmsg-char/src/utils.c -o rpmsg_json
+all: audio_utils
+
+audio_utils: audio_utils.c
+	$(CC) audio_utils.c -o audio_utils -pthread
 
 clean:
-	rm -f rpmsg_json.o rpmsg_char.o soc.o utils.o rpmsg_json
+	rm -f audio_utils

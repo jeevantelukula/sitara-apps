@@ -1992,8 +1992,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <ti-widget-vtabcontainer id="ti_widget_vtabcontainer" vtab-height-in-px="60" selected-index="0" ink-color="#f1f1f1" color-selected="#ffffff" color-unselected="#888" color-disabled="#ccc" color-selection-bar="white" background-color-selected="#148c9c" background-color-hover="#dcdcec" auto-expand auto-zero-htab-index tab-height-in-px="60" vertical layout>
     <ti-widget-vtab id="ti_widget_vtab_home" name="Home" icon="home" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
-        <ti-widget-label id="ti_widget_label_productname" label="AM335x Uname Demo" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
-        <ti-widget-label id="ti_widget_label_productdesc" label="Display system information using uname -a" text-align="center" font-size="custom" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        <ti-widget-label id="ti_widget_label_productname" label="Beaglebone Green Eco" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
         <ti-widget-tabcontainer selected-index="0" show-tab-labels-in-designer-only id="ti_widget_tabcontainer" layout>
             <ti-widget-tab name="Home" icon-style="width:30px;height:30px;padding:5px;" visible font-style="normal" font-weight="normal" text-align="left" text-decoration="none" id="ti_widget_tab" title>
                 <ti-widget-container id="ti_widget_container1" font-size="inherit" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
@@ -2003,7 +2002,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 </ti-widget-container>
             </ti-widget-tab>
         </ti-widget-tabcontainer>
-        <ti-widget-button id="open_terminal_button" label="Open Terminal" raised center-justified center wrap style="margin-top: 20px;"></ti-widget-button>
     </ti-widget-vtab>
     <ti-widget-vtab id="ti_widget_vtab_uname_demo" name="Uname Demo" caption="Run uname -a and display output" icon="icons:info" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
         <ti-widget-banner id="ti_widget_banner_uname" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
@@ -2040,7 +2038,24 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <ti-widget-vtab id="ti_widget_vtab_terminal" name="Terminal" caption="Interactive Terminal" icon="icons:code" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
         <ti-widget-banner id="ti_widget_banner_terminal" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
         <ti-widget-container id="terminal_container" style="width: 100%; height: calc(100% - 50px);">
-            <ti-widget-terminal id="terminal" style="width: 100%; height: 100%;"></ti-widget-terminal>
+            <ti-widget-terminal id="terminal" connection-mode="None" style="width: 100%; height: 100%;"></ti-widget-terminal>
+        </ti-widget-container>
+    </ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_audio_classification" name="Audio Classification" caption="Live Audio Classification" icon="av:mic" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
+        <ti-widget-banner id="ti_widget_banner_audio" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
+        <ti-widget-container id="ti_widget_container_audio_controls" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
+            <ti-widget-label id="ti_widget_label_audio_title" label="Audio Classification" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="700" text-decoration="none" visible></ti-widget-label>
+            <div style="display: flex; align-items: center; margin-top: 10px;">
+                <ti-widget-label label="Select Device:" style="margin-right: 10px;"></ti-widget-label>
+                <ti-widget-droplist id="audio_device_droplist" labels="" selected-index="0" style="flex-grow: 1;"></ti-widget-droplist>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                <ti-widget-button id="start_audio_button" label="Start Classification" raised></ti-widget-button>
+                <ti-widget-button id="stop_audio_button" label="Stop Classification" raised disabled></ti-widget-button>
+            </div>
+        </ti-widget-container>
+        <ti-widget-container id="audio_output_container" style="padding: 20px;">
+            <ti-widget-label id="audio_classification_result" label="No classification running." text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
         </ti-widget-container>
     </ti-widget-vtab>
 </ti-widget-vtabcontainer>

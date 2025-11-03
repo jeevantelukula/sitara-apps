@@ -146,19 +146,148 @@ var init = function() {
             const terminalVtab = templateObj.$.ti_widget_vtab_terminal;
             const terminalWidget = templateObj.$.terminal;
 
+            let wsTerminal;
+
             if (openTerminalButton && terminalVtab && terminalWidget) {
                 openTerminalButton.addEventListener('click', function() {
                     templateObj.$.ti_widget_vtabcontainer.selectedItem = terminalVtab;
+                    
                     // Initialize terminal when tab is selected
                     if (!terminalWidget._initialized) {
-                        terminalWidget.initTerminal(); // Assuming ti-widget-terminal has an initTerminal method
+                        console.log("Initializing terminal and connecting to WebSocket...");
+                        
+                        // Explicitly call _doInitialize with connectionMode 'None'
+                        terminalWidget.connectionMode = "None";
+                        terminalWidget._doInitialize();
+
+                        wsTerminal = new WebSocket("ws://" + window.location.hostname + ":8082");
+
+                        wsTerminal.onopen = function() {
+                            console.log("Terminal WebSocket connected.");
+                            terminalWidget.write("Connected to terminal WebSocket.\r\n");
+                            
+                            // Send initial terminal dimensions to the server
+                            if (terminalWidget._term) {
+                                const dimensions = { cols: terminalWidget._term.cols, rows: terminalWidget._term.rows };
+                                wsTerminal.send(JSON.stringify({ type: "resize", ...dimensions }));
+                            }
+                        };
+
+                        wsTerminal.onmessage = function(event) {
+                            terminalWidget.write(event.data);
+                        };
+
+                        wsTerminal.onclose = function() {
+                            console.log("Terminal WebSocket disconnected.");
+                            terminalWidget.write("\r\nDisconnected from terminal WebSocket.\r\n");
+                        };
+
+                        wsTerminal.onerror = function(error) {
+                            console.error("Terminal WebSocket error: ", error);
+                            terminalWidget.write("\r\nWebSocket error: " + error.message + "\r\n");
+                        };
+
+                        // Handle input from the terminal and send it to the WebSocket server
+                        terminalWidget.onKey(function(keyEvent) {
+                            if (wsTerminal && wsTerminal.readyState === WebSocket.OPEN) {
+                                wsTerminal.send(keyEvent.key);
+                            }
+                        });
+
                         terminalWidget._initialized = true;
                     }
                 });
-
-                // Connect terminal to WebSocket
-                terminalWidget.socketUrl = "ws://" + window.location.hostname + ":8082";
             }
+
+            // Audio Classification specific logic
+            const audioClassificationVtab = templateObj.$.ti_widget_vtab_audio_classification;
+            const audioDeviceDroplist = templateObj.$.audio_device_droplist;
+            const startAudioButton = templateObj.$.start_audio_button;
+            const stopAudioButton = templateObj.$.stop_audio_button;
+            const audioClassificationResult = templateObj.$.audio_classification_result;
+
+            let wsAudio;
+
+            // Fetch devices when the audio classification tab is selected
+            templateObj.$.ti_widget_vtabcontainer.addEventListener('selected-item-changed', function(event) {
+                console.log("selected-item-changed event fired.");
+                console.log("event.detail.value:", event.detail.value);
+                console.log("audioClassificationVtab:", audioClassificationVtab);
+                if (event.detail.value === audioClassificationVtab) {
+                    console.log("Audio Classification tab selected. Calling fetchAudioDevices().");
+                    fetchAudioDevices();
+                }
+            });
+
+            // Function to fetch audio devices
+            const fetchAudioDevices = function() {
+                console.log("fetchAudioDevices() called.");
+
+            // Start audio classification
+            startAudioButton.addEventListener('click', function() {
+                const selectedDevice = audioDeviceDroplist.selectedText;
+                if (selectedDevice && selectedDevice !== "No devices found" && selectedDevice !== "Error loading devices") {
+                    startAudioButton.disabled = true;
+                    stopAudioButton.disabled = false;
+                    audioClassificationResult.label = "Starting classification...";
+
+                    $.get("/start-audio-classification?device=" + encodeURIComponent(selectedDevice), function(data) {
+                        console.log(data);
+                        audioClassificationResult.label = "Classification started. Waiting for results...";
+
+                        // Establish WebSocket connection for live results
+                        wsAudio = new WebSocket("ws://" + window.location.hostname + ":8083");
+
+                        wsAudio.onopen = function() {
+                            console.log("Audio Classification WebSocket connected.");
+                        };
+
+                        wsAudio.onmessage = function(event) {
+                            audioClassificationResult.label = "Class: " + event.data;
+                        };
+
+                        wsAudio.onclose = function() {
+                            console.log("Audio Classification WebSocket disconnected.");
+                            audioClassificationResult.label = "Classification stopped.";
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                        };
+
+                        wsAudio.onerror = function(error) {
+                            console.error("Audio Classification WebSocket error: ", error);
+                            audioClassificationResult.label = "Error in classification stream.";
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                        };
+
+                    }).fail(function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error starting audio classification: ", textStatus, errorThrown);
+                        audioClassificationResult.label = "Failed to start classification.";
+                        startAudioButton.disabled = false;
+                        stopAudioButton.disabled = true;
+                    });
+                } else {
+                    audioClassificationResult.label = "Please select a valid audio device.";
+                }
+            });
+
+            // Stop audio classification
+            stopAudioButton.addEventListener('click', function() {
+                $.get("/stop-audio-classification", function(data) {
+                    console.log(data);
+                    if (wsAudio) {
+                        wsAudio.close();
+                    }
+                    audioClassificationResult.label = "Stopping classification...";
+                    startAudioButton.disabled = false;
+                    stopAudioButton.disabled = true;
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error("Error stopping audio classification: ", textStatus, errorThrown);
+                    audioClassificationResult.label = "Failed to stop classification.";
+                    startAudioButton.disabled = false;
+                    stopAudioButton.disabled = true;
+                });
+            });
 
         }, 1);
 
