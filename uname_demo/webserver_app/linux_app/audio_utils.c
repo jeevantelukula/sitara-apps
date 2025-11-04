@@ -55,7 +55,7 @@ char* get_arecord_devices() {
                     current_card_name[name_len] = '\0';
 
                     // Skip HDMI/playback-only devices
-                    if (strstr(current_card_name, "HDMI") != NULL || strstr(current_card_name, "hdmi") != NULL || strstr(current_card_name, "cape") != NULL) {
+                    if (strstr(current_card_name, "HDMI") != NULL || strstr(current_card_name, "hdmi") != NULL) {
                         fprintf(stderr, "Skipping playback-only device: %s (card %d)\n", current_card_name, card_num);
                         continue;
                     }
@@ -73,7 +73,9 @@ char* get_arecord_devices() {
                         if (device_count > 0) {
                             strcat(device_list, "\n");
                         }
-                        strcat(device_list, current_card_name);
+                        char full_device_string[256];
+                    snprintf(full_device_string, sizeof(full_device_string), "%s -> %s", current_card_name, audio_devices[device_count].alsa_device);
+                    strcat(device_list, full_device_string);
                     }
 
                     fprintf(stderr, "Found capture device: %s -> %s\n",
@@ -159,6 +161,11 @@ int main(int argc, char *argv[]) {
     if (argc > 1 && strcmp(argv[1], "devices") == 0) {
         char *devices = get_arecord_devices();
         if (devices) {
+            FILE *log_file = fopen("/home/jeevan/tmp/instance_2/audio_devices.log", "w");
+            if (log_file) {
+                fprintf(log_file, "%s", devices);
+                fclose(log_file);
+            }
             printf("%s\n", devices);
             free(devices);
         } else {

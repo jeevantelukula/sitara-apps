@@ -31,7 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <link rel="icon" type="image/png" href="splash/gui_icon.png">
 
-    <title>AM335x Uname Demo</title>
+    <title>AM335x Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <script src="components/webcomponentsjs/webcomponents-lite.js"></script>
@@ -50,6 +50,51 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <script src="main.js"></script>
     <link rel="stylesheet" href="oneui.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('WebComponentsReady', function() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.dot');
+            let currentSlide = 0;
+            let slideInterval;
+
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.remove('active');
+                    dots[i].classList.remove('active');
+                });
+                slides[index].classList.add('active');
+                dots[index].classList.add('active');
+                currentSlide = index;
+            }
+
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            }
+
+            function startSlideShow() {
+                slideInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+            }
+
+            function stopSlideShow() {
+                clearInterval(slideInterval);
+            }
+
+            // Event listeners for dots
+            dots.forEach(dot => {
+                dot.addEventListener('click', (event) => {
+                    stopSlideShow();
+                    showSlide(parseInt(event.target.dataset.slide));
+                    startSlideShow();
+                });
+            });
+
+            showSlide(currentSlide);
+            startSlideShow();
+        });
+    </script>
     <script type = "text/javascript" src = "jquery-3.5.1.min.js"></script>
     <script type = "text/javascript" language = "javascript">
          $(function() {
@@ -402,6 +447,16 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     overflow: initial;
   }
   #ti_widget_vtab_collateral {
+    background-color: white;
+    text-align: left;
+    text-decoration: none;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    overflow: initial;
+    height: calc(100% - 40px);
+  }
+  #ti_widget_vtab_usecases {
     background-color: white;
     text-align: left;
     text-decoration: none;
@@ -1961,17 +2016,74 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         z-index: -1;
     }
 </style>
+    <style>
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 400px; /* Adjust as needed */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            padding-top: 180px;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+        }
+
+        .carousel-slide ti-widget-image {
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .carousel-slide ti-widget-label {
+            color: black; /* Ensure visibility */
+            margin-top: 10px; /* Space from image */
+            text-align: center;
+            width: 80%; /* Constrain width if needed */
+        }
+
+        .carousel-dots {
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .dot {
+            cursor: pointer;
+            height: 15px;
+            width: 15px;
+            margin: 0 5px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.6s ease;
+        }
+
+        .dot.active, .dot:hover {
+            background-color: #717171;
+        }
+    </style>
 
 <ti-widget-readme background-color="#ffffff" elevation="5" title-text="README.md" id="readmeViewer" pin></ti-widget-readme>
 <ti-core-stylesheets id="ti_core_stylesheets"></ti-core-stylesheets>
 
-<ti-widget-menubar id="ti_widget_menubar" layout class="x-scope ti-widget-menubar-0" horizontal pin product-name="AM335x Uname Demo">
-    <ti-widget-filemenu load-save-disabled="true" id="ti_widget_filemenu" layout>
-        <ti-widget-menuaction name="Open Log Pane" action="open_log_pane" icon-name="ti-core-icons:book" id="ti_widget_menuaction_openlog"></ti-widget-menuaction>
-    </ti-widget-filemenu>
-    <ti-widget-optionsmenu id="ti_widget_optionsmenu" layout></ti-widget-optionsmenu>
+<ti-widget-menubar id="ti_widget_menubar" layout class="x-scope ti-widget-menubar-0" horizontal pin product-name="AM335x Demo">
+
+
     <ti-widget-menuitem name="Tools" id="ti_widget_menuitem_tools" layout>
-        <ti-widget-menuaction name="Open Scripting Window" action="open_scripting_window" icon-name="icons:description" id="ti_widget_menuaction_scripting"></ti-widget-menuaction>
+
         <ti-widget-menuaction name="Log pane" action="open_log_pane" icon-name="ti-core-icons:book" id="ti_widget_menuaction_openlog"></ti-widget-menuaction>
     </ti-widget-menuitem>
     <ti-widget-zoommenu id="ti_widget_zoommenu" layout></ti-widget-zoommenu>
@@ -1992,7 +2104,24 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <ti-widget-vtabcontainer id="ti_widget_vtabcontainer" vtab-height-in-px="60" selected-index="0" ink-color="#f1f1f1" color-selected="#ffffff" color-unselected="#888" color-disabled="#ccc" color-selection-bar="white" background-color-selected="#148c9c" background-color-hover="#dcdcec" auto-expand auto-zero-htab-index tab-height-in-px="60" vertical layout>
     <ti-widget-vtab id="ti_widget_vtab_home" name="Home" icon="home" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
-        <ti-widget-label id="ti_widget_label_productname" label="Beaglebone Green Eco" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        <ti-widget-label id="ti_widget_label_productname" label="AM335X" text-align="center" font-size="custom" custom-font-size="32px" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+        <ti-widget-label id="ti_widget_label_productdesc" label="Analyze system performance, review documentation, and run demos" text-align="center" font-size="custom" font-color="#ffffff" font-style="normal" font-weight="normal" text-decoration="none" visible></ti-widget-label>
+
+        <div class="carousel-container">
+            <div class="carousel-slide active">
+                <ti-widget-image image-path="images/beagl-bone-grn-eco-angled.png" lock-aspect-ratio hover-effect="no" visible lockaspectratio center-justified horizontal layout center></ti-widget-image>
+                <ti-widget-label label="Beaglebone Green Eco: A low-cost, high-expansion board for IoT and embedded applications." text-align="center" font-size="medium"></ti-widget-label>
+            </div>
+            <div class="carousel-slide">
+                <ti-widget-image image-path="images/tmdxevm3358-angled.png" lock-aspect-ratio hover-effect="no" visible lockaspectratio center-justified horizontal layout center></ti-widget-image>
+                <ti-widget-label label="AM335x Evaluation Module: Comprehensive development platform for AM335x processors." text-align="center" font-size="medium"></ti-widget-label>
+            </div>
+        </div>
+        <div class="carousel-dots">
+            <span class="dot active" data-slide="0"></span>
+            <span class="dot" data-slide="1"></span>
+        </div>
+
         <ti-widget-tabcontainer selected-index="0" show-tab-labels-in-designer-only id="ti_widget_tabcontainer" layout>
             <ti-widget-tab name="Home" icon-style="width:30px;height:30px;padding:5px;" visible font-style="normal" font-weight="normal" text-align="left" text-decoration="none" id="ti_widget_tab" title>
                 <ti-widget-container id="ti_widget_container1" font-size="inherit" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
@@ -2003,67 +2132,178 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </ti-widget-tab>
         </ti-widget-tabcontainer>
     </ti-widget-vtab>
-    <ti-widget-vtab id="ti_widget_vtab_uname_demo" name="Uname Demo" caption="Run uname -a and display output" icon="icons:info" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
-        <ti-widget-banner id="ti_widget_banner_uname" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
-        <ti-widget-container id="ti_widget_container_uname_controls" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
-            <ti-widget-label id="ti_widget_label_uname_title" label="Uname -a Output" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="700" text-decoration="none" visible></ti-widget-label>
-            <ti-widget-button id="run_uname_button" label="Run uname -a" raised center-justified center wrap></ti-widget-button>
-        </ti-widget-container>
-
-        <ti-widget-container id="uname_output_container" style="display: flex; flex-wrap: wrap; justify-content: space-around; padding: 20px;">
-            <ti-tile-container title-text="Kernel Name" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_sysname" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-            <ti-tile-container title-text="Nodename" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_nodename" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-            <ti-tile-container title-text="Kernel Release" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_release" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-            <ti-tile-container title-text="Kernel Version" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_version" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-            <ti-tile-container title-text="Machine" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_machine" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-            <ti-tile-container title-text="Hardware Platform" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_processor" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-            <ti-tile-container title-text="Operating System" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
-                <ti-widget-label id="uname_os" label="N/A" text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-            </ti-tile-container>
-        </ti-widget-container>
-
-    </ti-widget-vtab>
-    <ti-widget-vtab id="ti_widget_vtab_terminal" name="Terminal" caption="Interactive Terminal" icon="icons:code" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
-        <ti-widget-banner id="ti_widget_banner_terminal" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
-        <ti-widget-container id="terminal_container" style="width: 100%; height: calc(100% - 50px);">
-            <ti-widget-terminal id="terminal" connection-mode="None" style="width: 100%; height: 100%;"></ti-widget-terminal>
-        </ti-widget-container>
-    </ti-widget-vtab>
     <ti-widget-vtab id="ti_widget_vtab_audio_classification" name="Audio Classification" caption="Live Audio Classification" icon="av:mic" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
-        <ti-widget-banner id="ti_widget_banner_audio" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
-        <ti-widget-container id="ti_widget_container_audio_controls" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
-            <ti-widget-label id="ti_widget_label_audio_title" label="Audio Classification" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="700" text-decoration="none" visible></ti-widget-label>
-            <div style="display: flex; align-items: center; margin-top: 10px;">
-                <ti-widget-label label="Select Device:" style="margin-right: 10px;"></ti-widget-label>
-                <ti-widget-droplist id="audio_device_droplist" labels="" selected-index="0" style="flex-grow: 1;"></ti-widget-droplist>
-            </div>
-            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+    <style>
+        .audio-classification-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align to the top */
+            height: 100%;
+            padding-top: 50px; /* Add some padding at the top */
+            gap: 20px; /* Add some space between the elements */
+        }
+        .audio-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .loader {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <div class="audio-classification-content">
+        <ti-widget-label label="Audio Classification Demo" font-size="28px" font-weight="bold"></ti-widget-label>
+        <ti-widget-image src="images/audio_placeholder.png" width="200" height="200"></ti-widget-image>
+        <div class="audio-controls">
+            <ti-widget-label label="Select Device:"></ti-widget-label>
+            <ti-widget-droplist id="audio_device_droplist" labels="" selected-index="0" width="300"></ti-widget-droplist>
+            <div style="display: flex; gap: 10px;">
                 <ti-widget-button id="start_audio_button" label="Start Classification" raised></ti-widget-button>
                 <ti-widget-button id="stop_audio_button" label="Stop Classification" raised disabled></ti-widget-button>
             </div>
-        </ti-widget-container>
-        <ti-widget-container id="audio_output_container" style="padding: 20px;">
-            <ti-widget-label id="audio_classification_result" label="No classification running." text-align="center" font-size="large" font-weight="bold"></ti-widget-label>
-        </ti-widget-container>
+            <div class="loader" id="loading_spinner"></div>
+            <ti-widget-label id="audio_classification_result" label="Result: " font-size="18px" font-weight="bold"></ti-widget-label>
+            <ti-widget-label id="confidence_score" label="Confidence: " font-size="16px"></ti-widget-label>
+        </div>
+    </div>
+</ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_cpu_performance" name="CPU Performance" icon="icons:assessment" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
+        <div style="padding: 20px;">
+            <h3>CPU Information</h3>
+            <div id="cpu-info-container" style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <!-- lscpu info will be populated here -->
+            </div>
+            <h3>CPU Usage</h3>
+            <ti-widget-gauge id="cpu_usage_gauge" value="0" title-label="Current" decimal-places="2" gauge-thickness="40" fractional-scale-decimals="0" number-format="standard" size="0" units="%" value-font-size="x-large"></ti-widget-gauge>
+            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                <ti-widget-label id="avg_cpu_label" label="Average: 0.00%" font-size="large" font-weight="bold"></ti-widget-label>
+                <ti-widget-label id="max_cpu_label" label="Max: 0.00%" font-size="large" font-weight="bold"></ti-widget-label>
+            </div>
+            <div style="margin-top: 20px;">
+                <h3>History</h3>
+                <canvas id="cpu_chart" width="400" height="200"></canvas>
+            </div>
+        </div>
     </ti-widget-vtab>
-</ti-widget-vtabcontainer>
+    <ti-widget-vtab id="ti_widget_vtab_collaterals" name="Collaterals" icon="icons:description" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
+        <ti-widget-banner id="ti_widget_banner_collateral" custom-font-size="24px" font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible horizontal layout center start-justified title></ti-widget-banner>
+        <ti-widget-container id="ti_widget_container_collateral_controls" font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" visible title>
+            <ti-widget-label id="ti_widget_label_collateral_title" label="AM335x Documentation & Resources" text-align="left" font-size="custom" custom-font-size="18px" font-color="#404040" font-style="normal" font-weight="700" text-decoration="none" visible></ti-widget-label>
+        </ti-widget-container>
 
+        <ti-widget-tilecontainer id="ti_widget_tilecontainer_collateral" layout horizontal wrap style="padding: 10px;">
+            <ti-tile-container title-text="Product Page" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
+                <div style="text-align: center; padding: 10px;">
+                    <a href="https://www.ti.com/product/AM3358" target="_blank" style="color: #148C9C; text-decoration: underline;">AM335x Product Page (TI)</a>
+                </div>
+            </ti-tile-container>
+            <ti-tile-container title-text="TRM" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
+                <div style="text-align: center; padding: 10px;">
+                    <a href="https://www.ti.com/lit/ug/spruh73p/spruh73p.pdf" target="_blank" style="color: #148C9C; text-decoration: underline;">AM335x Technical Reference Manual (TRM)</a>
+                </div>
+            </ti-tile-container>
+            <ti-tile-container title-text="SDK Essentials" background-color="#ffffff" elevation="3" style="margin: 10px; width: 300px;">
+                <div style="text-align: center; padding: 10px;">
+                    <a href="https://www.ti.com/tool/PROCESSOR-SDK-AM335X" target="_blank" style="color: #148C9C; text-decoration: underline;">AM335x SDK Essentials</a>
+                </div>
+            </ti-tile-container>
+        </ti-widget-tilecontainer>
+    </ti-widget-vtab>
+    <ti-widget-vtab id="ti_widget_vtab_terminal" name="Terminal" caption="Interactive Terminal" icon="icons:code" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
+</ti-widget-vtabcontainer>
 </template><!--gist-end-->
 
 <!-- ------------------------------------------------------------------------------------- -->
 
+<script>
+    document.addEventListener('WebComponentsReady', function() {
+        var cpuUsageGauge = document.querySelector('#cpu_usage_gauge');
+        var avgCpuLabel = document.querySelector('#avg_cpu_label');
+        var maxCpuLabel = document.querySelector('#max_cpu_label');
+        var cpuChartCanvas = document.querySelector('#cpu_chart');
+
+        // Function to load static CPU info
+        function loadCpuInfo() {
+            var infoContainer = $('#cpu-info-container');
+            if (infoContainer.length) {
+                $.getJSON('/api/lscpu', function(data) {
+                    if (data) {
+                        var content = '<dl style="margin: 0;">';
+                        $.each(data, function(key, value) {
+                            content += '<dt style="font-weight: bold; float: left; width: 120px; clear: left;">' + key + '</dt>';
+                            content += '<dd style="margin-left: 130px;">' + value + '</dd>';
+                        });
+                        content += '</dl>';
+                        infoContainer.html(content);
+                    }
+                }).fail(function() {
+                    infoContainer.html('<p>Could not load CPU information.</p>');
+                });
+            }
+        }
+
+        if (cpuUsageGauge && avgCpuLabel && maxCpuLabel && cpuChartCanvas) {
+            var cpuChart;
+
+            function updateCpuPerformance() {
+                $.getJSON('/cgi-bin/cpu_stats', function(data) {
+                    if (data) {
+                        cpuUsageGauge.value = data.current_cpu_usage;
+                        avgCpuLabel.label = "Average: " + data.average_cpu_usage.toFixed(2) + "%";
+                        maxCpuLabel.label = "Max: " + data.max_cpu_usage.toFixed(2) + "%";
+
+                        if (cpuChart) {
+                            cpuChart.data.labels = Array.from(Array(data.history.length).keys());
+                            cpuChart.data.datasets[0].data = data.history;
+                            cpuChart.update();
+                        } else {
+                            var ctx = cpuChartCanvas.getContext('2d');
+                            cpuChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: Array.from(Array(data.history.length).keys()),
+                                    datasets: [{
+                                        label: 'CPU Usage (%)',
+                                        data: data.history,
+                                        borderColor: 'rgb(75, 192, 192)',
+                                        tension: 0.1
+                                    }]
+                                },
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            max: 100
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            setInterval(updateCpuPerformance, 1000);
+            updateCpuPerformance();
+        }
+
+        // Load the CPU info once
+        loadCpuInfo();
+    });
+</script>
 <script>
 	// Do not edit this file - it is automatically generated.  Please edit index.js
 	addEventListener('WebComponentsReady', function () {

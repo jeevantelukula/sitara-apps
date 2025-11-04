@@ -44,6 +44,7 @@ app.get("/run-uname", (request, response) => {
 
 /* Handle incoming GET requests for audio devices */
 app.get("/audio-devices", (request, response) => {
+  console.log("Received request for /audio-devices");
   const audioUtilsPath = path.join(linux_app_dir, 'audio_utils');
   execFile(audioUtilsPath, ['devices'], (error, stdout, stderr) => {
     if (error) {
@@ -51,6 +52,7 @@ app.get("/audio-devices", (request, response) => {
       response.status(500).send(stderr);
       return;
     }
+    console.log("Successfully executed audio_utils. stdout:", stdout);
     response.send(stdout);
   });
 });

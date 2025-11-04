@@ -60,7 +60,9 @@ var templateObj;
 
 // Wait for DOMContentLoaded event before trying to access the application template
 var init = function() {
+    console.log("init() function called.");
     templateObj = document.querySelector('#template_obj');
+    console.log("templateObj after querySelector:", templateObj);
 
     // Wait for the template to fire a dom-change event to indicate that it has been 'stamped'
     // before trying to access components in the application.
@@ -74,7 +76,9 @@ var init = function() {
 
             // Expand vtabcontainer nav bar when user clicks on menu icon or 'Menu' label
             templateObj.toggleMenu = function(event){
+                console.log("toggleMenu called. Current isExpanded:", templateObj.$.ti_widget_vtabcontainer.isExpanded);
                 templateObj.$.ti_widget_vtabcontainer.isExpanded = !templateObj.$.ti_widget_vtabcontainer.isExpanded;
+                console.log("New isExpanded:", templateObj.$.ti_widget_vtabcontainer.isExpanded);
             };
             templateObj.$.ti_widget_icon_button_menu.addEventListener('click',templateObj.toggleMenu);
             templateObj.$.ti_widget_label_menu.addEventListener('click',templateObj.toggleMenu);
@@ -199,29 +203,45 @@ var init = function() {
                 });
             }
 
-            // Audio Classification specific logic
             const audioClassificationVtab = templateObj.$.ti_widget_vtab_audio_classification;
             const audioDeviceDroplist = templateObj.$.audio_device_droplist;
             const startAudioButton = templateObj.$.start_audio_button;
             const stopAudioButton = templateObj.$.stop_audio_button;
             const audioClassificationResult = templateObj.$.audio_classification_result;
+            const confidenceScore = templateObj.$.confidence_score;
+            const loadingSpinner = templateObj.$.loading_spinner;
 
             let wsAudio;
 
             // Fetch devices when the audio classification tab is selected
             templateObj.$.ti_widget_vtabcontainer.addEventListener('selected-item-changed', function(event) {
-                console.log("selected-item-changed event fired.");
-                console.log("event.detail.value:", event.detail.value);
-                console.log("audioClassificationVtab:", audioClassificationVtab);
-                if (event.detail.value === audioClassificationVtab) {
-                    console.log("Audio Classification tab selected. Calling fetchAudioDevices().");
+                console.log("selected-item-changed event fired. Detail value:", event.detail.value, "Audio Classification Vtab ID:", audioClassificationVtab.id);
+                if (event.detail.value === audioClassificationVtab.id) {
                     fetchAudioDevices();
                 }
             });
 
             // Function to fetch audio devices
             const fetchAudioDevices = function() {
-                console.log("fetchAudioDevices() called.");
+                $.get("/audio-devices", function(data) {
+                    console.log("Raw data from /audio-devices:", data);
+                    const devices = data.trim().split('\n').filter(d => d.length > 0);
+                    console.log("Parsed devices array:", devices);
+                    if (devices.length > 0) {
+                        audioDeviceDroplist.labels = devices.join('|');
+                        console.log("Setting droplist labels to:", audioDeviceDroplist.labels);
+                        audioDeviceDroplist.selectedIndex = 0;
+                    } else {
+                        audioDeviceDroplist.labels = "No devices found";
+                        console.log("No devices found.");
+                        audioDeviceDroplist.selectedIndex = -1;
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error("Error fetching audio devices: ", textStatus, errorThrown);
+                    audioDeviceDroplist.labels = "Error loading devices";
+                    audioDeviceDroplist.selectedIndex = -1;
+                });
+            };
 
             // Start audio classification
             startAudioButton.addEventListener('click', function() {
@@ -230,6 +250,8 @@ var init = function() {
                     startAudioButton.disabled = true;
                     stopAudioButton.disabled = false;
                     audioClassificationResult.label = "Starting classification...";
+                    confidenceScore.label = "Confidence: ";
+                    loadingSpinner.style.display = 'block';
 
                     $.get("/start-audio-classification?device=" + encodeURIComponent(selectedDevice), function(data) {
                         console.log(data);
@@ -243,7 +265,14 @@ var init = function() {
                         };
 
                         wsAudio.onmessage = function(event) {
-                            audioClassificationResult.label = "Class: " + event.data;
+                            try {
+                                const result = JSON.parse(event.data);
+                                audioClassificationResult.label = "Class: " + result.class;
+                                confidenceScore.label = "Confidence: " + (result.confidence * 100).toFixed(2) + "%";
+                            } catch (e) {
+                                audioClassificationResult.label = "Class: " + event.data;
+                                confidenceScore.label = "Confidence: N/A";
+                            }
                         };
 
                         wsAudio.onclose = function() {
@@ -251,6 +280,7 @@ var init = function() {
                             audioClassificationResult.label = "Classification stopped.";
                             startAudioButton.disabled = false;
                             stopAudioButton.disabled = true;
+                            loadingSpinner.style.display = 'none';
                         };
 
                         wsAudio.onerror = function(error) {
@@ -258,6 +288,7 @@ var init = function() {
                             audioClassificationResult.label = "Error in classification stream.";
                             startAudioButton.disabled = false;
                             stopAudioButton.disabled = true;
+                            loadingSpinner.style.display = 'none';
                         };
 
                     }).fail(function(jqXHR, textStatus, errorThrown) {
@@ -265,6 +296,7 @@ var init = function() {
                         audioClassificationResult.label = "Failed to start classification.";
                         startAudioButton.disabled = false;
                         stopAudioButton.disabled = true;
+                        loadingSpinner.style.display = 'none';
                     });
                 } else {
                     audioClassificationResult.label = "Please select a valid audio device.";
@@ -281,11 +313,13 @@ var init = function() {
                     audioClassificationResult.label = "Stopping classification...";
                     startAudioButton.disabled = false;
                     stopAudioButton.disabled = true;
+                    loadingSpinner.style.display = 'none';
                 }).fail(function(jqXHR, textStatus, errorThrown) {
                     console.error("Error stopping audio classification: ", textStatus, errorThrown);
                     audioClassificationResult.label = "Failed to stop classification.";
                     startAudioButton.disabled = false;
                     stopAudioButton.disabled = true;
+                    loadingSpinner.style.display = 'none';
                 });
             });
 
