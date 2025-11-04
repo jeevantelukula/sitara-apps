@@ -1,0 +1,13 @@
+{
+  "name": "webserver-oob",
+  "version": "1.0.0",
+  "description": "A simple webserver oob demo for am335x",
+  "main": "webserver.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "ws": "^8.14.2",
+    "node-pty": "^1.0.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

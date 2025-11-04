@@ -1,3 +1,6 @@
 [submodule "benchmark_demo/webserver_app/app/components"]
 	path = benchmark_demo/webserver_app/app/components
 	url = ssh://git@bitbucket.itg.ti.com/gc/ti-guicomposer-components.git
+[submodule "webserver-oob/webserver_app/app/components"]
+	path = webserver-oob/webserver_app/app/components
+	url = https://git.ti.com/git/gui-composer-components/ti-gc-components.git
