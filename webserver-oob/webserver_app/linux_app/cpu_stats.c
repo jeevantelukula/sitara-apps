@@ -134,12 +134,54 @@ uint32_t ti_get_cpu_load()
     for (int i = 0; i < TI_NUM_PROC_STAT_FIELDS; ++i)
         ti_glob_prev_stats[i] = cur_stats[i];
 
-    ti_cpu_utilization = 100 - ((busy_time * 100) / total_time);
+    ti_cpu_utilization = (busy_time * 100) / total_time;
 
     return ti_cpu_utilization;
 }
 
-int main() {
-    printf("%d\n", ti_get_cpu_load());
+int main(int argc, char *argv[]) {
+    // Basic mode: return just the current CPU load
+    if (argc == 1) {
+        printf("%d\n", ti_get_cpu_load());
+        return 0;
+    }
+
+    // Info mode: return CPU information in JSON format
+    if (argc > 1 && strcmp(argv[1], "info") == 0) {
+        FILE *cpu_info = fopen("/proc/cpuinfo", "r");
+        if (cpu_info == NULL) {
+            printf("{\"error\":\"Could not read CPU info\"}\n");
+            return 1;
+        }
+
+        char line[256];
+        char model_name[256] = "";
+        int cpu_cores = 0;
+        float cpu_mhz = 0.0;
+
+        while (fgets(line, sizeof(line), cpu_info)) {
+            if (strstr(line, "model name") != NULL) {
+                char *value = strchr(line, ':');
+                if (value) {
+                    sscanf(value + 1, "%255[^\n]", model_name);
+                    // Count cores
+                    cpu_cores++;
+                }
+            }
+
+            if (strstr(line, "cpu MHz") != NULL) {
+                char *value = strchr(line, ':');
+                if (value) {
+                    sscanf(value + 1, "%f", &cpu_mhz);
+                }
+            }
+        }
+        fclose(cpu_info);
+
+        printf("{\"model\":\"%s\",\"cores\":%d,\"frequency\":\"%.2f MHz\"}\n",
+               model_name, cpu_cores, cpu_mhz);
+        return 0;
+    }
+
     return 0;
 }

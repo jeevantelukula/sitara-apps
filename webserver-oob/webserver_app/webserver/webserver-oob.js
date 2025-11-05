@@ -75,7 +75,18 @@ app.get('/run-uname', (req, res) => {
 
 /* Handle CPU load requests */
 app.get('/cpu-load', (req, res) => {
-    exec('cpu_stats', (error, stdout, stderr) => {
+    exec('/usr/share/webserver-oob/webserver_app/linux_app/cpu_stats', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            return res.status(500).send(error);
+        }
+        res.send(stdout);
+    });
+});
+
+/* Handle CPU info requests */
+app.get('/cpu-info', (req, res) => {
+    exec('/usr/share/webserver-oob/webserver_app/linux_app/cpu_stats info', (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
             return res.status(500).send(error);
