@@ -2302,12 +2302,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <div class="stats-card">
                                 <h4>AVERAGE USAGE</h4>
                                 <div class="stats-value" id="avg_cpu_value">0.0%</div>
-                                <ti-widget-label id="avg_cpu_label" label="Average: 0.00%" visible="false"></ti-widget-label>
+                                <!-- Removed duplicate label -->
                             </div>
                             <div class="stats-card">
                                 <h4>MAXIMUM USAGE</h4>
                                 <div class="stats-value" id="max_cpu_value">0.0%</div>
-                                <ti-widget-label id="max_cpu_label" label="Max: 0.00%" visible="false"></ti-widget-label>
+                                <!-- Removed duplicate label -->
                             </div>
                         </div>
                         <div style="text-align: center; color: #666; font-style: italic;">
@@ -2358,8 +2358,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <script>
     document.addEventListener('WebComponentsReady', function() {
         var cpuUsageGauge = document.querySelector('#cpu_usage_gauge');
-        var avgCpuLabel = document.querySelector('#avg_cpu_label');
-        var maxCpuLabel = document.querySelector('#max_cpu_label');
         var cpuChartCanvas = document.querySelector('#cpu_chart');
 
         // Function to load static CPU info
@@ -2396,11 +2394,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         // Update CPU gauge with current usage
                         cpuUsageGauge.value = cpuData.current_cpu_usage;
 
-                        // Update average and max labels
-                        avgCpuLabel.label = "Average: " + cpuData.average_cpu_usage.toFixed(2) + "%";
-                        maxCpuLabel.label = "Max: " + cpuData.max_cpu_usage.toFixed(2) + "%";
-
-                        // Also update the styled elements
+                        // Update the styled elements
                         $('#avg_cpu_value').text(cpuData.average_cpu_usage.toFixed(1) + '%');
                         $('#max_cpu_value').text(cpuData.max_cpu_usage.toFixed(1) + '%');
 
@@ -2439,7 +2433,28 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                         x: {
                                             title: {
                                                 display: true,
-                                                text: 'Time (seconds ago)'
+                                                text: 'Time (minutes:seconds ago)'
+                                            },
+                                            ticks: {
+                                                // Custom function to format x-axis labels as minutes:seconds
+                                                callback: function(value, index, values) {
+                                                    // For a 5-minute history with 300 points
+                                                    // Calculate minutes and seconds for this tick
+                                                    const totalSeconds = Math.floor(value);
+                                                    const minutes = Math.floor(totalSeconds / 60);
+                                                    const seconds = totalSeconds % 60;
+
+                                                    // Only show labels at certain intervals to avoid overcrowding
+                                                    if (minutes === 0) {
+                                                        if (seconds % 15 === 0) { // Every 15 seconds in first minute
+                                                            return seconds + 's';
+                                                        }
+                                                    } else if (seconds === 0) { // On minute marks
+                                                        return minutes + 'm';
+                                                    }
+                                                    return '';
+                                                },
+                                                maxTicksLimit: 15
                                             }
                                         }
                                     },
@@ -2463,7 +2478,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 cpuChart.data.datasets[0].data.push(cpuUsage);
 
                                 // Remove oldest point if we have too many
-                                if (cpuChart.data.datasets[0].data.length > 60) {
+                                if (cpuChart.data.datasets[0].data.length > 300) { // Updated to 300 for 5 minutes
                                     cpuChart.data.datasets[0].data.shift();
                                     cpuChart.data.labels.shift();
                                 }
@@ -2499,7 +2514,31 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                             x: {
                                                 title: {
                                                     display: true,
-                                                    text: 'Time (seconds ago)'
+                                                    text: 'Time (minutes:seconds ago)'
+                                                },
+                                                ticks: {
+                                                    // Custom function to format x-axis labels as minutes:seconds
+                                                    callback: function(value, index, values) {
+                                                        // For a 5-minute history with 300 points
+                                                        // Calculate minutes and seconds for this tick
+                                                        const totalSeconds = Math.floor(value);
+                                                        const minutes = Math.floor(totalSeconds / 60);
+                                                        const seconds = totalSeconds % 60;
+
+                                                        // Only show labels at certain intervals to avoid overcrowding
+                                                        if (minutes === 0) {
+                                                            if (seconds % 15 === 0) { // Every 15 seconds in first minute
+                                                                return seconds + 's';
+                                                            }
+                                                        } else if (seconds === 0) { // On minute marks
+                                                            return minutes + 'm';
+                                                        } else if (seconds % 30 === 0) { // Every 30 seconds after first minute
+                                                            return minutes + 'm' + seconds + 's';
+                                                        }
+                                                        return '';
+                                                    },
+                                                    // Limit number of ticks to avoid overcrowding
+                                                    maxTicksLimit: 15
                                                 }
                                             }
                                         },

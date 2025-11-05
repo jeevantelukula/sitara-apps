@@ -37,138 +37,142 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>  /* For usleep() */
+#include <time.h>    /* For nanosleep() */
 
-#define HISTORY_SIZE 60
-#define STATE_FILE "/tmp/cpu_stats_history.dat"
+#define HISTORY_SIZE 300  /* Store 5 minutes of history (assuming 1 second per sample) */
+#define SAMPLE_COUNT 3  /* Number of samples to take for one measurement */
+#define SAMPLE_INTERVAL_MS 200  /* Time between samples in milliseconds */
 
+/* Structure to hold CPU time stats */
 typedef struct {
-    /* Values from previous CPU time measurement */
-    long long int prev_user, prev_nice, prev_system, prev_idle,
-                 prev_iowait, prev_irq, prev_softirq, prev_steal;
-    /* History for tracking CPU usage over time */
+    long long int user;
+    long long int nice;
+    long long int system;
+    long long int idle;
+    long long int iowait;
+    long long int irq;
+    long long int softirq;
+    long long int steal;
+    long long int total;
+    long long int idle_total;
+} CpuTimes;
+
+/* History tracking structure */
+typedef struct {
     double history[HISTORY_SIZE];
     int history_index;
     int history_count;
     double max_cpu_usage;
     double avg_cpu_usage;
-} CpuState;
+    time_t last_update;
+} CpuHistory;
 
-/* Function to read state from file */
-void read_state(CpuState *state) {
-    FILE *fp = fopen(STATE_FILE, "rb");
-    if (fp) {
-        fread(state, sizeof(CpuState), 1, fp);
-        fclose(fp);
-    } else {
-        /* Initialize state if file doesn't exist */
-        memset(state, 0, sizeof(CpuState));
-    }
+/* Global history state - safer than using file-based state which can be corrupted */
+static CpuHistory cpu_history = {{0}, 0, 0, 0.0, 0.0, 0};
+
+/* Sleep for specified milliseconds */
+void sleep_ms(int milliseconds) {
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+    nanosleep(&ts, NULL);
 }
 
-/* Function to write state to file */
-void write_state(const CpuState *state) {
-    FILE *fp = fopen(STATE_FILE, "wb");
-    if (fp) {
-        fwrite(state, sizeof(CpuState), 1, fp);
-        fclose(fp);
-    } else {
-        perror("Could not write state file");
-    }
-}
-
-/* Read CPU stats and calculate usage percentage */
-double get_cpu_usage() {
-    CpuState state;
-    read_state(&state);
-
-    long long int user, nice, system, idle, iowait, irq, softirq, steal;
-    long long int total, prev_total;
-    long long int idle_total, prev_idle_total;
-    double cpu_percentage;
-
-    /* Read current CPU times */
+/* Read CPU times from /proc/stat */
+int read_cpu_times(CpuTimes *times) {
     FILE *fp = fopen("/proc/stat", "r");
     if (fp == NULL) {
         perror("Error opening /proc/stat");
-        return -1;
+        return 0;
     }
 
     /* Read the first line with overall CPU stats */
-    fscanf(fp, "cpu %lld %lld %lld %lld %lld %lld %lld %lld",
-           &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal);
+    if (fscanf(fp, "cpu %lld %lld %lld %lld %lld %lld %lld %lld",
+               &times->user, &times->nice, &times->system, &times->idle,
+               &times->iowait, &times->irq, &times->softirq, &times->steal) != 8) {
+        fclose(fp);
+        return 0;
+    }
+
     fclose(fp);
 
     /* Calculate totals */
-    idle_total = idle + iowait;
-    prev_idle_total = state.prev_idle + state.prev_iowait;
+    times->idle_total = times->idle + times->iowait;
+    times->total = times->user + times->nice + times->system + times->idle +
+                   times->iowait + times->irq + times->softirq + times->steal;
 
-    total = user + nice + system + idle + iowait + irq + softirq + steal;
-    prev_total = state.prev_user + state.prev_nice + state.prev_system +
-                 state.prev_idle + state.prev_iowait + state.prev_irq +
-                 state.prev_softirq + state.prev_steal;
+    return 1;
+}
+
+/* Get CPU usage by taking multiple samples and averaging */
+double get_cpu_usage() {
+    CpuTimes first, last;
+    double cpu_percentage = 0.0;
+    time_t now = time(NULL);
+
+    /* Take first sample */
+    if (!read_cpu_times(&first)) {
+        return 0.0;
+    }
+
+    /* Wait for a short period */
+    sleep_ms(SAMPLE_INTERVAL_MS);
+
+    /* Take last sample */
+    if (!read_cpu_times(&last)) {
+        return 0.0;
+    }
 
     /* Calculate differences */
-    long long int total_diff = total - prev_total;
-    long long int idle_diff = idle_total - prev_idle_total;
+    long long int total_diff = last.total - first.total;
+    long long int idle_diff = last.idle_total - first.idle_total;
 
     /* Calculate CPU usage percentage */
     if (total_diff > 0) {
         cpu_percentage = ((total_diff - idle_diff) * 100.0) / total_diff;
     } else {
-        /* No time has passed or counter wrapped, use previous value */
+        /* No time has passed or counter wrapped, return 0 */
         cpu_percentage = 0.0;
-        for (int i = 0; i < state.history_count; i++) {
-            cpu_percentage += state.history[i];
-        }
-        cpu_percentage = (state.history_count > 0) ?
-                         (cpu_percentage / state.history_count) : 0.0;
     }
 
     /* Ensure value is in valid range */
     if (cpu_percentage < 0) cpu_percentage = 0.0;
     if (cpu_percentage > 100) cpu_percentage = 100.0;
 
-    /* Update history */
-    state.history[state.history_index] = cpu_percentage;
-    state.history_index = (state.history_index + 1) % HISTORY_SIZE;
-    if (state.history_count < HISTORY_SIZE) {
-        state.history_count++;
-    }
-
-    /* Calculate average and max */
-    double sum = 0;
-    double max_cpu = 0;
-    for (int i = 0; i < state.history_count; i++) {
-        sum += state.history[i];
-        if (state.history[i] > max_cpu) {
-            max_cpu = state.history[i];
+    /* Only update history if enough time has passed (avoid too frequent updates) */
+    if (now - cpu_history.last_update >= 1) {
+        /* Update history */
+        cpu_history.history[cpu_history.history_index] = cpu_percentage;
+        cpu_history.history_index = (cpu_history.history_index + 1) % HISTORY_SIZE;
+        if (cpu_history.history_count < HISTORY_SIZE) {
+            cpu_history.history_count++;
         }
+
+        /* Calculate average and max */
+        double sum = 0;
+        double max_cpu = 0;
+        for (int i = 0; i < cpu_history.history_count; i++) {
+            sum += cpu_history.history[i];
+            if (cpu_history.history[i] > max_cpu) {
+                max_cpu = cpu_history.history[i];
+            }
+        }
+        cpu_history.avg_cpu_usage = (cpu_history.history_count > 0) ?
+                               (sum / cpu_history.history_count) : 0.0;
+
+        if (max_cpu > cpu_history.max_cpu_usage) {
+            cpu_history.max_cpu_usage = max_cpu;
+        }
+
+        cpu_history.last_update = now;
     }
-    state.avg_cpu_usage = (state.history_count > 0) ?
-                        (sum / state.history_count) : 0.0;
-    state.max_cpu_usage = max_cpu;
-
-    /* Update state for next run */
-    state.prev_user = user;
-    state.prev_nice = nice;
-    state.prev_system = system;
-    state.prev_idle = idle;
-    state.prev_iowait = iowait;
-    state.prev_irq = irq;
-    state.prev_softirq = softirq;
-    state.prev_steal = steal;
-
-    /* Save state to file */
-    write_state(&state);
 
     return cpu_percentage;
 }
 
 int main(int argc, char *argv[]) {
-    // Get current CPU usage using our persistent state approach
+    // Get current CPU usage - now takes measurements with a short delay
     double current_cpu_usage = get_cpu_usage();
-    CpuState state;
-    read_state(&state); // Read current state to get history, avg, max
 
     // Basic mode: return just the current CPU load
     if (argc == 1) {
@@ -180,12 +184,12 @@ int main(int argc, char *argv[]) {
     if (argc > 1 && strcmp(argv[1], "enhanced") == 0) {
         // Construct JSON with current usage, average, max, and history
         printf("{\"current_cpu_usage\":%.1f,\"average_cpu_usage\":%.1f,\"max_cpu_usage\":%.1f,\"history\":[",
-               current_cpu_usage, state.avg_cpu_usage, state.max_cpu_usage);
+               current_cpu_usage, cpu_history.avg_cpu_usage, cpu_history.max_cpu_usage);
 
         // Add history array in chronological order
-        for (int i = 0; i < state.history_count; i++) {
-            int idx = (state.history_index - state.history_count + i + HISTORY_SIZE) % HISTORY_SIZE;
-            printf("%.1f%s", state.history[idx], (i < state.history_count - 1) ? "," : "");
+        for (int i = 0; i < cpu_history.history_count; i++) {
+            int idx = (cpu_history.history_index - cpu_history.history_count + i + HISTORY_SIZE) % HISTORY_SIZE;
+            printf("%.1f%s", cpu_history.history[idx], (i < cpu_history.history_count - 1) ? "," : "");
         }
 
         printf("]}\n");
