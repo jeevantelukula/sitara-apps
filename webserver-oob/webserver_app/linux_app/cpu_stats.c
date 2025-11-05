@@ -194,43 +194,43 @@ int main(int argc, char *argv[]) {
 
     // Info mode: return CPU information in JSON format
     if (argc > 1 && strcmp(argv[1], "info") == 0) {
-        FILE *cpu_info = fopen("/proc/cpuinfo", "r");
-        if (cpu_info == NULL) {
-            printf("{\"error\":\"Could not read CPU info\"}\n");
+        // Use lscpu command instead of reading /proc/cpuinfo directly
+        FILE *lscpu_output = popen("lscpu", "r");
+        if (lscpu_output == NULL) {
+            printf("{\"error\":\"Could not run lscpu command\"}\n");
             return 1;
         }
 
         char line[256];
-        char model_name[256] = "";
-        int cpu_cores = 0;
-        float cpu_mhz = 0.0;
+        char architecture[64] = "Unknown";
+        char vendor_id[64] = "Unknown";
+        char model_name[256] = "Unknown";
 
-        while (fgets(line, sizeof(line), cpu_info)) {
-            if (strstr(line, "model name") != NULL || strstr(line, "Processor") != NULL) {
-                char *value = strchr(line, ':');
-                if (value) {
-                    sscanf(value + 1, "%255[^\n]", model_name);
-                    // Count cores
-                    cpu_cores++;
-                }
+        while (fgets(line, sizeof(line), lscpu_output)) {
+            // Extract Architecture
+            if (strncmp(line, "Architecture:", 13) == 0) {
+                char *value = line + 13;
+                while (*value == ' ' || *value == '\t') value++; // Skip whitespace
+                sscanf(value, "%63[^\n]", architecture);
             }
-
-            if (strstr(line, "cpu MHz") != NULL || strstr(line, "BogoMIPS") != NULL) {
-                char *value = strchr(line, ':');
-                if (value) {
-                    sscanf(value + 1, "%f", &cpu_mhz);
-                }
+            // Extract Vendor ID
+            else if (strncmp(line, "Vendor ID:", 10) == 0) {
+                char *value = line + 10;
+                while (*value == ' ' || *value == '\t') value++; // Skip whitespace
+                sscanf(value, "%63[^\n]", vendor_id);
+            }
+            // Extract Model name
+            else if (strncmp(line, "Model name:", 11) == 0) {
+                char *value = line + 11;
+                while (*value == ' ' || *value == '\t') value++; // Skip whitespace
+                sscanf(value, "%255[^\n]", model_name);
             }
         }
-        fclose(cpu_info);
+        pclose(lscpu_output);
 
-        // If no model name was found, provide a default for ARM systems
-        if (strlen(model_name) == 0) {
-            strcpy(model_name, "ARM Processor");
-        }
-
-        printf("{\"model\":\"%s\",\"cores\":%d,\"frequency\":\"%.2f MHz\",\"current_usage\":%.1f}\n",
-               model_name, (cpu_cores > 0 ? cpu_cores : 1), cpu_mhz, current_cpu_usage);
+        // Return the CPU information in JSON format
+        printf("{\"architecture\":\"%s\",\"vendor\":\"%s\",\"model\":\"%s\",\"current_usage\":%.1f}\n",
+               architecture, vendor_id, model_name, current_cpu_usage);
         return 0;
     }
 
