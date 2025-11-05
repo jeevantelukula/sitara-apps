@@ -36,113 +36,159 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>  /* For usleep() */
 
-/* The number of fields in /proc/stat entries. Currently, as of kernel v6.12, it is 10. */
-#define TI_NUM_PROC_STAT_FIELDS 10
-/* The index (from 0) to field that shows idle stat. */
-#define TI_PROC_STAT_IDLE_FIELD 3
-/* The index (from 0) to field that shows IO-wait stat. */
-#define TI_PROC_STAT_IOWAIT_FIELD 4
+#define HISTORY_SIZE 60
+#define STATE_FILE "/tmp/cpu_stats_history.dat"
 
-/* Variable to indicate that this is the first time a CPU load is being calculated. */
-static uint8_t ti_is_first_time = 1;
+typedef struct {
+    /* Values from previous CPU time measurement */
+    long long int prev_user, prev_nice, prev_system, prev_idle,
+                 prev_iowait, prev_irq, prev_softirq, prev_steal;
+    /* History for tracking CPU usage over time */
+    double history[HISTORY_SIZE];
+    int history_index;
+    int history_count;
+    double max_cpu_usage;
+    double avg_cpu_usage;
+} CpuState;
 
-/* Variable to hold cpu_util from last computation. This is useful when /proc/stat fails to open,
- * leaving the function with no value to return. In such cases, the previous utilization can be
- * returned.
- */
-static uint32_t ti_cpu_utilization = 0;
-
-/* Array to hold stats from previous function call. Initialized to 0 since there have been 0 calls
- * before the 1st one.
- */
-uint32_t ti_glob_prev_stats[TI_NUM_PROC_STAT_FIELDS] = {0};
-
-uint8_t ti_read_proc_stats(uint32_t stat_values[], uint32_t len)
-{
-    FILE *f = fopen("/proc/stat", "r");
-    if (f == NULL) {
-        printf("fopen FAIL: %s\n", strerror(errno));
-        return 0;
+/* Function to read state from file */
+void read_state(CpuState *state) {
+    FILE *fp = fopen(STATE_FILE, "rb");
+    if (fp) {
+        fread(state, sizeof(CpuState), 1, fp);
+        fclose(fp);
+    } else {
+        /* Initialize state if file doesn't exist */
+        memset(state, 0, sizeof(CpuState));
     }
-
-    char str[256];
-    char delimiter[] = " ";
-
-    fgets(str, 256, f);
-    fclose(f);
-
-    /* Trim this string at \n */
-    int j;
-    for (j = 0; str[j] != '\n' && str[j] != '\0'; ++j)
-        ;
-    str[j] = '\0';
-    
-    char *token = strtok(str, delimiter);
-    for (int i = 0; i < len; ++i)
-        if ((token = strtok(NULL, delimiter)))
-            stat_values[i] = atoi(token);
-    return 1;
 }
 
-uint32_t ti_get_cpu_load()
-{
-    /**
-     * Implementation:
-     * ----------------
-     *
-     * /proc/stat aggregates information on the amount of time the CPU spent on different types of
-     * activities since boot. The "types" here are "user processes", "niced processes" etc.
-     * The format of output is:
-     * 
-     * cpu <user> <nice> ...
-     *
-     * The code below reads this, then finds the difference from the values obtained in the previous
-     * read. It sums all the differences to determine the total_time taken, and finds busy_time by
-     * subtracting the idle and io-wait time's from total_time.
-     * It returns 100 - (percentage of busy_time), since LVGL expects idle %, instead of
-     * utilization %.
-     */
+/* Function to write state to file */
+void write_state(const CpuState *state) {
+    FILE *fp = fopen(STATE_FILE, "wb");
+    if (fp) {
+        fwrite(state, sizeof(CpuState), 1, fp);
+        fclose(fp);
+    } else {
+        perror("Could not write state file");
+    }
+}
 
-    if (ti_is_first_time) {
-        /* if there was a problem in opening file, return previous utilization */
-        if(!ti_read_proc_stats(ti_glob_prev_stats, TI_NUM_PROC_STAT_FIELDS))
-            return ti_cpu_utilization;
-        ti_is_first_time = 0;
-        return 0;
+/* Read CPU stats and calculate usage percentage */
+double get_cpu_usage() {
+    CpuState state;
+    read_state(&state);
+
+    long long int user, nice, system, idle, iowait, irq, softirq, steal;
+    long long int total, prev_total;
+    long long int idle_total, prev_idle_total;
+    double cpu_percentage;
+
+    /* Read current CPU times */
+    FILE *fp = fopen("/proc/stat", "r");
+    if (fp == NULL) {
+        perror("Error opening /proc/stat");
+        return -1;
     }
 
-    uint32_t cur_stats[TI_NUM_PROC_STAT_FIELDS] = {0};
-    if(!ti_read_proc_stats(cur_stats, TI_NUM_PROC_STAT_FIELDS)) {
-        return ti_cpu_utilization;
+    /* Read the first line with overall CPU stats */
+    fscanf(fp, "cpu %lld %lld %lld %lld %lld %lld %lld %lld",
+           &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal);
+    fclose(fp);
+
+    /* Calculate totals */
+    idle_total = idle + iowait;
+    prev_idle_total = state.prev_idle + state.prev_iowait;
+
+    total = user + nice + system + idle + iowait + irq + softirq + steal;
+    prev_total = state.prev_user + state.prev_nice + state.prev_system +
+                 state.prev_idle + state.prev_iowait + state.prev_irq +
+                 state.prev_softirq + state.prev_steal;
+
+    /* Calculate differences */
+    long long int total_diff = total - prev_total;
+    long long int idle_diff = idle_total - prev_idle_total;
+
+    /* Calculate CPU usage percentage */
+    if (total_diff > 0) {
+        cpu_percentage = ((total_diff - idle_diff) * 100.0) / total_diff;
+    } else {
+        /* No time has passed or counter wrapped, use previous value */
+        cpu_percentage = 0.0;
+        for (int i = 0; i < state.history_count; i++) {
+            cpu_percentage += state.history[i];
+        }
+        cpu_percentage = (state.history_count > 0) ?
+                         (cpu_percentage / state.history_count) : 0.0;
     }
 
-    uint32_t total_time = 0;
+    /* Ensure value is in valid range */
+    if (cpu_percentage < 0) cpu_percentage = 0.0;
+    if (cpu_percentage > 100) cpu_percentage = 100.0;
 
-    uint32_t diff_stats[TI_NUM_PROC_STAT_FIELDS] = {0};
-    for (int i = 0; i < TI_NUM_PROC_STAT_FIELDS; ++i) {
-        diff_stats[i] = cur_stats[i] - ti_glob_prev_stats[i];
-        total_time += diff_stats[i];
+    /* Update history */
+    state.history[state.history_index] = cpu_percentage;
+    state.history_index = (state.history_index + 1) % HISTORY_SIZE;
+    if (state.history_count < HISTORY_SIZE) {
+        state.history_count++;
     }
 
-    if (total_time == 0) {
-        return ti_cpu_utilization;
+    /* Calculate average and max */
+    double sum = 0;
+    double max_cpu = 0;
+    for (int i = 0; i < state.history_count; i++) {
+        sum += state.history[i];
+        if (state.history[i] > max_cpu) {
+            max_cpu = state.history[i];
+        }
     }
+    state.avg_cpu_usage = (state.history_count > 0) ?
+                        (sum / state.history_count) : 0.0;
+    state.max_cpu_usage = max_cpu;
 
-    uint32_t busy_time = total_time - (diff_stats[TI_PROC_STAT_IDLE_FIELD] + diff_stats[TI_PROC_STAT_IOWAIT_FIELD]);
+    /* Update state for next run */
+    state.prev_user = user;
+    state.prev_nice = nice;
+    state.prev_system = system;
+    state.prev_idle = idle;
+    state.prev_iowait = iowait;
+    state.prev_irq = irq;
+    state.prev_softirq = softirq;
+    state.prev_steal = steal;
 
-    for (int i = 0; i < TI_NUM_PROC_STAT_FIELDS; ++i)
-        ti_glob_prev_stats[i] = cur_stats[i];
+    /* Save state to file */
+    write_state(&state);
 
-    ti_cpu_utilization = (busy_time * 100) / total_time;
-
-    return ti_cpu_utilization;
+    return cpu_percentage;
 }
 
 int main(int argc, char *argv[]) {
+    // Get current CPU usage using our persistent state approach
+    double current_cpu_usage = get_cpu_usage();
+    CpuState state;
+    read_state(&state); // Read current state to get history, avg, max
+
     // Basic mode: return just the current CPU load
     if (argc == 1) {
-        printf("%d\n", ti_get_cpu_load());
+        printf("%.0f\n", current_cpu_usage);
+        return 0;
+    }
+
+    // Enhanced mode: return more detailed CPU stats in JSON format
+    if (argc > 1 && strcmp(argv[1], "enhanced") == 0) {
+        // Construct JSON with current usage, average, max, and history
+        printf("{\"current_cpu_usage\":%.1f,\"average_cpu_usage\":%.1f,\"max_cpu_usage\":%.1f,\"history\":[",
+               current_cpu_usage, state.avg_cpu_usage, state.max_cpu_usage);
+
+        // Add history array in chronological order
+        for (int i = 0; i < state.history_count; i++) {
+            int idx = (state.history_index - state.history_count + i + HISTORY_SIZE) % HISTORY_SIZE;
+            printf("%.1f%s", state.history[idx], (i < state.history_count - 1) ? "," : "");
+        }
+
+        printf("]}\n");
         return 0;
     }
 
@@ -160,7 +206,7 @@ int main(int argc, char *argv[]) {
         float cpu_mhz = 0.0;
 
         while (fgets(line, sizeof(line), cpu_info)) {
-            if (strstr(line, "model name") != NULL) {
+            if (strstr(line, "model name") != NULL || strstr(line, "Processor") != NULL) {
                 char *value = strchr(line, ':');
                 if (value) {
                     sscanf(value + 1, "%255[^\n]", model_name);
@@ -169,7 +215,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            if (strstr(line, "cpu MHz") != NULL) {
+            if (strstr(line, "cpu MHz") != NULL || strstr(line, "BogoMIPS") != NULL) {
                 char *value = strchr(line, ':');
                 if (value) {
                     sscanf(value + 1, "%f", &cpu_mhz);
@@ -178,8 +224,13 @@ int main(int argc, char *argv[]) {
         }
         fclose(cpu_info);
 
-        printf("{\"model\":\"%s\",\"cores\":%d,\"frequency\":\"%.2f MHz\"}\n",
-               model_name, cpu_cores, cpu_mhz);
+        // If no model name was found, provide a default for ARM systems
+        if (strlen(model_name) == 0) {
+            strcpy(model_name, "ARM Processor");
+        }
+
+        printf("{\"model\":\"%s\",\"cores\":%d,\"frequency\":\"%.2f MHz\",\"current_usage\":%.1f}\n",
+               model_name, (cpu_cores > 0 ? cpu_cores : 1), cpu_mhz, current_cpu_usage);
         return 0;
     }
 
