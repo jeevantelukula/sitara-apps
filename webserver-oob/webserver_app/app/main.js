@@ -203,116 +203,171 @@ var init = function() {
                 });
             }
 
+            // Audio Classification Logic
             const audioClassificationVtab = templateObj.$.ti_widget_vtab_audio_classification;
-            const audioDeviceDroplist = templateObj.$.audio_device_droplist;
             const startAudioButton = templateObj.$.start_audio_button;
             const stopAudioButton = templateObj.$.stop_audio_button;
             const audioClassificationResult = templateObj.$.audio_classification_result;
             const confidenceScore = templateObj.$.confidence_score;
-            const loadingSpinner = templateObj.$.loading_spinner;
+            const loadingSpinner = document.getElementById('loading_spinner');
+            const deviceListContainer = document.getElementById('device_list_container');
 
-            let wsAudio;
+            let selectedDevice = null; // Will store the ALSA device ID (e.g., plughw:1,0)
+            let selectedDeviceName = null; // Will store the display name
+            let audioDevicesData = []; // Will store the full device list with names and IDs
 
-            console.log("Audio classification components initialized");
-            console.log("audioClassificationVtab ID:", audioClassificationVtab ? audioClassificationVtab.id : "NOT FOUND");
-            console.log("audioDeviceDroplist:", audioDeviceDroplist ? "FOUND" : "NOT FOUND");
+            console.log("[Audio] Audio classification components initialized");
 
             // Fetch devices when the audio classification tab is selected
             templateObj.$.ti_widget_vtabcontainer.addEventListener('selected-item-changed', function(event) {
-                console.log("selected-item-changed event fired. Detail value:", event.detail.value, "Audio Classification Vtab ID:", audioClassificationVtab.id);
                 if (event.detail.value === audioClassificationVtab.id) {
-                    console.log("Audio Classification tab selected, fetching devices...");
-                    fetchAudioDevices();
+                    console.log("[Audio] Audio Classification tab selected, fetching devices...");
+                    fetchAndDisplayAudioDevices();
                 }
             });
 
             // Also fetch devices immediately if audio classification tab is already selected
-            if (templateObj.$.ti_widget_vtabcontainer.selectedItem === audioClassificationVtab ||
-                templateObj.$.ti_widget_vtabcontainer.selectedItem?.id === audioClassificationVtab.id) {
-                console.log("Audio Classification tab is already selected on page load, fetching devices...");
-                setTimeout(function() {
-                    fetchAudioDevices();
-                }, 500);
+            setTimeout(function() {
+                if (templateObj.$.ti_widget_vtabcontainer.selectedItem?.id === audioClassificationVtab.id) {
+                    console.log("[Audio] Audio Classification tab is already selected on page load");
+                    fetchAndDisplayAudioDevices();
+                }
+            }, 500);
+
+            // Function to fetch and display audio devices
+            function fetchAndDisplayAudioDevices() {
+                console.log("[Audio] fetchAndDisplayAudioDevices called");
+
+                // Show loading state
+                deviceListContainer.innerHTML = '<div class="loading-devices">Loading audio capture devices...</div>';
+                startAudioButton.disabled = true;
+                selectedDevice = null;
+                selectedDeviceName = null;
+
+                console.log("[Audio] Making GET request to /audio-devices");
+                $.ajax({
+                    url: "/audio-devices",
+                    method: "GET",
+                    dataType: "text",
+                    success: function(data) {
+                        console.log("[Audio] SUCCESS: Received response from /audio-devices");
+                        console.log("[Audio] Raw data:", data);
+
+                        const lines = data.trim().split('\n').filter(d => d.length > 0);
+                        console.log("[Audio] Parsed lines:", lines);
+                        console.log("[Audio] Number of lines:", lines.length);
+
+                        // Check for error messages
+                        if (lines.length === 0 ||
+                            lines[0].toLowerCase().includes('error') ||
+                            lines[0].toLowerCase().includes('no audio') ||
+                            lines[0].toLowerCase().includes('not found')) {
+
+                            console.warn("[Audio] No devices or error detected");
+                            deviceListContainer.innerHTML = '<div class="no-devices-message">No audio capture devices found. Please connect a microphone.</div>';
+                            audioClassificationResult.label = "No audio devices available";
+                            return;
+                        }
+
+                        // Parse device names and prepare to fetch their ALSA IDs
+                        audioDevicesData = lines.map(name => ({ name: name.trim(), alsaId: null }));
+                        console.log("[Audio] Device names:", audioDevicesData.map(d => d.name));
+
+                        // Now fetch the full device info with ALSA IDs
+                        fetchDeviceDetails();
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("[Audio] FAILED: Error fetching audio devices");
+                        console.error("[Audio] Status:", textStatus);
+                        console.error("[Audio] Error:", errorThrown);
+                        console.error("[Audio] Response:", jqXHR.responseText);
+
+                        deviceListContainer.innerHTML = '<div class="no-devices-message">Error loading devices. Check console for details.</div>';
+                        audioClassificationResult.label = "Failed to load devices";
+                    }
+                });
             }
 
-            // Function to fetch audio devices
-            const fetchAudioDevices = function() {
-                console.log("fetchAudioDevices called");
+            // Function to fetch device details (ALSA IDs)
+            function fetchDeviceDetails() {
+                // The audio_utils binary outputs device names only
+                // We need to map them to ALSA IDs (plughw:X,Y)
+                // Based on audio_utils.c, devices are mapped to plughw:card,0
+                // We'll need to parse this from the audio_utils or query the backend
 
-                // Show loading indicator in dropdown
-                audioDeviceDroplist.labels = "Loading devices...";
-                audioDeviceDroplist.selectedIndex = -1;
+                // For now, let's request the backend to provide full details
+                // We'll modify the backend to return JSON with both name and ALSA ID
+                displayDeviceList();
+            }
 
-                console.log("Making GET request to /audio-devices");
-                $.get("/audio-devices", function(data) {
-                    console.log("SUCCESS: Received response from /audio-devices");
-                    console.log("Raw data from /audio-devices:", data);
-                    console.log("Data type:", typeof data);
-                    console.log("Data length:", data ? data.length : 0);
-                    const devices = data.trim().split('\n').filter(d => d.length > 0);
-                    console.log("Parsed devices array:", devices);
-                    console.log("Number of devices found:", devices.length);
+            // Function to display device list with select buttons
+            function displayDeviceList() {
+                console.log("[Audio] Displaying device list");
 
-                    if (devices.length > 0) {
-                        // Check if the first entry contains an error message
-                        if (devices[0].toLowerCase().includes('error') ||
-                            devices[0].toLowerCase().includes('no audio') ||
-                            devices[0].toLowerCase().includes('not found')) {
+                if (audioDevicesData.length === 0) {
+                    deviceListContainer.innerHTML = '<div class="no-devices-message">No audio capture devices found.</div>';
+                    return;
+                }
 
-                            // Error message in the response
-                            console.warn("Device error detected:", devices[0]);
-                            audioDeviceDroplist.labels = devices[0];
-                            audioDeviceDroplist.selectedIndex = -1;
-
-                            // Disable start button
-                            startAudioButton.disabled = true;
-
-                            // Update status message
-                            audioClassificationResult.label = "No audio devices available";
-                            confidenceScore.label = "Confidence: N/A";
-                        } else {
-                            // Valid devices found
-                            audioDeviceDroplist.labels = devices.join('|');
-                            console.log("Setting droplist labels to:", audioDeviceDroplist.labels);
-                            audioDeviceDroplist.selectedIndex = 0;
-
-                            // Enable start button
-                            startAudioButton.disabled = false;
-
-                            // Update status message
-                            audioClassificationResult.label = "Select a device and press Start";
-                            confidenceScore.label = "Confidence: N/A";
-                        }
-                    } else {
-                        // No devices returned
-                        audioDeviceDroplist.labels = "No devices found";
-                        console.log("No devices found.");
-                        audioDeviceDroplist.selectedIndex = -1;
-
-                        // Disable start button
-                        startAudioButton.disabled = true;
-
-                        // Update status message
-                        audioClassificationResult.label = "No audio devices available";
-                        confidenceScore.label = "Confidence: N/A";
-                    }
-                }).fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error("FAILED: Error fetching audio devices");
-                    console.error("Status:", textStatus);
-                    console.error("Error:", errorThrown);
-                    console.error("Response status:", jqXHR.status);
-                    console.error("Response text:", jqXHR.responseText);
-                    audioDeviceDroplist.labels = "Error loading devices";
-                    audioDeviceDroplist.selectedIndex = -1;
-
-                    // Disable start button
-                    startAudioButton.disabled = true;
-
-                    // Update status message
-                    audioClassificationResult.label = "Failed to load audio devices - check console for details";
-                    confidenceScore.label = "Confidence: N/A";
+                let html = '';
+                audioDevicesData.forEach((device, index) => {
+                    // Since audio_utils maps devices to plughw:card,0, we'll use the device name directly
+                    // The backend will handle the mapping
+                    html += `
+                        <div class="device-item" data-device-index="${index}">
+                            <div class="device-info">
+                                <div class="device-name">${device.name}</div>
+                                <div class="device-id">Audio Input Device ${index + 1}</div>
+                            </div>
+                            <button class="device-select-btn" data-device-index="${index}" data-device-name="${device.name}">
+                                Select
+                            </button>
+                        </div>
+                    `;
                 });
-            };
+
+                deviceListContainer.innerHTML = html;
+
+                // Add click handlers to select buttons
+                const selectButtons = deviceListContainer.querySelectorAll('.device-select-btn');
+                selectButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const deviceIndex = parseInt(this.getAttribute('data-device-index'));
+                        const deviceName = this.getAttribute('data-device-name');
+                        selectAudioDevice(deviceIndex, deviceName);
+                    });
+                });
+
+                audioClassificationResult.label = "Select a device above and click 'Start Classification'";
+            }
+
+            // Function to select a device
+            function selectAudioDevice(index, deviceName) {
+                console.log("[Audio] Device selected:", deviceName, "at index", index);
+
+                selectedDevice = deviceName; // We'll pass the name to the backend
+                selectedDeviceName = deviceName;
+
+                // Update UI to show selection
+                const allItems = deviceListContainer.querySelectorAll('.device-item');
+                const allButtons = deviceListContainer.querySelectorAll('.device-select-btn');
+
+                allItems.forEach(item => item.classList.remove('selected'));
+                allButtons.forEach(btn => {
+                    btn.classList.remove('selected');
+                    btn.textContent = 'Select';
+                });
+
+                allItems[index].classList.add('selected');
+                allButtons[index].classList.add('selected');
+                allButtons[index].textContent = 'Selected ✓';
+
+                // Enable start button
+                startAudioButton.disabled = false;
+                audioClassificationResult.label = `Ready to classify audio from: ${deviceName}`;
+
+                console.log("[Audio] Device ready for classification:", selectedDevice);
+            }
 
             // WebSocket for audio classification results
             let wsAudio = null;
@@ -396,12 +451,15 @@ var init = function() {
 
             // Function to update UI state
             function updateUIState(state) {
+                console.log("[Audio] UI state changing to:", state);
                 switch(state) {
                     case 'starting':
                         isClassifying = true;
                         startAudioButton.disabled = true;
                         stopAudioButton.disabled = false;
-                        audioDeviceDroplist.disabled = true;
+                        // Disable device selection buttons
+                        const selectButtons = deviceListContainer.querySelectorAll('.device-select-btn');
+                        selectButtons.forEach(btn => btn.disabled = true);
                         audioClassificationResult.label = "Starting classification...";
                         confidenceScore.label = "Confidence: ";
                         loadingSpinner.style.display = 'block';
@@ -411,7 +469,6 @@ var init = function() {
                         isClassifying = true;
                         startAudioButton.disabled = true;
                         stopAudioButton.disabled = false;
-                        audioDeviceDroplist.disabled = true;
                         audioClassificationResult.label = "Listening for audio...";
                         loadingSpinner.style.display = 'none';
                         break;
@@ -425,21 +482,25 @@ var init = function() {
 
                     case 'stopped':
                         isClassifying = false;
-                        startAudioButton.disabled = false;
+                        startAudioButton.disabled = selectedDevice ? false : true; // Only enable if device is selected
                         stopAudioButton.disabled = true;
-                        audioDeviceDroplist.disabled = false;
+                        // Re-enable device selection buttons
+                        const selectBtns = deviceListContainer.querySelectorAll('.device-select-btn');
+                        selectBtns.forEach(btn => btn.disabled = false);
                         loadingSpinner.style.display = 'none';
                         if (audioClassificationResult.label === "Starting classification..." ||
                             audioClassificationResult.label === "Stopping classification...") {
-                            audioClassificationResult.label = "Classification stopped.";
+                            audioClassificationResult.label = "Classification stopped. Select a device to start again.";
                         }
                         break;
 
                     case 'error':
                         isClassifying = false;
-                        startAudioButton.disabled = false;
+                        startAudioButton.disabled = selectedDevice ? false : true;
                         stopAudioButton.disabled = true;
-                        audioDeviceDroplist.disabled = false;
+                        // Re-enable device selection buttons
+                        const selectBtnsError = deviceListContainer.querySelectorAll('.device-select-btn');
+                        selectBtnsError.forEach(btn => btn.disabled = false);
                         loadingSpinner.style.display = 'none';
                         break;
                 }
@@ -447,54 +508,58 @@ var init = function() {
 
             // Start audio classification
             startAudioButton.addEventListener('click', function() {
-                const selectedDevice = audioDeviceDroplist.selectedText;
-                if (selectedDevice && selectedDevice !== "No devices found" && selectedDevice !== "Error loading devices") {
-                    // Update UI to starting state
-                    updateUIState('starting');
+                if (!selectedDevice) {
+                    audioClassificationResult.label = "Please select an audio device first";
+                    return;
+                }
 
-                    // Set up WebSocket first to ensure we catch early messages
-                    setupAudioWebSocket();
+                console.log("[Audio] Start button clicked, selected device:", selectedDevice);
 
-                    // Send request to start classification
-                    $.ajax({
-                        url: "/start-audio-classification?device=" + encodeURIComponent(selectedDevice),
-                        method: "GET",
-                        dataType: "json",
-                        timeout: 15000, // 15 seconds timeout
-                        success: function(data) {
-                            console.log("Start classification response:", data);
-                            if (data.status === 'started') {
-                                updateUIState('started');
-                                // Keep WebSocket open for results
-                            } else {
-                                audioClassificationResult.label = "Classification process completed.";
-                                updateUIState('stopped');
-                                if (wsAudio) {
-                                    wsAudio.close();
-                                    wsAudio = null;
-                                }
-                            }
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            console.error("Error starting audio classification:", jqXHR.responseText);
-                            let errorMsg;
-                            try {
-                                const response = JSON.parse(jqXHR.responseText);
-                                errorMsg = response.error || "Failed to start classification";
-                            } catch (e) {
-                                errorMsg = "Failed to start classification: " + textStatus;
-                            }
-                            audioClassificationResult.label = "Error: " + errorMsg;
-                            updateUIState('error');
+                // Update UI to starting state
+                updateUIState('starting');
+
+                // Set up WebSocket first to ensure we catch early messages
+                setupAudioWebSocket();
+
+                // Send request to start classification with selected device
+                console.log("[Audio] Sending start request with device:", selectedDevice);
+                $.ajax({
+                    url: "/start-audio-classification?device=" + encodeURIComponent(selectedDevice),
+                    method: "GET",
+                    dataType: "json",
+                    timeout: 15000, // 15 seconds timeout
+                    success: function(data) {
+                        console.log("[Audio] Start classification response:", data);
+                        if (data.status === 'started') {
+                            updateUIState('started');
+                            audioClassificationResult.label = `Classifying audio from: ${selectedDeviceName}`;
+                            // Keep WebSocket open for results
+                        } else {
+                            audioClassificationResult.label = "Classification process completed.";
+                            updateUIState('stopped');
                             if (wsAudio) {
                                 wsAudio.close();
                                 wsAudio = null;
                             }
                         }
-                    });
-                } else {
-                    audioClassificationResult.label = "Please select a valid audio device.";
-                }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("[Audio] Error starting audio classification:", jqXHR.responseText);
+                        let errorMsg;
+                        try {
+                            const response = JSON.parse(jqXHR.responseText);
+                            errorMsg = response.error || "Failed to start classification";
+                        } catch (e) {
+                            errorMsg = "Failed to start classification: " + textStatus;
+                        }
+                        audioClassificationResult.label = "Error: " + errorMsg;
+                        updateUIState('error');
+                        if (wsAudio) {
+                            wsAudio.close();
+                            wsAudio = null;
+                        }
+                    }
+                });
             });
 
             // Stop audio classification

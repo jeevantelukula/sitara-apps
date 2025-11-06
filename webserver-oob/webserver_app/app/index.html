@@ -2145,16 +2145,17 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding-top: 30px;
+            padding: 30px 20px;
             background-color: #f9f9f9;
             position: relative;
             font-family: 'Roboto', Arial, sans-serif;
+            overflow-y: auto;
         }
 
         .audio-title-section {
             width: 100%;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         .audio-title-section h1 {
@@ -2170,47 +2171,130 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             margin-top: 10px;
         }
 
-        .audio-device-section {
-            width: 80%;
-            max-width: 600px;
-            margin-bottom: 30px;
+        .audio-content-section {
+            width: 90%;
+            max-width: 800px;
         }
 
         .device-selection-container {
             background-color: white;
             border-radius: 12px;
-            padding: 20px;
+            padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             margin-bottom: 30px;
         }
 
-        .device-label {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 15px;
-            color: #333;
+        .device-selection-container h3 {
+            color: #148C9C;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #148C9C;
+            padding-bottom: 10px;
+            font-size: 20px;
         }
 
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+        #device_list_container {
             margin-top: 20px;
         }
 
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .device-item:hover {
+            background-color: #e8f4f5;
+            border-color: #148C9C;
+        }
+
+        .device-item.selected {
+            background-color: #d4eef1;
+            border-color: #148C9C;
+            border-width: 3px;
+        }
+
+        .device-info {
+            flex: 1;
+        }
+
+        .device-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .device-id {
+            font-size: 13px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .device-select-btn {
+            background-color: #148C9C;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+
+        .device-select-btn:hover {
+            background-color: #0f6b77;
+        }
+
+        .device-select-btn.selected {
+            background-color: #28a745;
+        }
+
+        .no-devices-message {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .loading-devices {
+            text-align: center;
+            padding: 30px;
+            color: #148C9C;
+            font-size: 16px;
+        }
+
+        .control-buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
         .results-container {
-            width: 100%;
             background-color: white;
             border-radius: 12px;
             padding: 30px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             text-align: center;
             min-height: 150px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
+        }
+
+        .results-container h3 {
+            color: #148C9C;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #148C9C;
+            padding-bottom: 10px;
         }
 
         .spinner {
@@ -2220,25 +2304,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        .audio-icon {
-            margin-bottom: 20px;
+            margin: 20px auto;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        /* Match CPU Performance styles for consistency */
-        .audio-classification-container h3 {
-            color: #148C9C;
-            margin-top: 0;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #148C9C;
-            padding-bottom: 5px;
         }
     </style>
 
@@ -2248,23 +2319,23 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <p>Real-time audio analysis using machine learning</p>
         </div>
 
-        <div class="audio-device-section">
+        <div class="audio-content-section">
             <div class="device-selection-container">
-                <h3>Audio Device Selection</h3>
-                <div class="device-label">Select Audio Input Device:</div>
-                <ti-widget-droplist id="audio_device_droplist" labels="Loading devices..." selected-index="0" width="100%"></ti-widget-droplist>
+                <h3>Step 1: Select Audio Input Device</h3>
+                <div id="device_list_container">
+                    <div class="loading-devices">Loading audio capture devices...</div>
+                </div>
 
-                <div class="button-container">
-                    <ti-widget-button id="start_audio_button" label="Start" raised background-color="#148C9C" color="white" width="140px" height="45px"></ti-widget-button>
-                    <ti-widget-button id="stop_audio_button" label="Stop" raised background-color="#e74c3c" color="white" width="140px" height="45px" disabled></ti-widget-button>
+                <div class="control-buttons-container">
+                    <ti-widget-button id="start_audio_button" label="Start Classification" raised background-color="#148C9C" color="white" width="180px" height="45px" disabled></ti-widget-button>
+                    <ti-widget-button id="stop_audio_button" label="Stop Classification" raised background-color="#e74c3c" color="white" width="180px" height="45px" disabled></ti-widget-button>
                 </div>
             </div>
 
             <div class="results-container">
-                <h3>Classification Results</h3>
-                <ti-widget-image src="images/audio_placeholder.png" width="80" height="80" class="audio-icon"></ti-widget-image>
+                <h3>Step 2: Classification Results</h3>
                 <div id="loading_spinner" class="spinner" style="display: none;"></div>
-                <ti-widget-label id="audio_classification_result" label="Connect your microphone and press Start" font-size="18px" font-weight="bold"></ti-widget-label>
+                <ti-widget-label id="audio_classification_result" label="Select a device and click 'Start Classification'" font-size="18px" font-weight="bold"></ti-widget-label>
                 <ti-widget-label id="confidence_score" label="Confidence: N/A" font-size="16px" margin-top="10px"></ti-widget-label>
             </div>
         </div>
