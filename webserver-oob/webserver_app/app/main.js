@@ -213,24 +213,45 @@ var init = function() {
 
             let wsAudio;
 
+            console.log("Audio classification components initialized");
+            console.log("audioClassificationVtab ID:", audioClassificationVtab ? audioClassificationVtab.id : "NOT FOUND");
+            console.log("audioDeviceDroplist:", audioDeviceDroplist ? "FOUND" : "NOT FOUND");
+
             // Fetch devices when the audio classification tab is selected
             templateObj.$.ti_widget_vtabcontainer.addEventListener('selected-item-changed', function(event) {
                 console.log("selected-item-changed event fired. Detail value:", event.detail.value, "Audio Classification Vtab ID:", audioClassificationVtab.id);
                 if (event.detail.value === audioClassificationVtab.id) {
+                    console.log("Audio Classification tab selected, fetching devices...");
                     fetchAudioDevices();
                 }
             });
 
+            // Also fetch devices immediately if audio classification tab is already selected
+            if (templateObj.$.ti_widget_vtabcontainer.selectedItem === audioClassificationVtab ||
+                templateObj.$.ti_widget_vtabcontainer.selectedItem?.id === audioClassificationVtab.id) {
+                console.log("Audio Classification tab is already selected on page load, fetching devices...");
+                setTimeout(function() {
+                    fetchAudioDevices();
+                }, 500);
+            }
+
             // Function to fetch audio devices
             const fetchAudioDevices = function() {
+                console.log("fetchAudioDevices called");
+
                 // Show loading indicator in dropdown
                 audioDeviceDroplist.labels = "Loading devices...";
                 audioDeviceDroplist.selectedIndex = -1;
 
+                console.log("Making GET request to /audio-devices");
                 $.get("/audio-devices", function(data) {
+                    console.log("SUCCESS: Received response from /audio-devices");
                     console.log("Raw data from /audio-devices:", data);
+                    console.log("Data type:", typeof data);
+                    console.log("Data length:", data ? data.length : 0);
                     const devices = data.trim().split('\n').filter(d => d.length > 0);
                     console.log("Parsed devices array:", devices);
+                    console.log("Number of devices found:", devices.length);
 
                     if (devices.length > 0) {
                         // Check if the first entry contains an error message
@@ -276,7 +297,11 @@ var init = function() {
                         confidenceScore.label = "Confidence: N/A";
                     }
                 }).fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error("Error fetching audio devices: ", textStatus, errorThrown);
+                    console.error("FAILED: Error fetching audio devices");
+                    console.error("Status:", textStatus);
+                    console.error("Error:", errorThrown);
+                    console.error("Response status:", jqXHR.status);
+                    console.error("Response text:", jqXHR.responseText);
                     audioDeviceDroplist.labels = "Error loading devices";
                     audioDeviceDroplist.selectedIndex = -1;
 
@@ -284,7 +309,7 @@ var init = function() {
                     startAudioButton.disabled = true;
 
                     // Update status message
-                    audioClassificationResult.label = "Failed to load audio devices";
+                    audioClassificationResult.label = "Failed to load audio devices - check console for details";
                     confidenceScore.label = "Confidence: N/A";
                 });
             };

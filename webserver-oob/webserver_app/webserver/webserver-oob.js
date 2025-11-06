@@ -219,23 +219,28 @@ let audioProcess = null;
 const fifoPath = '/tmp/audio_classification_fifo';
 
 app.get('/audio-devices', (req, res) => {
+    console.log('[/audio-devices] Endpoint called');
+
     // Use full path to audio_utils binary
     const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
 
+    console.log(`[/audio-devices] Executing: ${audioUtilsPath} devices`);
     exec(`${audioUtilsPath} devices`, (error, stdout, stderr) => {
         if (error) {
-            console.error(`Failed to get audio devices: ${error}`);
-            console.error(`stderr: ${stderr}`);
-            return res.status(500).send({ error: 'Failed to get audio devices', details: error.message });
+            console.error(`[/audio-devices] Failed to get audio devices: ${error}`);
+            console.error(`[/audio-devices] stderr: ${stderr}`);
+            // Send plain text error message, not JSON
+            return res.status(500).send(`Error: ${error.message}\n${stderr}`);
         }
 
         // Log both stdout and stderr for debugging
-        console.log(`Audio devices stdout: ${stdout.trim()}`);
+        console.log(`[/audio-devices] Audio devices stdout: ${stdout.trim()}`);
         if (stderr) {
-            console.log(`Audio devices stderr: ${stderr.trim()}`);
+            console.log(`[/audio-devices] Audio devices stderr: ${stderr.trim()}`);
         }
 
-        // Return the list of devices from stdout
+        // Return the list of devices from stdout (plain text)
+        console.log(`[/audio-devices] Sending response with ${stdout.trim().split('\n').length} lines`);
         res.send(stdout);
     });
 });

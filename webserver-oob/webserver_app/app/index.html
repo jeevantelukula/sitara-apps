@@ -213,15 +213,17 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     position: absolute;
     background-color: rgb(255, 255, 255);
     border: 1px solid white;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: rgba(0, 0, 0, 0.3) 0px 2px 4px;
-    z-index: 3;
+    z-index: 10;
     padding: 4px;
   }
   #ti_widget_icon_button_menu {
     position: relative;
     width: 40px;
     height: 40px;
+    cursor: pointer;
+    z-index: 10;
   }
   #ti_widget_label_menu {
     text-align: left;
@@ -230,6 +232,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     font-style: normal;
     font-size: inherit;
     white-space: nowrap;
+    cursor: pointer;
+    z-index: 10;
   }
   #ti_widget_vtabcontainer {
     height: calc(100% - 73px);
