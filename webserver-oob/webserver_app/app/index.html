@@ -2401,28 +2401,59 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         // Update CPU gauge with current usage
                         cpuUsageGauge.value = cpuData.current_cpu_usage;
 
-                        // Update the styled elements
+                        // Make sure we have valid average and max values
+                        if (typeof cpuData.average_cpu_usage !== 'number' || isNaN(cpuData.average_cpu_usage)) {
+                            cpuData.average_cpu_usage = 0.0;
+                        }
+                        if (typeof cpuData.max_cpu_usage !== 'number' || isNaN(cpuData.max_cpu_usage)) {
+                            cpuData.max_cpu_usage = 0.0;
+                        }
+
+                        // Update the styled elements with proper formatting
                         $('#avg_cpu_value').text(cpuData.average_cpu_usage.toFixed(1) + '%');
                         $('#max_cpu_value').text(cpuData.max_cpu_usage.toFixed(1) + '%');
 
+                        // Make sure we have valid history data
+                        if (!Array.isArray(cpuData.history) || cpuData.history.length === 0) {
+                            console.warn("Received invalid or empty history data:", cpuData.history);
+                            // Initialize with an empty array if history is invalid
+                            cpuData.history = [];
+                        }
+
+                        // Debug output to console
+                        console.log("Received CPU data:", {
+                            current: cpuData.current_cpu_usage,
+                            avg: cpuData.average_cpu_usage,
+                            max: cpuData.max_cpu_usage,
+                            historyLength: cpuData.history.length
+                        });
+
                         // Update or initialize the chart
                         if (cpuChart) {
-                            cpuChart.data.labels = Array.from(Array(cpuData.history.length).keys());
-                            cpuChart.data.datasets[0].data = cpuData.history;
-                            cpuChart.update();
+                            // Make sure we're using reverse chronological order for better visualization
+                            const historyLabels = Array.from(Array(cpuData.history.length).keys()).reverse();
+                            cpuChart.data.labels = historyLabels;
+                            cpuChart.data.datasets[0].data = cpuData.history.slice(); // Clone array to avoid reference issues
+                            cpuChart.update('none'); // Use 'none' for faster updates
                         } else {
                             var ctx = cpuChartCanvas.getContext('2d');
+
+                            // Create reversed labels for better visualization
+                            const historyLabels = Array.from(Array(cpuData.history.length).keys()).reverse();
+
                             cpuChart = new Chart(ctx, {
                                 type: 'line',
                                 data: {
-                                    labels: Array.from(Array(cpuData.history.length).keys()),
+                                    labels: historyLabels,
                                     datasets: [{
                                         label: 'CPU Usage (%)',
-                                        data: cpuData.history,
+                                        data: cpuData.history.slice(), // Clone array to avoid reference issues
                                         borderColor: 'rgb(75, 192, 192)',
                                         tension: 0.1,
                                         fill: true,
-                                        backgroundColor: 'rgba(75, 192, 192, 0.2)'
+                                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                        pointRadius: 0, // Hide points for smoother appearance
+                                        borderWidth: 2  // Slightly thicker line
                                     }]
                                 },
                                 options: {
@@ -2477,33 +2508,70 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         if (!isNaN(cpuUsage)) {
                             cpuUsageGauge.value = cpuUsage;
 
-                            // For single value, just update the gauge
-                            // but keep the chart as is or initialize with just this value
+                            // For single value format, we need to maintain our own statistics
+                            // Update running averages and max manually
+                            var currentAvg = parseFloat($('#avg_cpu_value').text());
+                            var currentMax = parseFloat($('#max_cpu_value').text());
+
+                            // If we don't have an average yet, start with this value
+                            if (isNaN(currentAvg)) {
+                                currentAvg = cpuUsage;
+                            } else {
+                                // Apply smoothing to average (95% old value, 5% new value)
+                                currentAvg = (0.95 * currentAvg) + (0.05 * cpuUsage);
+                            }
+
+                            // Update max if needed
+                            if (isNaN(currentMax) || cpuUsage > currentMax) {
+                                currentMax = cpuUsage;
+                            }
+
+                            // Update the display
+                            $('#avg_cpu_value').text(currentAvg.toFixed(1) + '%');
+                            $('#max_cpu_value').text(currentMax.toFixed(1) + '%');
                             if (cpuChart) {
+                                // Track current data array length
+                                const currentLength = cpuChart.data.datasets[0].data.length;
+
                                 // Add new point to existing chart
-                                cpuChart.data.labels.push(cpuChart.data.labels.length);
                                 cpuChart.data.datasets[0].data.push(cpuUsage);
 
                                 // Remove oldest point if we have too many
-                                if (cpuChart.data.datasets[0].data.length > 300) { // Updated to 300 for 5 minutes
+                                if (cpuChart.data.datasets[0].data.length > 300) { // Keep 300 points for 5 minutes
                                     cpuChart.data.datasets[0].data.shift();
-                                    cpuChart.data.labels.shift();
                                 }
-                                cpuChart.update();
+
+                                // Update labels to represent seconds in reverse chronological order
+                                // (most recent values on the right side of the chart)
+                                cpuChart.data.labels = Array.from(
+                                    Array(cpuChart.data.datasets[0].data.length).keys()
+                                ).reverse();
+
+                                // Debug to monitor chart updates
+                                console.log("Updated chart with new value:", cpuUsage,
+                                          "Total points:", cpuChart.data.datasets[0].data.length);
+
+                                // Update the chart with animation: false for better performance
+                                cpuChart.update({
+                                    duration: 0,
+                                    easing: 'linear'
+                                });
                             } else {
                                 // Initialize chart with single value
                                 var ctx = cpuChartCanvas.getContext('2d');
                                 cpuChart = new Chart(ctx, {
                                     type: 'line',
                                     data: {
-                                        labels: [0],
+                                        labels: [0], // Start with a single value
                                         datasets: [{
                                             label: 'CPU Usage (%)',
                                             data: [cpuUsage],
                                             borderColor: 'rgb(75, 192, 192)',
                                             tension: 0.1,
                                             fill: true,
-                                            backgroundColor: 'rgba(75, 192, 192, 0.2)'
+                                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                            pointRadius: 0, // Hide points for smoother appearance
+                                            borderWidth: 2  // Slightly thicker line
                                         }]
                                     },
                                     options: {
@@ -2585,7 +2653,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 }
             }
 
-            setInterval(updateCpuPerformance, 1000);
+            // Update more frequently for smoother chart animation (500ms instead of 1000ms)
+            setInterval(updateCpuPerformance, 500);
+            // Initial update
             updateCpuPerformance();
         }
 
