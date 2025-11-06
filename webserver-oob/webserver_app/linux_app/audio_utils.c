@@ -192,15 +192,53 @@ int main(int argc, char *argv[]) {
     if (argc > 1 && strcmp(argv[1], "devices") == 0) {
         char *devices = get_arecord_devices();
         if (devices) {
-            printf("%s\n", devices);
+            // Print each audio device on a separate line for UI parsing
+            for (int i = 0; i < device_count; i++) {
+                printf("%s\n", audio_devices[i].display_name);
+            }
             free(devices);
         } else {
             return 1;
         }
     } else if (argc > 1 && strcmp(argv[1], "start_gst") == 0) {
         if (argc > 2) {
-            g_selected_device = argv[2];
+            // Map display name to ALSA device
+            g_selected_device = NULL;
+            char *requested_device = argv[2];
+
+            // First check if it's directly an ALSA device format (plughw:X,Y)
+            if (strncmp(requested_device, "plughw:", 7) == 0) {
+                g_selected_device = requested_device;
+            } else {
+                // Otherwise, try to match by display name
+                for (int i = 0; i < device_count; i++) {
+                    if (strcmp(audio_devices[i].display_name, requested_device) == 0) {
+                        g_selected_device = audio_devices[i].alsa_device;
+                        fprintf(stderr, "Mapped device '%s' to ALSA device: %s\n",
+                               requested_device, g_selected_device);
+                        break;
+                    }
+                }
+
+                // If no match found, default to the first device if available
+                if (!g_selected_device && device_count > 0) {
+                    g_selected_device = audio_devices[0].alsa_device;
+                    fprintf(stderr, "No exact match for '%s', using default device: %s\n",
+                           requested_device, g_selected_device);
+                }
+            }
+
+            // If still no device, use a default
+            if (!g_selected_device) {
+                g_selected_device = "plughw:0,0";
+                fprintf(stderr, "Using fallback default device: %s\n", g_selected_device);
+            }
+        } else if (device_count > 0) {
+            // No device specified, use the first available one
+            g_selected_device = audio_devices[0].alsa_device;
+            fprintf(stderr, "No device specified, using first device: %s\n", g_selected_device);
         }
+
         running = 1;
         pthread_t gst_thread;
         pthread_create(&gst_thread, NULL, gst_launch_thread, NULL);
