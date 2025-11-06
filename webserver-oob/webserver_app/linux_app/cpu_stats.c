@@ -39,12 +39,17 @@
 #include <unistd.h>  /* For usleep() */
 #include <time.h>    /* For nanosleep() */
 #include <math.h>    /* For fabs() */
+#include <fcntl.h>   /* For file operations */
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define HISTORY_SIZE 300        /* Store 5 minutes of history (assuming 1 second per sample) */
 #define SAMPLE_COUNT 5          /* Number of samples to take for one measurement */
 #define SAMPLE_INTERVAL_MS 200  /* Time between samples in milliseconds */
 #define SPIKE_THRESHOLD 30.0    /* Percentage change to consider a spike */
 #define EMA_ALPHA 0.3           /* Weight for current sample in exponential moving average */
+#define HISTORY_FILE "/tmp/cpu_stats_history.dat"  /* File to store history data */
+#define HISTORY_VERSION 1       /* Version of history file format */
 
 /* Structure to hold CPU time stats */
 typedef struct {
@@ -76,6 +81,9 @@ typedef struct {
 
 /* Global history state */
 static CpuHistory cpu_history = {{0}, 0, 0, 0.0, 0.0, 0, 0.0, 0.0, 0};
+
+/* Flag to indicate if history was loaded from file */
+static int history_initialized = 0;
 
 /* Sleep for specified milliseconds */
 void sleep_ms(int milliseconds) {
@@ -112,10 +120,105 @@ int read_cpu_times(CpuTimes *times) {
     return 1;
 }
 
-/* This section previously contained process-specific detection code that was removed
- * to make the CPU measurement more generic and robust without relying on
- * specific process names.
- */
+/* Functions to save and load CPU history data to ensure persistence between program runs */
+
+/* Save CPU history data to file */
+void save_cpu_history(const CpuHistory *history) {
+    FILE *file = fopen(HISTORY_FILE, "wb");
+    if (!file) {
+        perror("Error opening history file for writing");
+        return;
+    }
+
+    /* Write header with version and timestamp */
+    int32_t version = HISTORY_VERSION;
+    time_t current_time = time(NULL);
+
+    if (fwrite(&version, sizeof(version), 1, file) != 1 ||
+        fwrite(&current_time, sizeof(current_time), 1, file) != 1) {
+        perror("Error writing header to history file");
+        fclose(file);
+        return;
+    }
+
+    /* Write history data */
+    if (fwrite(&history->history_index, sizeof(history->history_index), 1, file) != 1 ||
+        fwrite(&history->history_count, sizeof(history->history_count), 1, file) != 1 ||
+        fwrite(&history->max_cpu_usage, sizeof(history->max_cpu_usage), 1, file) != 1 ||
+        fwrite(&history->avg_cpu_usage, sizeof(history->avg_cpu_usage), 1, file) != 1 ||
+        fwrite(&history->last_update, sizeof(history->last_update), 1, file) != 1 ||
+        fwrite(&history->last_reading, sizeof(history->last_reading), 1, file) != 1 ||
+        fwrite(&history->ema, sizeof(history->ema), 1, file) != 1 ||
+        fwrite(&history->start_time, sizeof(history->start_time), 1, file) != 1) {
+
+        perror("Error writing history data to file");
+        fclose(file);
+        return;
+    }
+
+    /* Write history array */
+    if (fwrite(history->history, sizeof(double), HISTORY_SIZE, file) != HISTORY_SIZE) {
+        perror("Error writing history array to file");
+        fclose(file);
+        return;
+    }
+
+    fclose(file);
+}
+
+/* Load CPU history data from file */
+int load_cpu_history(CpuHistory *history) {
+    FILE *file = fopen(HISTORY_FILE, "rb");
+    if (!file) {
+        /* File doesn't exist or can't be opened - not an error for first run */
+        return 0;
+    }
+
+    /* Read and verify header */
+    int32_t version;
+    time_t file_time;
+
+    if (fread(&version, sizeof(version), 1, file) != 1 || version != HISTORY_VERSION) {
+        /* Version mismatch or read error */
+        fclose(file);
+        return 0;
+    }
+
+    if (fread(&file_time, sizeof(file_time), 1, file) != 1) {
+        fclose(file);
+        return 0;
+    }
+
+    /* Check if file is too old (more than 30 minutes) */
+    time_t current_time = time(NULL);
+    if (difftime(current_time, file_time) > 1800) {
+        fclose(file);
+        return 0; /* File too old, start fresh */
+    }
+
+    /* Read history data */
+    if (fread(&history->history_index, sizeof(history->history_index), 1, file) != 1 ||
+        fread(&history->history_count, sizeof(history->history_count), 1, file) != 1 ||
+        fread(&history->max_cpu_usage, sizeof(history->max_cpu_usage), 1, file) != 1 ||
+        fread(&history->avg_cpu_usage, sizeof(history->avg_cpu_usage), 1, file) != 1 ||
+        fread(&history->last_update, sizeof(history->last_update), 1, file) != 1 ||
+        fread(&history->last_reading, sizeof(history->last_reading), 1, file) != 1 ||
+        fread(&history->ema, sizeof(history->ema), 1, file) != 1 ||
+        fread(&history->start_time, sizeof(history->start_time), 1, file) != 1) {
+
+        fclose(file);
+        return 0;
+    }
+
+    /* Read history array */
+    if (fread(history->history, sizeof(double), HISTORY_SIZE, file) != HISTORY_SIZE) {
+        fclose(file);
+        return 0;
+    }
+
+    fclose(file);
+    return 1;
+}
 
 /* Calculate CPU usage with multiple samples and intelligent filtering */
 double get_cpu_usage() {
@@ -239,8 +342,8 @@ double get_cpu_usage() {
         cpu_history.start_time = now;
     }
 
-    /* Update history if enough time has passed */
-    if (now - cpu_history.last_update >= 1) {
+    /* Update history if enough time has passed or history is empty (first run) */
+    if (now - cpu_history.last_update >= 1 || cpu_history.history_count == 0) {
         /* Save this reading */
         cpu_history.history[cpu_history.history_index] = cpu_percentage;
         cpu_history.history_index = (cpu_history.history_index + 1) % HISTORY_SIZE;
@@ -307,8 +410,34 @@ double get_cpu_usage() {
 }
 
 int main(int argc, char *argv[]) {
+    /* Initialize history from file if not already done */
+    if (!history_initialized) {
+        history_initialized = 1;
+
+        /* If loading fails, we'll start with a fresh history */
+        if (!load_cpu_history(&cpu_history)) {
+            /* Initialize start_time for fresh history */
+            cpu_history.start_time = time(NULL);
+        }
+    }
+
+    /* Check if temporary history file exists and is too old (more than 24 hours) */
+    struct stat file_stat;
+    time_t now = time(NULL);
+    if (stat(HISTORY_FILE, &file_stat) == 0) {
+        /* If file exists and is more than 24 hours old, remove it */
+        if (difftime(now, file_stat.st_mtime) > 86400) {
+            if (remove(HISTORY_FILE) != 0) {
+                perror("Warning: Failed to remove old history file");
+            }
+        }
+    }
+
     /* Get current CPU usage with robust measurement */
     double current_cpu_usage = get_cpu_usage();
+
+    /* Save history after update */
+    save_cpu_history(&cpu_history);
 
     /* Basic mode: return just the current CPU load */
     if (argc == 1) {
@@ -318,11 +447,11 @@ int main(int argc, char *argv[]) {
 
     /* Enhanced mode: return detailed CPU stats in JSON format */
     if (argc > 1 && strcmp(argv[1], "enhanced") == 0) {
-        /* Construct JSON with current usage, average, max, and history */
-        printf("{\"current_cpu_usage\":%.1f,\"average_cpu_usage\":%.1f,\"max_cpu_usage\":%.1f,\"history\":[",
-               current_cpu_usage, cpu_history.avg_cpu_usage, cpu_history.max_cpu_usage);
+        /* Construct JSON with current usage, average, max, history count and history */
+        printf("{\"current_cpu_usage\":%.1f,\"average_cpu_usage\":%.1f,\"max_cpu_usage\":%.1f,\"history_count\":%d,\"history\":[",
+               current_cpu_usage, cpu_history.avg_cpu_usage, cpu_history.max_cpu_usage, cpu_history.history_count);
 
-        /* Add history array in chronological order */
+        /* Add history array in chronological order (all entries, up to HISTORY_SIZE) */
         for (int i = 0; i < cpu_history.history_count; i++) {
             int idx = (cpu_history.history_index - cpu_history.history_count + i + HISTORY_SIZE) % HISTORY_SIZE;
             printf("%.1f%s", cpu_history.history[idx], (i < cpu_history.history_count - 1) ? "," : "");

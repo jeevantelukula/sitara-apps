@@ -2366,7 +2366,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 cpuData.history = [0]; // Start with zero if no history
             }
 
-            console.log("Initializing chart with " + cpuData.history.length + " data points");
+            // Use history_count if available to log more meaningful information
+            const historyCount = cpuData.history_count || cpuData.history.length;
+            console.log("Initializing chart with " + cpuData.history.length + " data points (history count: " + historyCount + ")");
 
             return new Chart(ctx, {
                 type: 'line',
@@ -2490,6 +2492,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             cpuData.history = [cpuData.current_cpu_usage || 0];
                         }
 
+                        // Log the history count from the CPU stats utility
+                        if (cpuData.history_count !== undefined) {
+                            console.log("History count from CPU stats:", cpuData.history_count);
+                        }
+
                         // Debug output to console with full details for troubleshooting
                         console.log("Received CPU data:", JSON.stringify({
                             current: cpuData.current_cpu_usage,
@@ -2504,7 +2511,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         if (!cpuChart && cpuChartCanvas) {
                             console.log("Creating new CPU chart");
                             var ctx = cpuChartCanvas.getContext('2d');
-                            initializeChart(ctx, cpuData);
+                            cpuChart = initializeChart(ctx, cpuData);
                         }
 
                         // Update the existing chart with data
@@ -2515,6 +2522,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             const historyLabels = Array.from(Array(cpuData.history.length).keys());
                             cpuChart.data.labels = historyLabels;
                             cpuChart.data.datasets[0].data = cpuData.history.slice(); // Clone array to avoid reference issues
+
+                            // Update x-axis to show appropriate time range (up to 5 minutes)
+                            if (cpuData.history.length >= 300) {
+                                cpuChart.options.scales.x.title.text = 'Time (last 5 minutes)';
+                            } else if (cpuData.history.length > 60) {
+                                cpuChart.options.scales.x.title.text = 'Time (last ' + Math.floor(cpuData.history.length/60) + ' min ' + (cpuData.history.length % 60) + ' sec)';
+                            }
 
                             // Force complete redraw to ensure visibility
                             cpuChart.update();
