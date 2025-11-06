@@ -61,17 +61,33 @@ char* get_arecord_devices() {
     if (!device_list) return NULL;
     device_list[0] = '\0';
 
-    fp = popen("arecord -l", "r");
+    // Clear existing device count
+    device_count = 0;
+
+    // First check if ALSA is available
+    fp = popen("which arecord 2>/dev/null", "r");
+    if (fp == NULL || !fgets(path, sizeof(path), fp)) {
+        fprintf(stderr, "arecord not found on system\n");
+        if (fp) pclose(fp);
+        strcpy(device_list, "No audio devices found - arecord not available");
+        return device_list;
+    }
+    pclose(fp);
+
+    fp = popen("arecord -l 2>/dev/null", "r");
     if (fp == NULL) {
         fprintf(stderr, "Failed to run command: arecord -l\n");
-        free(device_list);
-        return NULL;
+        strcpy(device_list, "Error running arecord command");
+        return device_list;
     }
 
     char current_card_name[256] = {0};
     int card_num = -1;
-    device_count = 0;
 
+    // Reset device array
+    memset(audio_devices, 0, sizeof(audio_devices));
+
+    // Process arecord output
     while (fgets(path, sizeof(path), fp) != NULL) {
         if (strncmp(path, "card", 4) == 0) {
             char *card_str = strstr(path, "card ");
@@ -88,11 +104,15 @@ char* get_arecord_devices() {
                     current_card_name[name_len] = '\0';
 
                     // Skip HDMI/playback-only devices
-                    if (strstr(current_card_name, "HDMI") != NULL || strstr(current_card_name, "hdmi") != NULL || strstr(current_card_name, "cape") != NULL) {
-                        fprintf(stderr, "Skipping playback-only device: %s (card %d)\n", current_card_name, card_num);
+                    if (strstr(current_card_name, "HDMI") != NULL ||
+                        strstr(current_card_name, "hdmi") != NULL ||
+                        strstr(current_card_name, "cape") != NULL) {
+                        fprintf(stderr, "Skipping playback-only device: %s (card %d)\n",
+                                current_card_name, card_num);
                         continue;
                     }
 
+                    // Save device details
                     strncpy(audio_devices[device_count].display_name,
                             current_card_name,
                             sizeof(audio_devices[device_count].display_name) - 1);
@@ -102,12 +122,11 @@ char* get_arecord_devices() {
                              sizeof(audio_devices[device_count].alsa_device),
                              "plughw:%d,0", card_num);
 
-                    if (strlen(device_list) + strlen(current_card_name) + 2 < 4095) {
-                        if (device_count > 0) {
-                            strcat(device_list, "\n");
-                        }
-                        strcat(device_list, current_card_name);
+                    // Add to return string with newline separation
+                    if (device_count > 0) {
+                        strcat(device_list, "\n");
                     }
+                    strcat(device_list, current_card_name);
 
                     fprintf(stderr, "Found capture device: %s -> %s\n",
                            current_card_name, audio_devices[device_count].alsa_device);
@@ -119,6 +138,12 @@ char* get_arecord_devices() {
     }
 
     pclose(fp);
+
+    // If no devices found, provide a clear message
+    if (device_count == 0) {
+        strcpy(device_list, "No audio input devices found");
+    }
+
     return device_list;
 }
 
@@ -130,60 +155,117 @@ void update_label_text(const char* text) {
 }
 
 void* gst_launch_thread(void *arg) {
-    char buffer[128];
+    char buffer[256];  // Increased buffer size
 
+    // Check if GStreamer is installed
+    FILE *check = popen("which gst-launch-1.0 2>/dev/null", "r");
+    if (check == NULL || !fgets(buffer, sizeof(buffer), check)) {
+        fprintf(stderr, "Error: GStreamer (gst-launch-1.0) not found on system\n");
+        if (check) pclose(check);
+        running = 0;
+        return NULL;
+    }
+    pclose(check);
+
+    // Remove any existing FIFO and create a new one
     unlink(fifo_path);
-    mkfifo(fifo_path, 0666);
+    if (mkfifo(fifo_path, 0666) != 0) {
+        perror("Failed to create FIFO");
+        running = 0;
+        return NULL;
+    }
+
+    // Use the default device if none selected
+    const char *device = g_selected_device ? g_selected_device : "plughw:0,0";
 
     char gst_command[2048]; // Increased buffer size for gst_command
     snprintf(gst_command, sizeof(gst_command),
-             "gst-launch-1.0 alsasrc device=%s ! audioconvert ! audio/x-raw,format=S16LE,channels=1,rate=16000,layout=interleaved ! "
-             " tensor_converter frames-per-tensor=3900 ! "
+             "gst-launch-1.0 alsasrc device=%s ! "
+             "audioconvert ! audio/x-raw,format=S16LE,channels=1,rate=16000,layout=interleaved ! "
+             "tensor_converter frames-per-tensor=3900 ! "
              "tensor_aggregator frames-in=3900 frames-out=15600 frames-flush=3900 frames-dim=1 ! "
              "tensor_transform mode=arithmetic option=typecast:float32,add:0.5,div:32767.5 ! "
              "tensor_transform mode=transpose option=1:0:2:3 ! "
              "queue leaky=2 max-size-buffers=10 ! "
              "tensor_filter framework=tensorflow2-lite model=/usr/share/oob-demo-assets/models/yamnet_audio_classification.tflite custom=Delegate:XNNPACK,NumThreads:2 ! "
              "tensor_decoder mode=image_labeling option1=/usr/share/oob-demo-assets/labels/yamnet_label_list.txt ! "
-             "filesink buffer-mode=2 location=%s 1> /dev/null", g_selected_device ? g_selected_device : "plughw:1,0", fifo_path);
+             "filesink buffer-mode=2 location=%s 2>/dev/null",
+             device, fifo_path);
 
-    fprintf(stderr, "Starting GStreamer with command: %s\n", gst_command);
-    fprintf(stderr, "Starting GStreamer with device: %s\n", g_selected_device ? g_selected_device : "plughw:1,0");
+    fprintf(stderr, "Starting GStreamer with device: %s\n", device);
 
+    // Execute the GStreamer pipeline
     FILE *pipe = popen(gst_command, "r");
-
     if (!pipe) {
-        perror("popen failed!");
+        perror("Failed to start GStreamer pipeline");
+        unlink(fifo_path);
+        running = 0;
         return NULL;
     }
 
-    // The JS server will read from the FIFO, so this thread doesn't need to read from it.
-    // This part of the code will be removed or adapted.
-    /*
-    int fifo_fd = open(fifo_path, O_RDONLY);
+    // Set up non-blocking read from FIFO to detect results
+    int fifo_fd = open(fifo_path, O_RDONLY | O_NONBLOCK);
     if (fifo_fd == -1) {
-        perror("open fifo failed!");
+        perror("Failed to open FIFO for reading");
         pclose(pipe);
+        unlink(fifo_path);
+        running = 0;
         return NULL;
     }
 
-    // Read from the named pipe
-    while (running && fgets(buffer, sizeof(buffer), fdopen(fifo_fd, "r")) != NULL) {
-        buffer[strcspn(buffer, "$")] = 0;
-        update_label_text(buffer);
+    // Set up file stream for the FIFO
+    FILE *fifo_stream = fdopen(fifo_fd, "r");
+    if (!fifo_stream) {
+        perror("Failed to create stream from FIFO");
+        close(fifo_fd);
+        pclose(pipe);
+        unlink(fifo_path);
+        running = 0;
+        return NULL;
     }
 
-    close(fifo_fd);
-    */
+    // Monitor the pipeline while it's running
+    fprintf(stderr, "Audio classification started successfully\n");
 
-    // Keep the pipe open as long as running is true
+    fd_set read_fds;
+    struct timeval tv;
+
     while (running) {
-        sleep(1); // Sleep to prevent busy-waiting
+        FD_ZERO(&read_fds);
+        FD_SET(fifo_fd, &read_fds);
+
+        // Set timeout to 1 second to check running flag periodically
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+
+        int ret = select(fifo_fd + 1, &read_fds, NULL, NULL, &tv);
+
+        if (ret < 0) {
+            // Error in select
+            perror("select() error");
+            break;
+        } else if (ret > 0 && FD_ISSET(fifo_fd, &read_fds)) {
+            // Data available to read
+            if (fgets(buffer, sizeof(buffer), fifo_stream) != NULL) {
+                // Remove trailing newline and $ character if present
+                size_t len = strlen(buffer);
+                if (len > 0 && buffer[len-1] == '\n') buffer[len-1] = '\0';
+
+                char *dollar_pos = strchr(buffer, '$');
+                if (dollar_pos) *dollar_pos = '\0';
+
+                // Print to stderr for debugging
+                fprintf(stderr, "Classification result: %s\n", buffer);
+            }
+        }
     }
 
+    // Cleanup resources
+    fclose(fifo_stream);  // This also closes fifo_fd
     pclose(pipe);
-    unlink(fifo_path); // Remove the named pipe
-    fprintf(stderr, "GStreamer pipeline stopped and FIFO unlinked.\n");
+    unlink(fifo_path);
+
+    fprintf(stderr, "GStreamer pipeline stopped and FIFO unlinked\n");
     return NULL;
 }
 
@@ -192,15 +274,35 @@ int main(int argc, char *argv[]) {
     if (argc > 1 && strcmp(argv[1], "devices") == 0) {
         char *devices = get_arecord_devices();
         if (devices) {
-            // Print each audio device on a separate line for UI parsing
-            for (int i = 0; i < device_count; i++) {
-                printf("%s\n", audio_devices[i].display_name);
+            if (device_count > 0) {
+                // Print each audio device on a separate line for UI parsing
+                for (int i = 0; i < device_count; i++) {
+                    printf("%s\n", audio_devices[i].display_name);
+                }
+            } else {
+                // Just output the message from get_arecord_devices for UI display
+                printf("%s\n", devices);
             }
             free(devices);
         } else {
+            printf("Error retrieving audio devices\n");
             return 1;
         }
     } else if (argc > 1 && strcmp(argv[1], "start_gst") == 0) {
+        // Ensure we have the list of devices
+        char *devices = get_arecord_devices();
+        if (devices) {
+            free(devices);
+        }
+
+        // No audio devices found
+        if (device_count == 0) {
+            fprintf(stderr, "No audio input devices found. Cannot start audio classification.\n");
+            printf("ERROR: No audio input devices found\n");
+            return 1;
+        }
+
+        // Handle device selection
         if (argc > 2) {
             // Map display name to ALSA device
             g_selected_device = NULL;
@@ -208,12 +310,12 @@ int main(int argc, char *argv[]) {
 
             // First check if it's directly an ALSA device format (plughw:X,Y)
             if (strncmp(requested_device, "plughw:", 7) == 0) {
-                g_selected_device = requested_device;
+                g_selected_device = strdup(requested_device);
             } else {
                 // Otherwise, try to match by display name
                 for (int i = 0; i < device_count; i++) {
                     if (strcmp(audio_devices[i].display_name, requested_device) == 0) {
-                        g_selected_device = audio_devices[i].alsa_device;
+                        g_selected_device = strdup(audio_devices[i].alsa_device);
                         fprintf(stderr, "Mapped device '%s' to ALSA device: %s\n",
                                requested_device, g_selected_device);
                         break;
@@ -222,7 +324,7 @@ int main(int argc, char *argv[]) {
 
                 // If no match found, default to the first device if available
                 if (!g_selected_device && device_count > 0) {
-                    g_selected_device = audio_devices[0].alsa_device;
+                    g_selected_device = strdup(audio_devices[0].alsa_device);
                     fprintf(stderr, "No exact match for '%s', using default device: %s\n",
                            requested_device, g_selected_device);
                 }
@@ -230,26 +332,54 @@ int main(int argc, char *argv[]) {
 
             // If still no device, use a default
             if (!g_selected_device) {
-                g_selected_device = "plughw:0,0";
+                g_selected_device = strdup("plughw:0,0");
                 fprintf(stderr, "Using fallback default device: %s\n", g_selected_device);
             }
         } else if (device_count > 0) {
             // No device specified, use the first available one
-            g_selected_device = audio_devices[0].alsa_device;
+            g_selected_device = strdup(audio_devices[0].alsa_device);
             fprintf(stderr, "No device specified, using first device: %s\n", g_selected_device);
         }
 
         running = 1;
         pthread_t gst_thread;
-        pthread_create(&gst_thread, NULL, gst_launch_thread, NULL);
+        if (pthread_create(&gst_thread, NULL, gst_launch_thread, NULL) != 0) {
+            fprintf(stderr, "Failed to create GStreamer thread\n");
+            printf("ERROR: Failed to start audio classification\n");
+            if (g_selected_device) {
+                free(g_selected_device);
+                g_selected_device = NULL;
+            }
+            return 1;
+        }
+
+        // Print success message for UI feedback
+        printf("SUCCESS: Audio classification started\n");
+
+        // Join the thread to wait for it to complete
         pthread_join(gst_thread, NULL);
+
+        // Cleanup
+        if (g_selected_device) {
+            free(g_selected_device);
+            g_selected_device = NULL;
+        }
     } else if (argc > 1 && strcmp(argv[1], "stop_gst") == 0) {
-        running = 0;
+        if (running) {
+            running = 0;
+            printf("SUCCESS: Audio classification stopped\n");
+        } else {
+            printf("INFO: Audio classification not running\n");
+        }
+    } else if (argc > 1 && strcmp(argv[1], "status") == 0) {
+        // New command to check if audio classification is running
+        printf("%s\n", running ? "RUNNING" : "STOPPED");
     } else {
         printf("Usage:\n");
         printf("  %s devices        - List audio recording devices\n", argv[0]);
         printf("  %s start_gst [device] - Start GStreamer pipeline (e.g., plughw:1,0)\n", argv[0]);
         printf("  %s stop_gst       - Stop GStreamer pipeline\n", argv[0]);
+        printf("  %s status         - Check if audio classification is running\n", argv[0]);
         return 1;
     }
     return 0;

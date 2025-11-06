@@ -2134,49 +2134,135 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </ti-widget-vtab>
     <ti-widget-vtab id="ti_widget_vtab_audio_classification" name="Audio Classification" caption="Live Audio Classification" icon="av:mic" icon-style="width:30px;height:30px;padding:5px;" visible font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title>
     <style>
-        .audio-classification-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start; /* Align to the top */
+        .audio-classification-container {
+            width: 100%;
             height: 100%;
-            padding-top: 50px; /* Add some padding at the top */
-            gap: 20px; /* Add some space between the elements */
-        }
-        .audio-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            justify-content: flex-start;
+            padding-top: 30px;
+            background-color: #f9f9f9;
+            position: relative;
+            font-family: 'Roboto', Arial, sans-serif;
         }
-        .loader {
-            border: 8px solid #f3f3f3; /* Light grey */
-            border-top: 8px solid #3498db; /* Blue */
+
+        .audio-title-section {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .audio-title-section h1 {
+            font-size: 28px;
+            font-weight: 500;
+            color: #148C9C;
+            margin: 0;
+        }
+
+        .audio-title-section p {
+            font-size: 16px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .audio-device-section {
+            width: 80%;
+            max-width: 600px;
+            margin-bottom: 30px;
+        }
+
+        .device-selection-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .device-label {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .results-container {
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #148C9C;
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            display: none; /* Hidden by default */
+            margin-bottom: 20px;
+        }
+
+        .audio-icon {
+            margin-bottom: 20px;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Match CPU Performance styles for consistency */
+        .audio-classification-container h3 {
+            color: #148C9C;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #148C9C;
+            padding-bottom: 5px;
+        }
     </style>
-    <div class="audio-classification-content">
-        <ti-widget-label label="Audio Classification Demo" font-size="28px" font-weight="bold"></ti-widget-label>
-        <ti-widget-image src="images/audio_placeholder.png" width="200" height="200"></ti-widget-image>
-        <div class="audio-controls">
-            <ti-widget-label label="Select Device:"></ti-widget-label>
-            <ti-widget-droplist id="audio_device_droplist" labels="" selected-index="0" width="300"></ti-widget-droplist>
-            <div style="display: flex; gap: 10px;">
-                <ti-widget-button id="start_audio_button" label="Start Classification" raised></ti-widget-button>
-                <ti-widget-button id="stop_audio_button" label="Stop Classification" raised disabled></ti-widget-button>
+
+    <div class="audio-classification-container">
+        <div class="audio-title-section">
+            <h1>Audio Classification Demo</h1>
+            <p>Real-time audio analysis using machine learning</p>
+        </div>
+
+        <div class="audio-device-section">
+            <div class="device-selection-container">
+                <h3>Audio Device Selection</h3>
+                <div class="device-label">Select Audio Input Device:</div>
+                <ti-widget-droplist id="audio_device_droplist" labels="Loading devices..." selected-index="0" width="100%"></ti-widget-droplist>
+
+                <div class="button-container">
+                    <ti-widget-button id="start_audio_button" label="Start" raised background-color="#148C9C" color="white" width="140px" height="45px"></ti-widget-button>
+                    <ti-widget-button id="stop_audio_button" label="Stop" raised background-color="#e74c3c" color="white" width="140px" height="45px" disabled></ti-widget-button>
+                </div>
             </div>
-            <div class="loader" id="loading_spinner"></div>
-            <ti-widget-label id="audio_classification_result" label="Result: " font-size="18px" font-weight="bold"></ti-widget-label>
-            <ti-widget-label id="confidence_score" label="Confidence: " font-size="16px"></ti-widget-label>
+
+            <div class="results-container">
+                <h3>Classification Results</h3>
+                <ti-widget-image src="images/audio_placeholder.png" width="80" height="80" class="audio-icon"></ti-widget-image>
+                <div id="loading_spinner" class="spinner" style="display: none;"></div>
+                <ti-widget-label id="audio_classification_result" label="Connect your microphone and press Start" font-size="18px" font-weight="bold"></ti-widget-label>
+                <ti-widget-label id="confidence_score" label="Confidence: N/A" font-size="16px" margin-top="10px"></ti-widget-label>
+            </div>
         </div>
     </div>
 </ti-widget-vtab>

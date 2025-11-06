@@ -223,80 +223,249 @@ var init = function() {
 
             // Function to fetch audio devices
             const fetchAudioDevices = function() {
+                // Show loading indicator in dropdown
+                audioDeviceDroplist.labels = "Loading devices...";
+                audioDeviceDroplist.selectedIndex = -1;
+
                 $.get("/audio-devices", function(data) {
                     console.log("Raw data from /audio-devices:", data);
                     const devices = data.trim().split('\n').filter(d => d.length > 0);
                     console.log("Parsed devices array:", devices);
+
                     if (devices.length > 0) {
-                        audioDeviceDroplist.labels = devices.join('|');
-                        console.log("Setting droplist labels to:", audioDeviceDroplist.labels);
-                        audioDeviceDroplist.selectedIndex = 0;
+                        // Check if the first entry contains an error message
+                        if (devices[0].toLowerCase().includes('error') ||
+                            devices[0].toLowerCase().includes('no audio') ||
+                            devices[0].toLowerCase().includes('not found')) {
+
+                            // Error message in the response
+                            console.warn("Device error detected:", devices[0]);
+                            audioDeviceDroplist.labels = devices[0];
+                            audioDeviceDroplist.selectedIndex = -1;
+
+                            // Disable start button
+                            startAudioButton.disabled = true;
+
+                            // Update status message
+                            audioClassificationResult.label = "No audio devices available";
+                            confidenceScore.label = "Confidence: N/A";
+                        } else {
+                            // Valid devices found
+                            audioDeviceDroplist.labels = devices.join('|');
+                            console.log("Setting droplist labels to:", audioDeviceDroplist.labels);
+                            audioDeviceDroplist.selectedIndex = 0;
+
+                            // Enable start button
+                            startAudioButton.disabled = false;
+
+                            // Update status message
+                            audioClassificationResult.label = "Select a device and press Start";
+                            confidenceScore.label = "Confidence: N/A";
+                        }
                     } else {
+                        // No devices returned
                         audioDeviceDroplist.labels = "No devices found";
                         console.log("No devices found.");
                         audioDeviceDroplist.selectedIndex = -1;
+
+                        // Disable start button
+                        startAudioButton.disabled = true;
+
+                        // Update status message
+                        audioClassificationResult.label = "No audio devices available";
+                        confidenceScore.label = "Confidence: N/A";
                     }
                 }).fail(function(jqXHR, textStatus, errorThrown) {
                     console.error("Error fetching audio devices: ", textStatus, errorThrown);
                     audioDeviceDroplist.labels = "Error loading devices";
                     audioDeviceDroplist.selectedIndex = -1;
+
+                    // Disable start button
+                    startAudioButton.disabled = true;
+
+                    // Update status message
+                    audioClassificationResult.label = "Failed to load audio devices";
+                    confidenceScore.label = "Confidence: N/A";
                 });
             };
+
+            // WebSocket for audio classification results
+            let wsAudio = null;
+            let isClassifying = false;
+
+            // Function to set up WebSocket for audio classification results
+            function setupAudioWebSocket() {
+                // Close any existing WebSocket connection
+                if (wsAudio) {
+                    wsAudio.close();
+                    wsAudio = null;
+                }
+
+                // Create new WebSocket connection
+                wsAudio = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/audio");
+
+                wsAudio.onopen = function() {
+                    console.log("Audio Classification WebSocket connected.");
+                };
+
+                wsAudio.onmessage = function(event) {
+                    try {
+                        const result = JSON.parse(event.data);
+
+                        // Handle different message types
+                        if (result.status === 'connected') {
+                            console.log("Audio WebSocket connected successfully");
+                            // Keep existing UI state
+                        } else if (result.status === 'stopped') {
+                            console.log("Audio classification stopped via WebSocket");
+                            updateUIState('stopped');
+                        } else if (result.error) {
+                            console.error("Error from WebSocket:", result.error);
+                            audioClassificationResult.label = "Error: " + result.error;
+                            confidenceScore.label = "Confidence: N/A";
+                            updateUIState('error');
+                        } else if (result.class) {
+                            // Classification result
+                            audioClassificationResult.label = "Class: " + result.class;
+                            if (result.confidence !== undefined) {
+                                const confidence = parseFloat(result.confidence);
+                                const confidencePercent = isNaN(confidence) ? 0 : confidence * 100;
+                                confidenceScore.label = "Confidence: " + confidencePercent.toFixed(1) + "%";
+                            } else {
+                                confidenceScore.label = "Confidence: N/A";
+                            }
+                            loadingSpinner.style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error("Error parsing WebSocket message:", e);
+                        // If not JSON, treat as plain text classification
+                        const text = event.data.toString();
+                        if (text && text.trim()) {
+                            audioClassificationResult.label = "Class: " + text.trim();
+                            confidenceScore.label = "Confidence: N/A";
+                            loadingSpinner.style.display = 'none';
+                        }
+                    }
+                };
+
+                wsAudio.onclose = function() {
+                    console.log("Audio Classification WebSocket disconnected.");
+                    if (isClassifying) {
+                        // Unexpected close while still classifying
+                        audioClassificationResult.label = "Connection lost. Classification stopped.";
+                        updateUIState('stopped');
+                    }
+                    wsAudio = null;
+                };
+
+                wsAudio.onerror = function(error) {
+                    console.error("Audio Classification WebSocket error: ", error);
+                    audioClassificationResult.label = "WebSocket error. Classification stopped.";
+                    updateUIState('error');
+                    if (wsAudio) {
+                        wsAudio.close();
+                        wsAudio = null;
+                    }
+                };
+            }
+
+            // Function to update UI state
+            function updateUIState(state) {
+                switch(state) {
+                    case 'starting':
+                        isClassifying = true;
+                        startAudioButton.disabled = true;
+                        stopAudioButton.disabled = false;
+                        audioDeviceDroplist.disabled = true;
+                        audioClassificationResult.label = "Starting classification...";
+                        confidenceScore.label = "Confidence: ";
+                        loadingSpinner.style.display = 'block';
+                        break;
+
+                    case 'started':
+                        isClassifying = true;
+                        startAudioButton.disabled = true;
+                        stopAudioButton.disabled = false;
+                        audioDeviceDroplist.disabled = true;
+                        audioClassificationResult.label = "Listening for audio...";
+                        loadingSpinner.style.display = 'none';
+                        break;
+
+                    case 'stopping':
+                        startAudioButton.disabled = true;
+                        stopAudioButton.disabled = true;
+                        audioClassificationResult.label = "Stopping classification...";
+                        loadingSpinner.style.display = 'block';
+                        break;
+
+                    case 'stopped':
+                        isClassifying = false;
+                        startAudioButton.disabled = false;
+                        stopAudioButton.disabled = true;
+                        audioDeviceDroplist.disabled = false;
+                        loadingSpinner.style.display = 'none';
+                        if (audioClassificationResult.label === "Starting classification..." ||
+                            audioClassificationResult.label === "Stopping classification...") {
+                            audioClassificationResult.label = "Classification stopped.";
+                        }
+                        break;
+
+                    case 'error':
+                        isClassifying = false;
+                        startAudioButton.disabled = false;
+                        stopAudioButton.disabled = true;
+                        audioDeviceDroplist.disabled = false;
+                        loadingSpinner.style.display = 'none';
+                        break;
+                }
+            }
 
             // Start audio classification
             startAudioButton.addEventListener('click', function() {
                 const selectedDevice = audioDeviceDroplist.selectedText;
                 if (selectedDevice && selectedDevice !== "No devices found" && selectedDevice !== "Error loading devices") {
-                    startAudioButton.disabled = true;
-                    stopAudioButton.disabled = false;
-                    audioClassificationResult.label = "Starting classification...";
-                    confidenceScore.label = "Confidence: ";
-                    loadingSpinner.style.display = 'block';
+                    // Update UI to starting state
+                    updateUIState('starting');
 
-                    $.get("/start-audio-classification?device=" + encodeURIComponent(selectedDevice), function(data) {
-                        console.log(data);
-                        audioClassificationResult.label = "Classification started. Waiting for results...";
+                    // Set up WebSocket first to ensure we catch early messages
+                    setupAudioWebSocket();
 
-                        // Establish WebSocket connection for live results
-                        wsAudio = new WebSocket("ws://" + window.location.hostname + ":8083");
-
-                        wsAudio.onopen = function() {
-                            console.log("Audio Classification WebSocket connected.");
-                        };
-
-                        wsAudio.onmessage = function(event) {
-                            try {
-                                const result = JSON.parse(event.data);
-                                audioClassificationResult.label = "Class: " + result.class;
-                                confidenceScore.label = "Confidence: " + (result.confidence * 100).toFixed(2) + "%";
-                            } catch (e) {
-                                audioClassificationResult.label = "Class: " + event.data;
-                                confidenceScore.label = "Confidence: N/A";
+                    // Send request to start classification
+                    $.ajax({
+                        url: "/start-audio-classification?device=" + encodeURIComponent(selectedDevice),
+                        method: "GET",
+                        dataType: "json",
+                        timeout: 15000, // 15 seconds timeout
+                        success: function(data) {
+                            console.log("Start classification response:", data);
+                            if (data.status === 'started') {
+                                updateUIState('started');
+                                // Keep WebSocket open for results
+                            } else {
+                                audioClassificationResult.label = "Classification process completed.";
+                                updateUIState('stopped');
+                                if (wsAudio) {
+                                    wsAudio.close();
+                                    wsAudio = null;
+                                }
                             }
-                        };
-
-                        wsAudio.onclose = function() {
-                            console.log("Audio Classification WebSocket disconnected.");
-                            audioClassificationResult.label = "Classification stopped.";
-                            startAudioButton.disabled = false;
-                            stopAudioButton.disabled = true;
-                            loadingSpinner.style.display = 'none';
-                        };
-
-                        wsAudio.onerror = function(error) {
-                            console.error("Audio Classification WebSocket error: ", error);
-                            audioClassificationResult.label = "Error in classification stream.";
-                            startAudioButton.disabled = false;
-                            stopAudioButton.disabled = true;
-                            loadingSpinner.style.display = 'none';
-                        };
-
-                    }).fail(function(jqXHR, textStatus, errorThrown) {
-                        console.error("Error starting audio classification: ", textStatus, errorThrown);
-                        audioClassificationResult.label = "Failed to start classification.";
-                        startAudioButton.disabled = false;
-                        stopAudioButton.disabled = true;
-                        loadingSpinner.style.display = 'none';
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.error("Error starting audio classification:", jqXHR.responseText);
+                            let errorMsg;
+                            try {
+                                const response = JSON.parse(jqXHR.responseText);
+                                errorMsg = response.error || "Failed to start classification";
+                            } catch (e) {
+                                errorMsg = "Failed to start classification: " + textStatus;
+                            }
+                            audioClassificationResult.label = "Error: " + errorMsg;
+                            updateUIState('error');
+                            if (wsAudio) {
+                                wsAudio.close();
+                                wsAudio = null;
+                            }
+                        }
                     });
                 } else {
                     audioClassificationResult.label = "Please select a valid audio device.";
@@ -305,21 +474,33 @@ var init = function() {
 
             // Stop audio classification
             stopAudioButton.addEventListener('click', function() {
-                $.get("/stop-audio-classification", function(data) {
-                    console.log(data);
-                    if (wsAudio) {
-                        wsAudio.close();
+                // Update UI to stopping state
+                updateUIState('stopping');
+
+                $.ajax({
+                    url: "/stop-audio-classification",
+                    method: "GET",
+                    dataType: "json",
+                    timeout: 10000,
+                    success: function(data) {
+                        console.log("Stop classification response:", data);
+                        audioClassificationResult.label = "Classification stopped.";
+                        updateUIState('stopped');
+                        if (wsAudio) {
+                            // Keep WebSocket open briefly to receive any final messages
+                            setTimeout(function() {
+                                if (wsAudio) {
+                                    wsAudio.close();
+                                    wsAudio = null;
+                                }
+                            }, 1000);
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error stopping audio classification:", textStatus, errorThrown);
+                        audioClassificationResult.label = "Error stopping classification. Please try again.";
+                        updateUIState('error');
                     }
-                    audioClassificationResult.label = "Stopping classification...";
-                    startAudioButton.disabled = false;
-                    stopAudioButton.disabled = true;
-                    loadingSpinner.style.display = 'none';
-                }).fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error("Error stopping audio classification: ", textStatus, errorThrown);
-                    audioClassificationResult.label = "Failed to stop classification.";
-                    startAudioButton.disabled = false;
-                    stopAudioButton.disabled = true;
-                    loadingSpinner.style.display = 'none';
                 });
             });
 
