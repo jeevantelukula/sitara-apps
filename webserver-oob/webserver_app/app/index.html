@@ -2364,23 +2364,30 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         function loadCpuInfo() {
             var infoContainer = $('#cpu-info-container');
             if (infoContainer.length) {
-                $.getJSON('/api/lscpu', function(data) {
-                    if (data) {
-                        var content = '<dl style="margin: 0;">';
-                        $.each(data, function(key, value) {
-                            content += '<dt style="font-weight: bold; float: left; width: 120px; clear: left;">' + key + '</dt>';
-                            content += '<dd style="margin-left: 130px;">' + value + '</dd>';
-                        });
-                        content += '</dl>';
-                        infoContainer.html(content);
+                $.get('/cpu-info', function(data) {
+                    try {
+                        var infoData = JSON.parse(data);
+                        if (infoData) {
+                            var content = '<dl style="margin: 0;">';
+                            content += '<dt style="font-weight: bold; float: left; width: 120px; clear: left;">Architecture</dt>';
+                            content += '<dd style="margin-left: 130px;">' + infoData.architecture + '</dd>';
+                            content += '<dt style="font-weight: bold; float: left; width: 120px; clear: left;">Vendor ID</dt>';
+                            content += '<dd style="margin-left: 130px;">' + infoData.vendor + '</dd>';
+                            content += '<dt style="font-weight: bold; float: left; width: 120px; clear: left;">Model Name</dt>';
+                            content += '<dd style="margin-left: 130px;">' + infoData.model + '</dd>';
+                            content += '</dl>';
+                            infoContainer.html(content);
+                        }
+                    } catch (e) {
+                        infoContainer.html('<p>Error parsing CPU information: ' + e.message + '</p>');
                     }
-                }).fail(function() {
-                    infoContainer.html('<p>Could not load CPU information.</p>');
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    infoContainer.html('<p>Could not load CPU information: ' + textStatus + ' - ' + errorThrown + '</p>');
                 });
             }
         }
 
-        if (cpuUsageGauge && avgCpuLabel && maxCpuLabel && cpuChartCanvas) {
+        if (cpuUsageGauge && cpuChartCanvas) {
             var cpuChart;
             var cpuInfoLoaded = false;
 

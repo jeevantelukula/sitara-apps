@@ -106,38 +106,51 @@ int read_cpu_times(CpuTimes *times) {
 
 /* Get CPU usage by taking multiple samples and averaging */
 double get_cpu_usage() {
-    CpuTimes first, last;
-    double cpu_percentage = 0.0;
+    CpuTimes samples[SAMPLE_COUNT+1];  /* +1 for the initial reading */
+    double cpu_percentage_sum = 0.0;
     time_t now = time(NULL);
+    int valid_samples = 0;
 
-    /* Take first sample */
-    if (!read_cpu_times(&first)) {
+    /* Take initial sample */
+    if (!read_cpu_times(&samples[0])) {
         return 0.0;
     }
 
-    /* Wait for a short period */
-    sleep_ms(SAMPLE_INTERVAL_MS);
+    /* Take SAMPLE_COUNT additional samples and calculate average */
+    for (int i = 0; i < SAMPLE_COUNT; i++) {
+        /* Wait for a short period */
+        sleep_ms(SAMPLE_INTERVAL_MS);
 
-    /* Take last sample */
-    if (!read_cpu_times(&last)) {
-        return 0.0;
+        /* Take next sample */
+        if (!read_cpu_times(&samples[i+1])) {
+            continue; /* Skip this sample if read fails */
+        }
+
+        /* Calculate differences between this sample and previous */
+        long long int total_diff = samples[i+1].total - samples[i].total;
+        long long int idle_diff = samples[i+1].idle_total - samples[i].idle_total;
+
+        /* Calculate CPU usage percentage for this interval */
+        if (total_diff > 0) {
+            double interval_percentage = ((total_diff - idle_diff) * 100.0) / total_diff;
+
+            /* Skip samples that seem too high (likely avahi-daemon spikes) */
+            if (interval_percentage > 95.0 && valid_samples > 0) {
+                /* Skip this suspiciously high value */
+                continue;
+            }
+
+            /* Ensure value is in valid range */
+            if (interval_percentage < 0) interval_percentage = 0.0;
+            if (interval_percentage > 100) interval_percentage = 100.0;
+
+            cpu_percentage_sum += interval_percentage;
+            valid_samples++;
+        }
     }
 
-    /* Calculate differences */
-    long long int total_diff = last.total - first.total;
-    long long int idle_diff = last.idle_total - first.idle_total;
-
-    /* Calculate CPU usage percentage */
-    if (total_diff > 0) {
-        cpu_percentage = ((total_diff - idle_diff) * 100.0) / total_diff;
-    } else {
-        /* No time has passed or counter wrapped, return 0 */
-        cpu_percentage = 0.0;
-    }
-
-    /* Ensure value is in valid range */
-    if (cpu_percentage < 0) cpu_percentage = 0.0;
-    if (cpu_percentage > 100) cpu_percentage = 100.0;
+    /* Calculate the average CPU percentage from the valid samples */
+    double cpu_percentage = (valid_samples > 0) ? (cpu_percentage_sum / valid_samples) : 0.0;
 
     /* Only update history if enough time has passed (avoid too frequent updates) */
     if (now - cpu_history.last_update >= 1) {
