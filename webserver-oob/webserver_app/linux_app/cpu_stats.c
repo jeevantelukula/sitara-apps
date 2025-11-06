@@ -189,12 +189,11 @@ int load_cpu_history(CpuHistory *history) {
         return 0;
     }
 
-    /* Check if file is too old (more than 30 minutes) */
+    /* We'll accept the file regardless of age to maintain continuity
+     * This ensures the history graph doesn't suddenly change shape
+     * Instead, we'll just update the timestamp to show it's being used now
+     */
     time_t current_time = time(NULL);
-    if (difftime(current_time, file_time) > 1800) {
-        fclose(file);
-        return 0; /* File too old, start fresh */
-    }
 
     /* Read history data */
     if (fread(&history->history_index, sizeof(history->history_index), 1, file) != 1 ||
@@ -376,34 +375,16 @@ double get_cpu_usage() {
             cpu_history.avg_cpu_usage = new_avg;
         }
 
-        /* Simple, stable high watermark approach for maximum CPU usage:
-         * 1. If any value in current history window is higher than max, update max
-         * 2. Apply a very slow decay to max value (0.1% per hour) to eventually forget very old spikes
-         * 3. This provides stable values that don't change frequently
-         */
-
-        /* Find max in current window */
-        double current_max_value = 0;
+        /* Simplest approach: max CPU usage is just the maximum value in the history array */
+        double max_value = 0;
         for (int i = 0; i < cpu_history.history_count; i++) {
-            if (cpu_history.history[i] > current_max_value) {
-                current_max_value = cpu_history.history[i];
+            if (cpu_history.history[i] > max_value) {
+                max_value = cpu_history.history[i];
             }
         }
 
-        /* Update max if new value is higher */
-        if (current_max_value > cpu_history.max_cpu_usage) {
-            cpu_history.max_cpu_usage = current_max_value;
-        } else {
-            /* Apply extremely slow decay - approximately 0.1% per hour */
-            double time_elapsed = difftime(now, cpu_history.last_update);
-            /* Only apply decay if some time has passed (avoiding tiny fluctuations) */
-            if (time_elapsed > 60) {  // Only decay if at least a minute has passed
-                double decay = time_elapsed / (3600.0 * 1000.0); // 0.1% per hour
-                /* Cap the decay to avoid large jumps after long periods of inactivity */
-                if (decay > 0.001) decay = 0.001;
-                cpu_history.max_cpu_usage *= (1.0 - decay);
-            }
-        }
+        /* Set max CPU usage to the maximum value found in the history array */
+        cpu_history.max_cpu_usage = max_value;
 
         cpu_history.last_update = now;
     }
@@ -426,12 +407,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /* Check if temporary history file exists and is too old (more than 24 hours) */
+    /* Only clean up history file if it's extremely old (more than 7 days)
+     * This is just for housekeeping and won't affect normal operation
+     */
     struct stat file_stat;
     time_t now = time(NULL);
     if (stat(HISTORY_FILE, &file_stat) == 0) {
-        /* If file exists and is more than 24 hours old, remove it */
-        if (difftime(now, file_stat.st_mtime) > 86400) {
+        /* If file exists and is more than 7 days old, remove it */
+        if (difftime(now, file_stat.st_mtime) > 604800) {
             if (remove(HISTORY_FILE) != 0) {
                 perror("Warning: Failed to remove old history file");
             }
@@ -456,10 +439,25 @@ int main(int argc, char *argv[]) {
         printf("{\"current_cpu_usage\":%.1f,\"average_cpu_usage\":%.1f,\"max_cpu_usage\":%.1f,\"history_count\":%d,\"history\":[",
                current_cpu_usage, cpu_history.avg_cpu_usage, cpu_history.max_cpu_usage, cpu_history.history_count);
 
-        /* Add history array in chronological order (all entries, up to HISTORY_SIZE) */
-        for (int i = 0; i < cpu_history.history_count; i++) {
-            int idx = (cpu_history.history_index - cpu_history.history_count + i + HISTORY_SIZE) % HISTORY_SIZE;
-            printf("%.1f%s", cpu_history.history[idx], (i < cpu_history.history_count - 1) ? "," : "");
+        /* Add history array in chronological order (all entries, up to HISTORY_SIZE)
+         * Ensure proper ordering by calculating the starting index carefully
+         */
+        if (cpu_history.history_count > 0) {
+            // Calculate the starting index (oldest entry)
+            int start_idx = 0;
+            if (cpu_history.history_count == HISTORY_SIZE) {
+                // If buffer is full, start at the next position after the current index
+                start_idx = (cpu_history.history_index + 1) % HISTORY_SIZE;
+            } else {
+                // If buffer is not full, start at the beginning (index 0)
+                start_idx = 0;
+            }
+
+            // Output all entries in chronological order
+            for (int i = 0; i < cpu_history.history_count; i++) {
+                int idx = (start_idx + i) % HISTORY_SIZE;
+                printf("%.1f%s", cpu_history.history[idx], (i < cpu_history.history_count - 1) ? "," : "");
+            }
         }
 
         printf("]}\n");
