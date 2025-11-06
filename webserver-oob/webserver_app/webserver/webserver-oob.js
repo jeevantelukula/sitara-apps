@@ -219,16 +219,23 @@ let audioProcess = null;
 const fifoPath = '/tmp/audio_classification_fifo';
 
 app.get('/audio-devices', (req, res) => {
-    exec('audio_utils devices', (error, stdout, stderr) => {
+    // Use full path to audio_utils binary
+    const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
+
+    exec(`${audioUtilsPath} devices`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Failed to get audio devices: ${error}`);
+            console.error(`stderr: ${stderr}`);
             return res.status(500).send({ error: 'Failed to get audio devices', details: error.message });
         }
 
-        // Log the output for debugging
-        console.log(`Audio devices detected: ${stdout.trim()}`);
+        // Log both stdout and stderr for debugging
+        console.log(`Audio devices stdout: ${stdout.trim()}`);
+        if (stderr) {
+            console.log(`Audio devices stderr: ${stderr.trim()}`);
+        }
 
-        // Return the list of devices
+        // Return the list of devices from stdout
         res.send(stdout);
     });
 });
@@ -245,8 +252,11 @@ app.get('/start-audio-classification', (req, res) => {
 
     console.log(`Starting audio classification with device: ${device}`);
 
+    // Use full path to audio_utils binary
+    const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
+
     // Start the audio_utils process
-    audioProcess = spawn('audio_utils', ['start_gst', device]);
+    audioProcess = spawn(audioUtilsPath, ['start_gst', device]);
 
     // Set up a timeout to check if the process started successfully
     const startTimeout = setTimeout(() => {
@@ -309,8 +319,11 @@ app.get('/stop-audio-classification', (req, res) => {
     if (audioProcess) {
         console.log('Stopping audio classification');
 
+        // Use full path to audio_utils binary
+        const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
+
         // Send the stop command instead of killing the process
-        const stopProcess = spawn('audio_utils', ['stop_gst']);
+        const stopProcess = spawn(audioUtilsPath, ['stop_gst']);
 
         stopProcess.on('close', (code) => {
             console.log(`Stop command exited with code ${code}`);
