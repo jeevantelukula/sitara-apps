@@ -2360,6 +2360,76 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         var cpuUsageGauge = document.querySelector('#cpu_usage_gauge');
         var cpuChartCanvas = document.querySelector('#cpu_chart');
 
+        // Initialize chart with given data
+        function initializeChart(ctx, cpuData) {
+            if (!cpuData.history) {
+                cpuData.history = [0]; // Start with zero if no history
+            }
+
+            console.log("Initializing chart with " + cpuData.history.length + " data points");
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from(Array(cpuData.history.length).keys()),
+                    datasets: [{
+                        label: 'CPU Usage (%)',
+                        data: cpuData.history.slice(),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        fill: true,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        pointRadius: 0, // Hide points for smoother appearance
+                        borderWidth: 2  // Slightly thicker line
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'CPU Usage (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (minutes:seconds ago)'
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    // Calculate minutes and seconds for this tick
+                                    const totalSeconds = Math.floor(value);
+                                    const minutes = Math.floor(totalSeconds / 60);
+                                    const seconds = totalSeconds % 60;
+
+                                    // Only show labels at certain intervals
+                                    if (minutes === 0) {
+                                        if (seconds % 15 === 0) { // Every 15 seconds in first minute
+                                            return seconds + 's';
+                                        }
+                                    } else if (seconds === 0) { // On minute marks
+                                        return minutes + 'm';
+                                    } else if (seconds % 30 === 0 && index % 2 === 0) { // Every 30 seconds, but not all
+                                        return minutes + 'm' + seconds + 's';
+                                    }
+                                    return '';
+                                },
+                                maxTicksLimit: 10
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 0 // No animation for better performance
+                    }
+                }
+            });
+        }
+
         // Function to load static CPU info
         function loadCpuInfo() {
             var infoContainer = $('#cpu-info-container');
@@ -2416,91 +2486,42 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         // Make sure we have valid history data
                         if (!Array.isArray(cpuData.history) || cpuData.history.length === 0) {
                             console.warn("Received invalid or empty history data:", cpuData.history);
-                            // Initialize with an empty array if history is invalid
-                            cpuData.history = [];
+                            // Initialize with current value if history is invalid
+                            cpuData.history = [cpuData.current_cpu_usage || 0];
                         }
 
-                        // Debug output to console
-                        console.log("Received CPU data:", {
+                        // Debug output to console with full details for troubleshooting
+                        console.log("Received CPU data:", JSON.stringify({
                             current: cpuData.current_cpu_usage,
                             avg: cpuData.average_cpu_usage,
                             max: cpuData.max_cpu_usage,
-                            historyLength: cpuData.history.length
-                        });
+                            historyLength: cpuData.history.length,
+                            historyStart: cpuData.history.slice(0, 3),
+                            historyEnd: cpuData.history.slice(-3)
+                        }));
 
-                        // Update or initialize the chart
+                        // First time initialization of chart or ensure it exists
+                        if (!cpuChart && cpuChartCanvas) {
+                            console.log("Creating new CPU chart");
+                            var ctx = cpuChartCanvas.getContext('2d');
+                            initializeChart(ctx, cpuData);
+                        }
+
+                        // Update the existing chart with data
                         if (cpuChart) {
-                            // Make sure we're using reverse chronological order for better visualization
-                            const historyLabels = Array.from(Array(cpuData.history.length).keys()).reverse();
+                            console.log("Updating CPU chart with " + cpuData.history.length + " data points");
+
+                            // Use chronological order (not reversed) - time flows left to right
+                            const historyLabels = Array.from(Array(cpuData.history.length).keys());
                             cpuChart.data.labels = historyLabels;
                             cpuChart.data.datasets[0].data = cpuData.history.slice(); // Clone array to avoid reference issues
-                            cpuChart.update('none'); // Use 'none' for faster updates
+
+                            // Force complete redraw to ensure visibility
+                            cpuChart.update();
                         } else {
+                            // If chart initialization in the first block failed, try again
                             var ctx = cpuChartCanvas.getContext('2d');
-
-                            // Create reversed labels for better visualization
-                            const historyLabels = Array.from(Array(cpuData.history.length).keys()).reverse();
-
-                            cpuChart = new Chart(ctx, {
-                                type: 'line',
-                                data: {
-                                    labels: historyLabels,
-                                    datasets: [{
-                                        label: 'CPU Usage (%)',
-                                        data: cpuData.history.slice(), // Clone array to avoid reference issues
-                                        borderColor: 'rgb(75, 192, 192)',
-                                        tension: 0.1,
-                                        fill: true,
-                                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                        pointRadius: 0, // Hide points for smoother appearance
-                                        borderWidth: 2  // Slightly thicker line
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                        y: {
-                                            beginAtZero: true,
-                                            max: 100,
-                                            title: {
-                                                display: true,
-                                                text: 'CPU Usage (%)'
-                                            }
-                                        },
-                                        x: {
-                                            title: {
-                                                display: true,
-                                                text: 'Time (minutes:seconds ago)'
-                                            },
-                                            ticks: {
-                                                // Custom function to format x-axis labels as minutes:seconds
-                                                callback: function(value, index, values) {
-                                                    // For a 5-minute history with 300 points
-                                                    // Calculate minutes and seconds for this tick
-                                                    const totalSeconds = Math.floor(value);
-                                                    const minutes = Math.floor(totalSeconds / 60);
-                                                    const seconds = totalSeconds % 60;
-
-                                                    // Only show labels at certain intervals to avoid overcrowding
-                                                    if (minutes === 0) {
-                                                        if (seconds % 15 === 0) { // Every 15 seconds in first minute
-                                                            return seconds + 's';
-                                                        }
-                                                    } else if (seconds === 0) { // On minute marks
-                                                        return minutes + 'm';
-                                                    }
-                                                    return '';
-                                                },
-                                                maxTicksLimit: 15
-                                            }
-                                        }
-                                    },
-                                    animation: {
-                                        duration: 500
-                                    }
-                                }
-                            });
+                            cpuChart = initializeChart(ctx, cpuData);
                         }
                     } catch (e) {
                         // If not JSON, it's probably just a number (old format)

@@ -71,10 +71,11 @@ typedef struct {
     time_t last_update;
     double last_reading;        /* Last valid CPU percentage for spike detection */
     double ema;                 /* Exponential Moving Average for smoothing */
+    time_t start_time;          /* When the program first started */
 } CpuHistory;
 
 /* Global history state */
-static CpuHistory cpu_history = {{0}, 0, 0, 0.0, 0.0, 0, 0.0, 0.0};
+static CpuHistory cpu_history = {{0}, 0, 0, 0.0, 0.0, 0, 0.0, 0.0, 0};
 
 /* Sleep for specified milliseconds */
 void sleep_ms(int milliseconds) {
@@ -233,6 +234,11 @@ double get_cpu_usage() {
         cpu_history.ema = cpu_percentage;
     }
 
+    /* Initialize start_time if this is the first run */
+    if (cpu_history.start_time == 0) {
+        cpu_history.start_time = now;
+    }
+
     /* Update history if enough time has passed */
     if (now - cpu_history.last_update >= 1) {
         /* Save this reading */
@@ -242,33 +248,54 @@ double get_cpu_usage() {
             cpu_history.history_count++;
         }
 
-        /* Update stats */
+        /* Update stats with a different approach for average and max */
         double sum = 0;
-        double max_cpu = cpu_history.max_cpu_usage; // Start with current max
+        double current_max = 0;  // Track max in current window only
 
         /* Calculate statistics from stored history */
         for (int i = 0; i < cpu_history.history_count; i++) {
             sum += cpu_history.history[i];
 
-            /* Update maximum if we find a larger value */
-            if (cpu_history.history[i] > max_cpu) {
-                max_cpu = cpu_history.history[i];
+            /* Find maximum in current window (not persistent) */
+            if (cpu_history.history[i] > current_max) {
+                current_max = cpu_history.history[i];
             }
         }
 
-        /* Calculate running average based on all values in history */
+        /* Calculate running average based on history window */
         double new_avg = (cpu_history.history_count > 0) ?
                         (sum / cpu_history.history_count) : 0.0;
 
-        /* Apply smoothing to the average to avoid jumps */
+        /* Apply gentle smoothing to average */
         if (cpu_history.history_count > 1) {
-            cpu_history.avg_cpu_usage = (0.8 * new_avg) + (0.2 * cpu_history.avg_cpu_usage);
+            cpu_history.avg_cpu_usage = (0.9 * new_avg) + (0.1 * cpu_history.avg_cpu_usage);
         } else {
             cpu_history.avg_cpu_usage = new_avg;
         }
 
-        /* Update max value if needed (max is persistent across app runs) */
-        cpu_history.max_cpu_usage = max_cpu;
+        /* For max CPU usage, use the greater of:
+         * 1. Current window maximum
+         * 2. Existing max value, but decay it slightly over time
+         *    (about 10% reduction per hour so it's not permanent)
+         */
+        double time_elapsed = difftime(now, cpu_history.start_time);
+        double decay_factor = 1.0;
+
+        /* Apply decay to max after 10 minutes, max decay rate about 10% per hour */
+        if (time_elapsed > 600) {  // 10 minutes
+            decay_factor = 1.0 - ((time_elapsed - 600) / 36000.0);
+            if (decay_factor < 0.5) decay_factor = 0.5;  // Never decay below 50%
+        }
+
+        /* Apply decay to previous max */
+        double decayed_max = cpu_history.max_cpu_usage * decay_factor;
+
+        /* Use greater of current window max and decayed historical max */
+        if (current_max > decayed_max) {
+            cpu_history.max_cpu_usage = current_max;
+        } else {
+            cpu_history.max_cpu_usage = decayed_max;
+        }
 
         cpu_history.last_update = now;
     }
