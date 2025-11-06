@@ -376,28 +376,33 @@ double get_cpu_usage() {
             cpu_history.avg_cpu_usage = new_avg;
         }
 
-        /* For max CPU usage, use the greater of:
-         * 1. Current window maximum
-         * 2. Existing max value, but decay it slightly over time
-         *    (about 10% reduction per hour so it's not permanent)
+        /* Simple, stable high watermark approach for maximum CPU usage:
+         * 1. If any value in current history window is higher than max, update max
+         * 2. Apply a very slow decay to max value (0.1% per hour) to eventually forget very old spikes
+         * 3. This provides stable values that don't change frequently
          */
-        double time_elapsed = difftime(now, cpu_history.start_time);
-        double decay_factor = 1.0;
 
-        /* Apply decay to max after 10 minutes, max decay rate about 10% per hour */
-        if (time_elapsed > 600) {  // 10 minutes
-            decay_factor = 1.0 - ((time_elapsed - 600) / 36000.0);
-            if (decay_factor < 0.5) decay_factor = 0.5;  // Never decay below 50%
+        /* Find max in current window */
+        double current_max_value = 0;
+        for (int i = 0; i < cpu_history.history_count; i++) {
+            if (cpu_history.history[i] > current_max_value) {
+                current_max_value = cpu_history.history[i];
+            }
         }
 
-        /* Apply decay to previous max */
-        double decayed_max = cpu_history.max_cpu_usage * decay_factor;
-
-        /* Use greater of current window max and decayed historical max */
-        if (current_max > decayed_max) {
-            cpu_history.max_cpu_usage = current_max;
+        /* Update max if new value is higher */
+        if (current_max_value > cpu_history.max_cpu_usage) {
+            cpu_history.max_cpu_usage = current_max_value;
         } else {
-            cpu_history.max_cpu_usage = decayed_max;
+            /* Apply extremely slow decay - approximately 0.1% per hour */
+            double time_elapsed = difftime(now, cpu_history.last_update);
+            /* Only apply decay if some time has passed (avoiding tiny fluctuations) */
+            if (time_elapsed > 60) {  // Only decay if at least a minute has passed
+                double decay = time_elapsed / (3600.0 * 1000.0); // 0.1% per hour
+                /* Cap the decay to avoid large jumps after long periods of inactivity */
+                if (decay > 0.001) decay = 0.001;
+                cpu_history.max_cpu_usage *= (1.0 - decay);
+            }
         }
 
         cpu_history.last_update = now;
