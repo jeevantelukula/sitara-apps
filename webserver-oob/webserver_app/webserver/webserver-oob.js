@@ -247,6 +247,61 @@ wss.on('connection', (ws, req) => {
 let audioProcess = null;
 const fifoPath = '/tmp/audio_classification_fifo';
 
+// Helper function to force kill any GStreamer processes
+function forceKillGstreamer() {
+    console.log('[Force Cleanup] Looking for stray GStreamer processes');
+    try {
+        // Use execSync to get immediate results
+        const { execSync } = require('child_process');
+        try {
+            // Find GStreamer processes
+            const psOutput = execSync('ps aux | grep gst-launch | grep -v grep', { encoding: 'utf8' });
+
+            if (psOutput && psOutput.trim()) {
+                console.log('[Force Cleanup] Found GStreamer processes:', psOutput);
+                // Extract PIDs
+                const lines = psOutput.trim().split('\n');
+                for (const line of lines) {
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length > 1) {
+                        const pid = parts[1];
+                        console.log('[Force Cleanup] Killing PID:', pid);
+                        try {
+                            // Force kill with SIGKILL
+                            execSync(`kill -9 ${pid}`);
+                            console.log('[Force Cleanup] Successfully killed PID:', pid);
+                        } catch (killError) {
+                            console.error('[Force Cleanup] Failed to kill PID:', pid, killError.message);
+                        }
+                    }
+                }
+            } else {
+                console.log('[Force Cleanup] No GStreamer processes found');
+            }
+        } catch (psError) {
+            // If grep returns no results, it will exit with code 1
+            if (psError.status === 1) {
+                console.log('[Force Cleanup] No GStreamer processes found');
+            } else {
+                console.error('[Force Cleanup] Error checking for GStreamer processes:', psError.message);
+            }
+        }
+
+        // Clean up any FIFO or PID files
+        if (fs.existsSync('/tmp/audio_classification.pid')) {
+            fs.unlinkSync('/tmp/audio_classification.pid');
+            console.log('[Force Cleanup] Removed stale PID file');
+        }
+
+        if (fs.existsSync(fifoPath)) {
+            fs.unlinkSync(fifoPath);
+            console.log('[Force Cleanup] Removed stale FIFO');
+        }
+    } catch (err) {
+        console.error('[Force Cleanup] Error during cleanup:', err.message);
+    }
+}
+
 app.get('/audio-devices', (req, res) => {
     console.log('[/audio-devices] Endpoint called');
 
@@ -354,45 +409,107 @@ app.get('/start-audio-classification', (req, res) => {
 });
 
 app.get('/stop-audio-classification', (req, res) => {
+    console.log('[/stop-audio-classification] Stopping audio classification');
+
+    // Start with force cleanup to ensure any stray processes are killed
+    forceKillGstreamer();
+
     if (audioProcess) {
-        console.log('[/stop-audio-classification] Stopping audio classification');
+        console.log('[/stop-audio-classification] Stopping managed audio process');
 
         // Use standard /usr/bin location for binary
         const audioUtilsPath = '/usr/bin/audio_utils';
 
         console.log(`[/stop-audio-classification] Executing: ${audioUtilsPath} stop_gst`);
 
-        // Send the stop command instead of killing the process
+        // Send the stop command
         const stopProcess = spawn(audioUtilsPath, ['stop_gst']);
 
-        stopProcess.on('close', (code) => {
-            console.log(`Stop command exited with code ${code}`);
+        // Set a timeout for graceful shutdown
+        const forceKillTimeout = setTimeout(() => {
+            console.log('[/stop-audio-classification] Timeout waiting for clean stop, force killing');
 
-            // Ensure the main process is killed after a short delay
+            // Kill the audio process if it still exists
+            if (audioProcess) {
+                console.log('[/stop-audio-classification] Killing audio process with SIGKILL');
+                try {
+                    audioProcess.kill('SIGKILL');
+                } catch (e) {
+                    console.error('[/stop-audio-classification] Error killing process:', e.message);
+                }
+                audioProcess = null;
+            }
+
+            // Run force cleanup again
+            forceKillGstreamer();
+        }, 3000); // 3 second timeout for graceful shutdown
+
+        stopProcess.stdout.on('data', (data) => {
+            console.log(`[/stop-audio-classification] Stop stdout: ${data.toString().trim()}`);
+        });
+
+        stopProcess.stderr.on('data', (data) => {
+            console.log(`[/stop-audio-classification] Stop stderr: ${data.toString().trim()}`);
+        });
+
+        stopProcess.on('close', (code) => {
+            console.log(`[/stop-audio-classification] Stop command exited with code ${code}`);
+            clearTimeout(forceKillTimeout);
+
+            // Ensure the main process is killed
             setTimeout(() => {
                 if (audioProcess) {
-                    audioProcess.kill();
+                    console.log('[/stop-audio-classification] Killing audio process');
+                    try {
+                        audioProcess.kill();
+                    } catch (e) {
+                        console.error('[/stop-audio-classification] Error killing process:', e.message);
+                    }
                     audioProcess = null;
                 }
-            }, 500);
 
-            res.status(200).json({ status: 'stopped', message: 'Audio classification stopped' });
+                // Run force cleanup one more time to be sure
+                forceKillGstreamer();
+
+                res.status(200).json({ status: 'stopped', message: 'Audio classification stopped' });
+            }, 500);
         });
 
         stopProcess.on('error', (err) => {
-            console.error(`Failed to stop audio classification: ${err}`);
+            console.error(`[/stop-audio-classification] Failed to stop audio classification: ${err.message}`);
+            clearTimeout(forceKillTimeout);
 
             // Fallback to killing the process directly
-            audioProcess.kill();
-            audioProcess = null;
+            if (audioProcess) {
+                try {
+                    audioProcess.kill('SIGKILL');
+                } catch (e) {
+                    console.error('[/stop-audio-classification] Error killing process:', e.message);
+                }
+                audioProcess = null;
+            }
+
+            // Run force cleanup again
+            forceKillGstreamer();
+
             res.status(200).json({ status: 'stopped', message: 'Audio classification stopped (fallback)' });
         });
     } else {
+        // No managed process, but run cleanup anyway
+        console.log('[/stop-audio-classification] No managed audio process, but running cleanup');
+
+        // Run cleanup one more time
+        forceKillGstreamer();
+
         res.status(200).json({ status: 'not_running', message: 'Audio classification not running' });
     }
 });
 
 /* Start the server */
+// Run cleanup on startup to ensure no stale processes
+console.log('[STARTUP] Running initial cleanup to ensure no stale processes');
+forceKillGstreamer();
+
 server.listen(port, () => {
     console.log(`Webserver-OOB listening on port ${port}, serving from ${app_dir}`);
 });

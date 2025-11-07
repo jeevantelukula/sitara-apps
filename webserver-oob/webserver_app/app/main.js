@@ -295,80 +295,111 @@ var init = function() {
             // WebSocket for audio classification results
             let wsAudio = null;
             let isClassifying = false;
+            let reconnectTimeout = null;
+            let reconnectAttempts = 0;
+            const MAX_RECONNECT_ATTEMPTS = 5;
+            const RECONNECT_INTERVAL = 1000; // 1 second between attempts
+
+            // Set up WebSocket immediately (persistent connection)
+            setupAudioWebSocket();
 
             // Function to set up WebSocket for audio classification results
             function setupAudioWebSocket() {
                 console.log("[Audio WebSocket] Setting up connection");
+                clearTimeout(reconnectTimeout); // Clear any pending reconnects
 
                 // Close any existing WebSocket connection
                 if (wsAudio) {
-                    console.log("[Audio WebSocket] Closing existing connection");
-                    wsAudio.close();
+                    try {
+                        console.log("[Audio WebSocket] Closing existing connection");
+                        wsAudio.onclose = null; // Prevent onclose handler during intentional close
+                        wsAudio.close();
+                    } catch (e) {
+                        console.error("[Audio WebSocket] Error closing socket:", e);
+                    }
                     wsAudio = null;
                 }
 
-                // Create new WebSocket connection
-                wsAudio = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/audio");
+                try {
+                    // Create new WebSocket connection
+                    wsAudio = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/audio");
 
-                wsAudio.onopen = function() {
-                    console.log("[Audio WebSocket] Connected successfully");
-                };
+                    wsAudio.onopen = function() {
+                        console.log("[Audio WebSocket] Connected successfully");
+                        reconnectAttempts = 0; // Reset reconnect counter on successful connection
+                    };
 
-                wsAudio.onmessage = function(event) {
-                    try {
-                        const result = JSON.parse(event.data);
-                        console.log("[Audio WebSocket] Received:", result);
+                    wsAudio.onmessage = function(event) {
+                        try {
+                            const result = JSON.parse(event.data);
+                            console.log("[Audio WebSocket] Received:", result);
 
-                        // Handle different message types
-                        if (result.status === 'connected') {
-                            console.log("[Audio WebSocket] Initial connection message received");
-                        } else if (result.status === 'stopped') {
-                            console.log("[Audio WebSocket] Classification stopped");
-                            audioClassificationResult.label = "Classification stopped";
-                            startAudioButton.disabled = false;
-                            stopAudioButton.disabled = true;
-                            isClassifying = false;
-                        } else if (result.error) {
-                            console.error("[Audio WebSocket] Error:", result.error);
-                            audioClassificationResult.label = "Error: " + result.error;
-                            if (confidenceScore) confidenceScore.label = "Confidence: N/A";
-                            startAudioButton.disabled = false;
-                            stopAudioButton.disabled = true;
-                            isClassifying = false;
-                        } else if (result.class) {
-                            // Classification result - THIS IS THE KEY PART
-                            console.log("[Audio WebSocket] Classification result:", result.class);
-                            audioClassificationResult.label = result.class;
+                            // Handle different message types
+                            if (result.status === 'connected') {
+                                console.log("[Audio WebSocket] Initial connection message received");
+                            } else if (result.status === 'stopped') {
+                                console.log("[Audio WebSocket] Classification stopped");
+                                audioClassificationResult.label = "Classification stopped";
+                                startAudioButton.disabled = false;
+                                stopAudioButton.disabled = true;
+                                isClassifying = false;
+                            } else if (result.error) {
+                                console.error("[Audio WebSocket] Error:", result.error);
+                                audioClassificationResult.label = "Error: " + result.error;
+                                if (confidenceScore) confidenceScore.label = "Confidence: N/A";
+                                startAudioButton.disabled = false;
+                                stopAudioButton.disabled = true;
+                                isClassifying = false;
+                            } else if (result.class) {
+                                // Classification result - LIVE UPDATES!
+                                console.log("[Audio WebSocket] Classification result:", result.class);
+                                audioClassificationResult.label = result.class;
 
-                            if (confidenceScore && result.confidence !== undefined) {
-                                const confidence = parseFloat(result.confidence);
-                                const confidencePercent = isNaN(confidence) ? 0 : confidence * 100;
-                                confidenceScore.label = "Confidence: " + confidencePercent.toFixed(1) + "%";
+                                if (confidenceScore && result.confidence !== undefined) {
+                                    const confidence = parseFloat(result.confidence);
+                                    const confidencePercent = isNaN(confidence) ? 0 : confidence * 100;
+                                    confidenceScore.label = "Confidence: " + confidencePercent.toFixed(1) + "%";
+                                }
                             }
+                        } catch (e) {
+                            console.error("[Audio WebSocket] Error parsing message:", e, "Data:", event.data);
                         }
-                    } catch (e) {
-                        console.error("[Audio WebSocket] Error parsing message:", e, "Data:", event.data);
-                    }
-                };
+                    };
 
-                wsAudio.onclose = function() {
-                    console.log("[Audio WebSocket] Connection closed");
-                    if (isClassifying) {
-                        audioClassificationResult.label = "Connection lost";
-                        startAudioButton.disabled = false;
-                        stopAudioButton.disabled = true;
-                        isClassifying = false;
-                    }
+                    wsAudio.onclose = function(event) {
+                        console.log("[Audio WebSocket] Connection closed", event ? `code: ${event.code}` : '');
+
+                        // If we're classifying, show connection lost
+                        if (isClassifying) {
+                            audioClassificationResult.label = "Connection lost - reconnecting...";
+                        }
+
+                        wsAudio = null;
+
+                        // Auto reconnect unless max attempts reached
+                        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                            reconnectAttempts++;
+                            const delay = RECONNECT_INTERVAL * reconnectAttempts;
+                            console.log(`[Audio WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+
+                            reconnectTimeout = setTimeout(setupAudioWebSocket, delay);
+                        } else if (isClassifying) {
+                            console.error("[Audio WebSocket] Max reconnection attempts reached");
+                            audioClassificationResult.label = "Connection lost";
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                            isClassifying = false;
+                        }
+                    };
+
+                    wsAudio.onerror = function(error) {
+                        console.error("[Audio WebSocket] Connection error:", error);
+                        // Don't reset UI here - onclose will be called after error and handle it
+                    };
+                } catch (e) {
+                    console.error("[Audio WebSocket] Error creating WebSocket:", e);
                     wsAudio = null;
-                };
-
-                wsAudio.onerror = function(error) {
-                    console.error("[Audio WebSocket] Connection error:", error);
-                    audioClassificationResult.label = "WebSocket error";
-                    startAudioButton.disabled = false;
-                    stopAudioButton.disabled = true;
-                    isClassifying = false;
-                };
+                }
             }
 
             // Start button handler
@@ -382,34 +413,56 @@ var init = function() {
 
                     console.log("[Audio] Starting classification with device:", selectedDevice);
 
-                    // Set up WebSocket FIRST to catch early messages
-                    setupAudioWebSocket();
+                    // WebSocket is already set up (persistent connection)
+                    // Just ensure it's connected or reconnect if needed
+                    if (!wsAudio) {
+                        console.log("[Audio] WebSocket not connected, reconnecting");
+                        setupAudioWebSocket();
+                    }
 
                     // Update UI
                     audioClassificationResult.label = "Starting...";
                     startAudioButton.disabled = true;
                     stopAudioButton.disabled = true;
 
-                    // Start classification
+                    // First try stopping any existing classification
                     $.ajax({
-                        url: '/start-audio-classification?device=' + encodeURIComponent(selectedDevice),
+                        url: '/stop-audio-classification',
                         type: 'GET',
-                        success: function(response) {
-                            console.log("[Audio] Start SUCCESS:", response);
-                            audioClassificationResult.label = "Listening...";
-                            stopAudioButton.disabled = false;
-                            isClassifying = true;
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("[Audio] Start ERROR:", error);
-                            audioClassificationResult.label = "Error: " + error;
-                            startAudioButton.disabled = false;
-                            stopAudioButton.disabled = true;
-                            isClassifying = false;
-                            if (wsAudio) {
-                                wsAudio.close();
-                                wsAudio = null;
-                            }
+                        complete: function() {
+                            // Start classification after cleanup - no matter what happened with stop
+                            $.ajax({
+                                url: '/start-audio-classification?device=' + encodeURIComponent(selectedDevice),
+                                type: 'GET',
+                                success: function(response) {
+                                    console.log("[Audio] Start SUCCESS:", response);
+                                    audioClassificationResult.label = "Listening...";
+                                    stopAudioButton.disabled = false;
+                                    isClassifying = true;
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error("[Audio] Start ERROR:", error);
+                                    let errorMessage = error;
+
+                                    // Handle "already running" error specifically
+                                    if (xhr.responseText && xhr.responseText.indexOf('already running') !== -1) {
+                                        console.log("[Audio] Classification already running - treating as success");
+                                        audioClassificationResult.label = "Listening... (reconnected)";
+                                        stopAudioButton.disabled = false;
+                                        isClassifying = true;
+                                        return; // Exit early - we're treating this as success
+                                    }
+
+                                    audioClassificationResult.label = "Error: " + errorMessage;
+                                    startAudioButton.disabled = false;
+                                    stopAudioButton.disabled = true;
+                                    isClassifying = false;
+                                    if (wsAudio) {
+                                        wsAudio.close();
+                                        wsAudio = null;
+                                    }
+                                }
+                            });
                         }
                     });
                 });
@@ -432,10 +485,11 @@ var init = function() {
                             startAudioButton.disabled = false;
                             stopAudioButton.disabled = true;
                             isClassifying = false;
-                            if (wsAudio) {
-                                wsAudio.close();
-                                wsAudio = null;
-                            }
+                            // DON'T close WebSocket - keep it open for next classification
+                            // if (wsAudio) {
+                            //     wsAudio.close();
+                            //     wsAudio = null;
+                            // }
                         },
                         error: function(xhr, status, error) {
                             console.error("[Audio] Stop ERROR:", error);
