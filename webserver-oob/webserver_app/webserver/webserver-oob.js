@@ -132,82 +132,111 @@ wss.on('connection', (ws, req) => {
     } else if (req.url === '/audio') {
         console.log(`Setting up audio classification WebSocket on ${fifoPath}`);
 
-        // Check if FIFO exists, if not create it
-        if (!fs.existsSync(fifoPath)) {
+        // Send initial connected message
+        ws.send(JSON.stringify({ status: 'connected', message: 'WebSocket connected, waiting for audio classification results' }));
+
+        let fifoFd = null;
+        let readBuffer = '';
+        let readInterval = null;
+
+        // Function to try opening and reading from FIFO
+        const tryReadFifo = () => {
             try {
-                require('child_process').execSync(`mkfifo ${fifoPath}`);
-                console.log(`Created FIFO at ${fifoPath}`);
-            } catch (err) {
-                console.error(`Failed to create FIFO: ${err.message}`);
-                ws.close(1011, "Failed to create FIFO");
-                return;
-            }
-        }
+                // Check if FIFO exists
+                if (!fs.existsSync(fifoPath)) {
+                    return; // FIFO not created yet, wait for pipeline to start
+                }
 
-        let fifoStream;
-
-        try {
-            // Open the FIFO for reading
-            fifoStream = fs.createReadStream(fifoPath, { flags: 'r' });
-
-            fifoStream.on('data', (data) => {
-                try {
-                    const result = data.toString().trim();
-                    console.log(`Audio classification result: ${result}`);
-
-                    if (ws.readyState === WebSocket.OPEN) {
-                        // Format the result as JSON
-                        let resultData;
-                        try {
-                            // Try to parse the result in case it's already JSON
-                            resultData = JSON.parse(result);
-                        } catch (e) {
-                            // If not, create a simple JSON object
-                            resultData = { class: result, confidence: 1.0 };
-                        }
-
-                        ws.send(JSON.stringify(resultData));
+                // Try to open FIFO in non-blocking mode
+                if (fifoFd === null) {
+                    try {
+                        fifoFd = fs.openSync(fifoPath, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK);
+                        console.log('FIFO opened successfully for reading');
+                    } catch (err) {
+                        // FIFO not ready yet
+                        return;
                     }
+                }
+
+                // Read available data
+                const buffer = Buffer.alloc(4096);
+                let bytesRead = 0;
+
+                try {
+                    bytesRead = fs.readSync(fifoFd, buffer, 0, buffer.length, null);
                 } catch (err) {
-                    console.error(`Error processing audio classification data: ${err.message}`);
+                    if (err.code === 'EAGAIN' || err.code === 'EWOULDBLOCK') {
+                        // No data available yet
+                        return;
+                    }
+                    throw err;
                 }
-            });
 
-            fifoStream.on('error', (err) => {
-                console.error(`FIFO stream error: ${err.message}`);
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ error: 'FIFO stream error', message: err.message }));
+                if (bytesRead > 0) {
+                    // Append to read buffer
+                    readBuffer += buffer.toString('utf8', 0, bytesRead);
+
+                    // Process complete results (delimited by $)
+                    let dollarIndex;
+                    while ((dollarIndex = readBuffer.indexOf('$')) !== -1) {
+                        const result = readBuffer.substring(0, dollarIndex).trim();
+                        readBuffer = readBuffer.substring(dollarIndex + 1);
+
+                        if (result && ws.readyState === WebSocket.OPEN) {
+                            console.log(`Audio classification result: ${result}`);
+
+                            // Send as JSON
+                            const resultData = {
+                                class: result,
+                                confidence: 1.0,
+                                timestamp: Date.now()
+                            };
+
+                            ws.send(JSON.stringify(resultData));
+                        }
+                    }
                 }
-            });
-
-            fifoStream.on('close', () => {
-                console.log('FIFO stream closed');
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ status: 'stopped', message: 'Audio classification stopped' }));
+            } catch (err) {
+                console.error(`Error reading from FIFO: ${err.message}`);
+                if (fifoFd !== null) {
+                    try {
+                        fs.closeSync(fifoFd);
+                    } catch (e) {}
+                    fifoFd = null;
                 }
-            });
+            }
+        };
 
-            ws.on('close', () => {
-                console.log('Audio WebSocket connection closed');
-                if (fifoStream) {
-                    fifoStream.close();
-                }
-            });
+        // Poll FIFO every 100ms
+        readInterval = setInterval(tryReadFifo, 100);
 
-            ws.on('error', (err) => {
-                console.error(`Audio WebSocket error: ${err.message}`);
-                if (fifoStream) {
-                    fifoStream.close();
-                }
-            });
+        ws.on('close', () => {
+            console.log('Audio WebSocket connection closed');
+            if (readInterval) {
+                clearInterval(readInterval);
+                readInterval = null;
+            }
+            if (fifoFd !== null) {
+                try {
+                    fs.closeSync(fifoFd);
+                } catch (err) {}
+                fifoFd = null;
+            }
+        });
 
-            // Send initial connected message
-            ws.send(JSON.stringify({ status: 'connected', message: 'WebSocket connected, waiting for audio classification results' }));
-
-        } catch (err) {
-            console.error(`Error setting up FIFO stream: ${err.message}`);
-            ws.close(1011, "Failed to set up FIFO stream");
-        }
+        ws.on('error', (err) => {
+            console.error(`Audio WebSocket error: ${err.message}`);
+            if (readInterval) {
+                clearInterval(readInterval);
+                readInterval = null;
+            }
+            if (fifoFd !== null) {
+                try {
+                    fs.closeSync(fifoFd);
+                } catch (e) {}
+                fifoFd = null;
+            }
+        });
     } else {
         console.log(`Unknown WebSocket URL: ${req.url}`);
         ws.close(1003, "Unsupported WebSocket URL");
