@@ -38,6 +38,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <signal.h>
+#include <sys/types.h>
 
 #define MAX_DEVICES 10
 
@@ -50,7 +52,16 @@ audio_device_info audio_devices[MAX_DEVICES];
 int device_count = 0;
 char *g_selected_device = NULL;
 char fifo_path[256] = "/tmp/audio_classification_fifo";
+char pid_file[256] = "/tmp/audio_classification.pid";
 volatile int running = 0;
+
+// Signal handler for graceful shutdown
+void signal_handler(int signum) {
+    if (signum == SIGTERM || signum == SIGINT) {
+        fprintf(stderr, "Received signal %d, stopping audio classification\n", signum);
+        running = 0;
+    }
+}
 
 // Get list of audio recording devices
 char* get_arecord_devices() {
@@ -341,11 +352,23 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "No device specified, using first device: %s\n", g_selected_device);
         }
 
+        // Setup signal handlers for graceful shutdown
+        signal(SIGTERM, signal_handler);
+        signal(SIGINT, signal_handler);
+
+        // Write PID file so stop_gst can find us
+        FILE *pf = fopen(pid_file, "w");
+        if (pf) {
+            fprintf(pf, "%d\n", getpid());
+            fclose(pf);
+        }
+
         running = 1;
         pthread_t gst_thread;
         if (pthread_create(&gst_thread, NULL, gst_launch_thread, NULL) != 0) {
             fprintf(stderr, "Failed to create GStreamer thread\n");
             printf("ERROR: Failed to start audio classification\n");
+            unlink(pid_file);
             if (g_selected_device) {
                 free(g_selected_device);
                 g_selected_device = NULL;
@@ -355,21 +378,48 @@ int main(int argc, char *argv[]) {
 
         // Print success message for UI feedback
         printf("SUCCESS: Audio classification started\n");
+        fflush(stdout);
 
-        // Join the thread to wait for it to complete
-        pthread_join(gst_thread, NULL);
+        // Detach the thread to let it run independently
+        pthread_detach(gst_thread);
+
+        // Keep the process running to maintain the pipeline
+        while (running) {
+            sleep(1);
+        }
 
         // Cleanup
+        unlink(pid_file);
         if (g_selected_device) {
             free(g_selected_device);
             g_selected_device = NULL;
         }
     } else if (argc > 1 && strcmp(argv[1], "stop_gst") == 0) {
-        if (running) {
-            running = 0;
-            printf("SUCCESS: Audio classification stopped\n");
+        // Read PID from file and send SIGTERM
+        FILE *pf = fopen(pid_file, "r");
+        if (pf) {
+            pid_t pid;
+            if (fscanf(pf, "%d", &pid) == 1) {
+                fclose(pf);
+                fprintf(stderr, "Sending SIGTERM to PID %d\n", pid);
+                if (kill(pid, SIGTERM) == 0) {
+                    printf("SUCCESS: Audio classification stopped\n");
+                    // Give it a moment to cleanup, then remove PID file
+                    sleep(1);
+                    unlink(pid_file);
+                } else {
+                    perror("Failed to send signal");
+                    printf("ERROR: Failed to stop audio classification\n");
+                    // Clean up stale PID file
+                    unlink(pid_file);
+                }
+            } else {
+                fclose(pf);
+                printf("ERROR: Invalid PID file\n");
+                unlink(pid_file);
+            }
         } else {
-            printf("INFO: Audio classification not running\n");
+            printf("INFO: Audio classification not running (no PID file)\n");
         }
     } else if (argc > 1 && strcmp(argv[1], "status") == 0) {
         // New command to check if audio classification is running
