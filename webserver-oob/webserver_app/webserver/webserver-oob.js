@@ -95,6 +95,9 @@ app.get('/cpu-info', (req, res) => {
     });
 });
 
+/* Audio classification support */
+const fifoPath = '/tmp/audio_classification_fifo';
+
 /* WebSocket server for terminal and audio */
 const wss = new WebSocket.Server({ server });
 
@@ -138,21 +141,73 @@ wss.on('connection', (ws, req) => {
         let fifoFd = null;
         let readBuffer = '';
         let readInterval = null;
+        let isClassifying = true; // Assume active by default until told otherwise
+
+        // Handle client messages
+        ws.on('message', (message) => {
+            try {
+                const data = JSON.parse(message);
+                console.log('[Audio WebSocket] Received client message:', data);
+
+                if (data.type === 'client_status') {
+                    if (data.status === 'stopped') {
+                        console.log('[Audio WebSocket] Client stopped classification, pausing FIFO reading');
+                        isClassifying = false;
+                    } else if (data.status === 'started') {
+                        console.log('[Audio WebSocket] Client started classification, resuming FIFO reading');
+                        isClassifying = true;
+                    }
+                } else if (data.type === 'diagnostic_ping') {
+                    console.log(`[Audio WebSocket] Received diagnostic ping #${data.counter}`);
+
+                    // Send back diagnostic information
+                    const diagnosticInfo = {
+                        type: 'diagnostic_response',
+                        fifo_exists: fs.existsSync(fifoPath),
+                        fifo_fd: fifoFd !== null ? 'open' : 'closed',
+                        buffer_size: readBuffer.length,
+                        is_classifying: isClassifying,
+                        timestamp: Date.now()
+                    };
+
+                    ws.send(JSON.stringify(diagnosticInfo));
+
+                    // Force send a test message to verify WebSocket works
+                    const testMessage = {
+                        class: `TEST_CLASS_${data.counter}`,
+                        confidence: 1.0,
+                        timestamp: Date.now()
+                    };
+
+                    ws.send(JSON.stringify(testMessage));
+                }
+            } catch (err) {
+                console.error('[Audio WebSocket] Error parsing client message:', err.message);
+            }
+        });
 
         // Function to try opening and reading from FIFO
         const tryReadFifo = () => {
             try {
+                // Skip reading if classification is paused
+                if (!isClassifying) {
+                    return; // Classification is paused by client
+                }
+
                 // Check if FIFO exists
                 if (!fs.existsSync(fifoPath)) {
+                    console.log('[Audio FIFO] FIFO does not exist yet, waiting for pipeline to create it');
                     return; // FIFO not created yet, wait for pipeline to start
                 }
 
                 // Try to open FIFO in non-blocking mode
                 if (fifoFd === null) {
                     try {
+                        console.log(`[Audio FIFO] Attempting to open FIFO at ${fifoPath}`);
                         fifoFd = fs.openSync(fifoPath, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK);
-                        console.log('FIFO opened successfully for reading');
+                        console.log('[Audio FIFO] FIFO opened successfully for reading, fd:', fifoFd);
                     } catch (err) {
+                        console.log('[Audio FIFO] Failed to open FIFO, it may not be ready yet:', err.message);
                         // FIFO not ready yet
                         return;
                     }
@@ -164,26 +219,100 @@ wss.on('connection', (ws, req) => {
 
                 try {
                     bytesRead = fs.readSync(fifoFd, buffer, 0, buffer.length, null);
+                    if (bytesRead > 0) {
+                        console.log(`[Audio FIFO] Successfully read ${bytesRead} bytes from FIFO`);
+
+                        // Log the first 100 characters of raw data for debugging
+                        const rawData = buffer.toString('utf8', 0, Math.min(bytesRead, 100));
+                        console.log(`[Audio FIFO] Raw data sample: "${rawData}${bytesRead > 100 ? '...' : ''}"`);
+
+                        // Check for dollar sign delimiters
+                        if (buffer.toString('utf8', 0, bytesRead).indexOf('$') === -1) {
+                            console.log('[Audio FIFO] Warning: No dollar sign delimiters found in data');
+                        }
+                    }
                 } catch (err) {
                     if (err.code === 'EAGAIN' || err.code === 'EWOULDBLOCK') {
                         // No data available yet
                         return;
                     }
+                    console.error('[Audio FIFO] Error reading from FIFO:', err.message);
                     throw err;
                 }
 
                 if (bytesRead > 0) {
                     // Append to read buffer
                     readBuffer += buffer.toString('utf8', 0, bytesRead);
+                    console.log('[Audio FIFO] Buffer now contains:', readBuffer.length, 'bytes');
 
-                    // Process complete results (delimited by $)
-                    let dollarIndex;
-                    while ((dollarIndex = readBuffer.indexOf('$')) !== -1) {
-                        const result = readBuffer.substring(0, dollarIndex).trim();
-                        readBuffer = readBuffer.substring(dollarIndex + 1);
+                    // Process complete results (try multiple possible delimiters)
+                    let resultCount = 0;
+                    let result = null;
+                    let delimiterFound = false;
+
+                    // Try to extract using regex pattern matching for audio class names
+                    // This is a more robust approach that can extract words even from messy output
+                    const classRegex = /\b([A-Za-z_]+)\b/g;
+                    const matches = readBuffer.match(classRegex);
+                    if (matches && matches.length > 0) {
+                        // Just use the first word we find as the classification
+                        delimiterFound = true;
+                        result = matches[0].trim();
+                        console.log(`[Audio FIFO] Found result using regex: "${result}"`);
+
+                        // Remove everything up to and including this match from the buffer
+                        const matchIndex = readBuffer.indexOf(result);
+                        if (matchIndex !== -1) {
+                            readBuffer = readBuffer.substring(matchIndex + result.length);
+                            resultCount++;
+                        }
+                    }
+
+                    // If no regex match, try dollar sign delimiter as a fallback
+                    if (!delimiterFound) {
+                        let dollarIndex = readBuffer.indexOf('$');
+                        if (dollarIndex !== -1) {
+                            delimiterFound = true;
+                            result = readBuffer.substring(0, dollarIndex).trim();
+                            readBuffer = readBuffer.substring(dollarIndex + 1);
+                            resultCount++;
+                            console.log(`[Audio FIFO] Found result using $ delimiter: "${result}"`);
+                        }
+                    }
+
+                    // If no dollar sign, try newline delimiter
+                    if (!delimiterFound) {
+                        let newlineIndex = readBuffer.indexOf('\n');
+                        if (newlineIndex !== -1) {
+                            delimiterFound = true;
+                            result = readBuffer.substring(0, newlineIndex).trim();
+                            readBuffer = readBuffer.substring(newlineIndex + 1);
+                            resultCount++;
+                            console.log(`[Audio FIFO] Found result using newline delimiter: "${result}"`);
+                        }
+                    }
+
+                    // If nothing found yet but buffer is getting large, try to extract anything useful
+                    if (!delimiterFound && readBuffer.length > 1000) {
+                        console.log(`[Audio FIFO] No delimiter found but buffer large (${readBuffer.length} bytes), using whole buffer`);
+                        result = readBuffer.trim();
+                        readBuffer = '';
+                        resultCount++;
+
+                        // Try to find and extract just a word if it's a messy buffer
+                        const wordMatch = result.match(/[A-Za-z_]+/);
+                        if (wordMatch) {
+                            console.log(`[Audio FIFO] Extracted word from buffer: "${wordMatch[0]}"`);
+                            result = wordMatch[0];
+                        }
+                    }
+
+                    // Process the result we found (if any)
+                    if (result !== null) {
+                        console.log(`[Audio FIFO] Extracted result: "${result}"`);
 
                         if (result && ws.readyState === WebSocket.OPEN) {
-                            console.log(`Audio classification result: ${result}`);
+                            console.log(`[Audio FIFO] Sending classification result: "${result}"`);
 
                             // Send as JSON
                             const resultData = {
@@ -192,23 +321,46 @@ wss.on('connection', (ws, req) => {
                                 timestamp: Date.now()
                             };
 
-                            ws.send(JSON.stringify(resultData));
+                            try {
+                                ws.send(JSON.stringify(resultData));
+                                console.log('[Audio FIFO] Sent result to WebSocket client');
+                            } catch (wsErr) {
+                                console.error('[Audio FIFO] Error sending to WebSocket:', wsErr.message);
+                            }
+                        } else {
+                            // Log why we're not sending
+                            if (!result) {
+                                console.log('[Audio FIFO] Not sending: empty result');
+                            } else if (!ws || ws.readyState !== WebSocket.OPEN) {
+                                console.log(`[Audio FIFO] Not sending: WebSocket not ready, readyState=${ws ? ws.readyState : 'ws is null'}`);
+                            }
                         }
+                    }
+
+                    if (resultCount > 0) {
+                        console.log(`[Audio FIFO] Processed ${resultCount} classification results`);
+                    } else {
+                        console.log('[Audio FIFO] No complete results found in buffer yet');
                     }
                 }
             } catch (err) {
-                console.error(`Error reading from FIFO: ${err.message}`);
+                console.error(`[Audio FIFO] Error reading from FIFO: ${err.message}`);
+                console.error(`[Audio FIFO] Error stack: ${err.stack}`);
                 if (fifoFd !== null) {
                     try {
                         fs.closeSync(fifoFd);
-                    } catch (e) {}
+                        console.log('[Audio FIFO] Closed FIFO file descriptor after error');
+                    } catch (e) {
+                        console.error('[Audio FIFO] Error closing FIFO:', e.message);
+                    }
                     fifoFd = null;
                 }
             }
         };
 
-        // Poll FIFO every 100ms
-        readInterval = setInterval(tryReadFifo, 100);
+        // Poll FIFO every 500ms (reduced frequency for more reliable updates)
+        console.log('[Audio FIFO] Setting up polling interval (500ms)');
+        readInterval = setInterval(tryReadFifo, 500);
 
         ws.on('close', () => {
             console.log('Audio WebSocket connection closed');
@@ -245,7 +397,6 @@ wss.on('connection', (ws, req) => {
 
 /* Audio classification support */
 let audioProcess = null;
-const fifoPath = '/tmp/audio_classification_fifo';
 
 // Helper function to force kill any GStreamer processes
 function forceKillGstreamer() {
