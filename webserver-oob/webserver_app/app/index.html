@@ -2321,9 +2321,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         <div class="audio-content-section">
             <div class="device-selection-container">
-                <h3>Step 1: Select Audio Input Device</h3>
-                <div id="device_list_container">
-                    <div class="loading-devices">Loading audio capture devices...</div>
+                <h3>Audio Input Devices</h3>
+
+                <ti-widget-button id="fetch_devices_button" label="Fetch Devices" raised background-color="#148C9C" color="white" width="180px" height="45px"></ti-widget-button>
+
+                <div id="device_list_container" style="margin-top: 20px;">
+                    <p>Click "Fetch Devices" to load audio input devices</p>
                 </div>
 
                 <div class="control-buttons-container">
@@ -2333,7 +2336,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
 
             <div class="results-container">
-                <h3>Step 2: Classification Results</h3>
+                <h3>Classification Results</h3>
                 <div id="loading_spinner" class="spinner" style="display: none;"></div>
                 <ti-widget-label id="audio_classification_result" label="Select a device and click 'Start Classification'" font-size="18px" font-weight="bold"></ti-widget-label>
                 <ti-widget-label id="confidence_score" label="Confidence: N/A" font-size="16px" margin-top="10px"></ti-widget-label>

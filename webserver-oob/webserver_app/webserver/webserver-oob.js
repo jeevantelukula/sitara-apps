@@ -75,7 +75,7 @@ app.get('/run-uname', (req, res) => {
 
 /* Handle CPU load requests */
 app.get('/cpu-load', (req, res) => {
-    exec('/usr/share/webserver-oob/webserver_app/linux_app/cpu_stats enhanced', (error, stdout, stderr) => {
+    exec('/usr/bin/cpu_stats enhanced', (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
             return res.status(500).send(error);
@@ -86,7 +86,7 @@ app.get('/cpu-load', (req, res) => {
 
 /* Handle CPU info requests */
 app.get('/cpu-info', (req, res) => {
-    exec('/usr/share/webserver-oob/webserver_app/linux_app/cpu_stats info', (error, stdout, stderr) => {
+    exec('/usr/bin/cpu_stats info', (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
             return res.status(500).send(error);
@@ -221,14 +221,16 @@ const fifoPath = '/tmp/audio_classification_fifo';
 app.get('/audio-devices', (req, res) => {
     console.log('[/audio-devices] Endpoint called');
 
-    // Use full path to audio_utils binary
-    const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
+    // Use standard /usr/bin location for binary
+    const audioUtilsPath = '/usr/bin/audio_utils';
 
     console.log(`[/audio-devices] Executing: ${audioUtilsPath} devices`);
     exec(`${audioUtilsPath} devices`, (error, stdout, stderr) => {
         if (error) {
             console.error(`[/audio-devices] Failed to get audio devices: ${error}`);
             console.error(`[/audio-devices] stderr: ${stderr}`);
+            console.error(`[/audio-devices] error code: ${error.code}`);
+            console.error(`[/audio-devices] Attempted path: ${audioUtilsPath}`);
             // Send plain text error message, not JSON
             return res.status(500).send(`Error: ${error.message}\n${stderr}`);
         }
@@ -255,10 +257,12 @@ app.get('/start-audio-classification', (req, res) => {
         return res.status(400).json({ error: 'Audio classification already running' });
     }
 
-    console.log(`Starting audio classification with device: ${device}`);
+    console.log(`[/start-audio-classification] Starting audio classification with device: ${device}`);
 
-    // Use full path to audio_utils binary
-    const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
+    // Use standard /usr/bin location for binary
+    const audioUtilsPath = '/usr/bin/audio_utils';
+
+    console.log(`[/start-audio-classification] Executing: ${audioUtilsPath} start_gst ${device}`);
 
     // Start the audio_utils process
     audioProcess = spawn(audioUtilsPath, ['start_gst', device]);
@@ -322,10 +326,12 @@ app.get('/start-audio-classification', (req, res) => {
 
 app.get('/stop-audio-classification', (req, res) => {
     if (audioProcess) {
-        console.log('Stopping audio classification');
+        console.log('[/stop-audio-classification] Stopping audio classification');
 
-        // Use full path to audio_utils binary
-        const audioUtilsPath = '/usr/share/webserver-oob/webserver_app/linux_app/audio_utils';
+        // Use standard /usr/bin location for binary
+        const audioUtilsPath = '/usr/bin/audio_utils';
+
+        console.log(`[/stop-audio-classification] Executing: ${audioUtilsPath} stop_gst`);
 
         // Send the stop command instead of killing the process
         const stopProcess = spawn(audioUtilsPath, ['stop_gst']);
