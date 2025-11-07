@@ -172,14 +172,19 @@ wss.on('connection', (ws, req) => {
 
                     ws.send(JSON.stringify(diagnosticInfo));
 
-                    // Force send a test message to verify WebSocket works
-                    const testMessage = {
-                        class: `TEST_CLASS_${data.counter}`,
-                        // Remove confidence as requested
-                        timestamp: Date.now()
-                    };
+                    // Only send a test message if we haven't seen real data from FIFO in the last 3 seconds
+                    // This ensures test messages only appear when no real classifications are coming through
+                    const lastClassificationAge = Date.now() - (global.lastRealClassification || 0);
+                    if (lastClassificationAge > 3000) {
+                        console.log(`[Audio WebSocket] No real classification for ${Math.round(lastClassificationAge/1000)}s, sending test message`);
+                        // Force send a test message to verify WebSocket works
+                        const testMessage = {
+                            class: `Looking for sound...`,  // More user-friendly message than TEST_CLASS_X
+                            timestamp: Date.now()
+                        };
 
-                    ws.send(JSON.stringify(testMessage));
+                        ws.send(JSON.stringify(testMessage));
+                    }
                 }
             } catch (err) {
                 console.error('[Audio WebSocket] Error parsing client message:', err.message);
@@ -252,19 +257,47 @@ wss.on('connection', (ws, req) => {
 
                     // Try to extract using regex pattern matching for audio class names
                     // This is a more robust approach that can extract words even from messy output
-                    const classRegex = /\b([A-Za-z_]+)\b/g;
+                    // More specific regex to match audio classifications like "Music", "Speech", etc.
+                    // Minimum 4 characters to avoid noise, focus on words that could be classifications
+                    const classRegex = /\b([A-Za-z_]{4,})\b/g;
                     const matches = readBuffer.match(classRegex);
                     if (matches && matches.length > 0) {
-                        // Just use the first word we find as the classification
-                        delimiterFound = true;
-                        result = matches[0].trim();
-                        console.log(`[Audio FIFO] Found result using regex: "${result}"`);
+                        // Common words that aren't likely to be classifications
+                        const commonWords = ["from", "with", "this", "that", "have", "been", "your", "file", "data"];
 
-                        // Remove everything up to and including this match from the buffer
-                        const matchIndex = readBuffer.indexOf(result);
-                        if (matchIndex !== -1) {
-                            readBuffer = readBuffer.substring(matchIndex + result.length);
-                            resultCount++;
+                        // Find the first word that's not in our common words list
+                        let found = false;
+                        for (let i = 0; i < matches.length; i++) {
+                            const currMatch = matches[i].trim();
+                            if (!commonWords.includes(currMatch.toLowerCase())) {
+                                // Found a potential classification
+                                delimiterFound = true;
+                                result = currMatch;
+                                found = true;
+                                console.log(`[Audio FIFO] Found result using regex: "${result}"`);
+
+                                // Remove everything up to and including this match from the buffer
+                                const matchIndex = readBuffer.indexOf(result);
+                                if (matchIndex !== -1) {
+                                    readBuffer = readBuffer.substring(matchIndex + result.length);
+                                    resultCount++;
+                                }
+                                break;
+                            }
+                        }
+
+                        // If we didn't find anything usable, just use the first match
+                        if (!found && matches.length > 0) {
+                            delimiterFound = true;
+                            result = matches[0].trim();
+                            console.log(`[Audio FIFO] Using first match (no better options): "${result}"`);
+
+                            // Remove everything up to and including this match from the buffer
+                            const matchIndex = readBuffer.indexOf(result);
+                            if (matchIndex !== -1) {
+                                readBuffer = readBuffer.substring(matchIndex + result.length);
+                                resultCount++;
+                            }
                         }
                     }
 
@@ -292,8 +325,8 @@ wss.on('connection', (ws, req) => {
                         }
                     }
 
-                    // If nothing found yet but buffer is getting large, try to extract anything useful
-                    if (!delimiterFound && readBuffer.length > 1000) {
+                    // If nothing found yet but buffer is getting large (reduced threshold), try to extract anything useful
+                    if (!delimiterFound && readBuffer.length > 200) {
                         console.log(`[Audio FIFO] No delimiter found but buffer large (${readBuffer.length} bytes), using whole buffer`);
                         result = readBuffer.trim();
                         readBuffer = '';
@@ -317,13 +350,15 @@ wss.on('connection', (ws, req) => {
                             // Send as JSON
                             const resultData = {
                                 class: result,
-                                confidence: 1.0,
                                 timestamp: Date.now()
                             };
 
                             try {
                                 ws.send(JSON.stringify(resultData));
-                                console.log('[Audio FIFO] Sent result to WebSocket client');
+                                console.log('[Audio FIFO] Sent real classification result to WebSocket client');
+
+                                // Update timestamp of last real classification
+                                global.lastRealClassification = Date.now();
                             } catch (wsErr) {
                                 console.error('[Audio FIFO] Error sending to WebSocket:', wsErr.message);
                             }
@@ -358,9 +393,9 @@ wss.on('connection', (ws, req) => {
             }
         };
 
-        // Poll FIFO every 500ms (reduced frequency for more reliable updates)
-        console.log('[Audio FIFO] Setting up polling interval (500ms)');
-        readInterval = setInterval(tryReadFifo, 500);
+        // Poll FIFO every 100ms for faster updates
+        console.log('[Audio FIFO] Setting up polling interval (100ms)');
+        readInterval = setInterval(tryReadFifo, 100);
 
         ws.on('close', () => {
             console.log('Audio WebSocket connection closed');
