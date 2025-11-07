@@ -218,31 +218,70 @@ wss.on('connection', (ws, req) => {
                     }
                 }
 
-                // Read available data
-                const buffer = Buffer.alloc(4096);
+                // Read available data - increased buffer size to capture more classifications at once
+                const buffer = Buffer.alloc(8192); // Doubled buffer size
                 let bytesRead = 0;
 
                 try {
-                    bytesRead = fs.readSync(fifoFd, buffer, 0, buffer.length, null);
+                    // Detailed error logging for the read operation
+                    try {
+                        bytesRead = fs.readSync(fifoFd, buffer, 0, buffer.length, null);
+                    } catch (readError) {
+                        if (readError.code === 'EAGAIN' || readError.code === 'EWOULDBLOCK') {
+                            // No data available yet, this is normal for non-blocking reads
+                            return;
+                        }
+
+                        // Log detailed error information
+                        console.error('[Audio FIFO] Error reading from FIFO:', readError);
+                        console.error(`[Audio FIFO] FIFO status: exists=${fs.existsSync(fifoPath)}, fd=${fifoFd}`);
+
+                        // Attempt recovery by reopening the FIFO
+                        try {
+                            if (fifoFd !== null) {
+                                fs.closeSync(fifoFd);
+                                console.log('[Audio FIFO] Closed FIFO after read error');
+                            }
+                            fifoFd = null;
+                            return; // Skip this round and try again later
+                        } catch (closeError) {
+                            console.error('[Audio FIFO] Error closing FIFO after read error:', closeError);
+                        }
+
+                        throw readError; // Re-throw the original error
+                    }
+
+                    // Successfully read from the FIFO
                     if (bytesRead > 0) {
                         console.log(`[Audio FIFO] Successfully read ${bytesRead} bytes from FIFO`);
 
-                        // Log the first 100 characters of raw data for debugging
+                        // Log more comprehensive debug information
                         const rawData = buffer.toString('utf8', 0, Math.min(bytesRead, 100));
-                        console.log(`[Audio FIFO] Raw data sample: "${rawData}${bytesRead > 100 ? '...' : ''}"`);
+                        console.log(`[Audio FIFO] Raw data (first 100 chars): "${rawData}${bytesRead > 100 ? '...' : ''}"`);
 
-                        // Check for dollar sign delimiters
-                        if (buffer.toString('utf8', 0, bytesRead).indexOf('$') === -1) {
+                        // Count dollar signs for better diagnostics
+                        const dollarCount = (buffer.toString('utf8', 0, bytesRead).match(/\$/g) || []).length;
+                        if (dollarCount === 0) {
                             console.log('[Audio FIFO] Warning: No dollar sign delimiters found in data');
+                        } else {
+                            console.log(`[Audio FIFO] Found ${dollarCount} dollar sign delimiters in data`);
                         }
                     }
                 } catch (err) {
-                    if (err.code === 'EAGAIN' || err.code === 'EWOULDBLOCK') {
-                        // No data available yet
-                        return;
+                    console.error('[Audio FIFO] Fatal error reading from FIFO:', err);
+
+                    // Try to recover by resetting the FIFO descriptor
+                    if (fifoFd !== null) {
+                        try {
+                            fs.closeSync(fifoFd);
+                            console.log('[Audio FIFO] Closed FIFO after fatal error');
+                        } catch (e) {
+                            console.error('[Audio FIFO] Error closing FIFO after fatal error:', e);
+                        }
+                        fifoFd = null;
                     }
-                    console.error('[Audio FIFO] Error reading from FIFO:', err.message);
-                    throw err;
+
+                    return; // Skip this round instead of throwing
                 }
 
                 if (bytesRead > 0) {
@@ -255,26 +294,104 @@ wss.on('connection', (ws, req) => {
                     let result = null;
                     let delimiterFound = false;
 
-                    // Try to extract using regex pattern matching for audio class names
-                    // This is a more robust approach that can extract words even from messy output
-                    // More specific regex to match audio classifications like "Music", "Speech", etc.
-                    // Minimum 4 characters to avoid noise, focus on words that could be classifications
-                    const classRegex = /\b([A-Za-z_]{4,})\b/g;
-                    const matches = readBuffer.match(classRegex);
-                    if (matches && matches.length > 0) {
-                        // Common words that aren't likely to be classifications
-                        const commonWords = ["from", "with", "this", "that", "have", "been", "your", "file", "data"];
+                    // First try to use dollar sign delimiter since we know that's the actual format
+                    // from the FIFO (e.g., "Typing$Typing$Chewing, mastication$...")
 
-                        // Find the first word that's not in our common words list
-                        let found = false;
-                        for (let i = 0; i < matches.length; i++) {
-                            const currMatch = matches[i].trim();
-                            if (!commonWords.includes(currMatch.toLowerCase())) {
-                                // Found a potential classification
+                    // Strategy: Find the LAST (rightmost) value to always show the latest classification
+                    let lastClassification = null;
+                    let processedAny = false;
+
+                    // Step 1: First check if there are any dollar signs in the buffer
+                    if (readBuffer.indexOf('$') !== -1) {
+                        delimiterFound = true;
+                        processedAny = true;
+
+                        // Step 2: Split by dollar sign to get all classifications
+                        const allClassifications = readBuffer.split('$');
+
+                        // Step 3: Get the last non-empty classification (the one before the last dollar sign)
+                        // We iterate through all values but only keep the last non-empty one
+                        for (let i = 0; i < allClassifications.length - 1; i++) {
+                            const current = allClassifications[i].trim();
+                            if (current) {
+                                resultCount++;
+                                lastClassification = current;
+                            }
+                        }
+
+                        // Step 4: Clear the buffer to avoid reprocessing old data
+                        // This is critical for real-time performance to avoid backlog
+                        readBuffer = '';
+
+                        // Step 5: Log and send only the last (most recent) classification
+                        if (lastClassification) {
+                            console.log(`[Audio FIFO] Found LATEST classification: "${lastClassification}"`);
+
+                            if (ws.readyState === WebSocket.OPEN) {
+                                try {
+                                    const resultData = {
+                                        class: lastClassification,
+                                        timestamp: Date.now()
+                                    };
+                                    ws.send(JSON.stringify(resultData));
+                                    console.log(`[Audio FIFO] Sent LATEST classification: "${lastClassification}"`);
+
+                                    // Update last real classification timestamp
+                                    global.lastRealClassification = Date.now();
+
+                                    // Set the result for later processing
+                                    result = lastClassification;
+                                } catch (err) {
+                                    console.error(`[Audio FIFO] Error sending latest classification: ${err.message}`);
+                                }
+                            }
+                        }
+                    }
+
+                    // If we processed any results with dollar signs, stop here
+                    if (processedAny) {
+                        // Clear the delimiterFound flag so we don't try to send the result again later
+                        delimiterFound = false;
+                        result = null;
+                    }
+
+                    // Only if $ delimiter isn't found, try regex pattern matching
+                    if (!delimiterFound) {
+                        // Try to extract using regex pattern matching for audio class names
+                        // Improved regex for multi-word classifications like "Chewing, mastication"
+                        // Allow spaces, commas, and keep phrases together
+                        const classRegex = /\b([A-Za-z][A-Za-z_,\s]{3,}[A-Za-z])\b/g;
+                        const matches = readBuffer.match(classRegex);
+                        if (matches && matches.length > 0) {
+                            // Common words that aren't likely to be classifications
+                            const commonWords = ["from", "with", "this", "that", "have", "been", "your", "file", "data"];
+
+                            // Find the first word that's not in our common words list
+                            let found = false;
+                            for (let i = 0; i < matches.length; i++) {
+                                const currMatch = matches[i].trim();
+                                if (!commonWords.includes(currMatch.toLowerCase())) {
+                                    // Found a potential classification
+                                    delimiterFound = true;
+                                    result = currMatch;
+                                    found = true;
+                                    console.log(`[Audio FIFO] Found result using regex: "${result}"`);
+
+                                    // Remove everything up to and including this match from the buffer
+                                    const matchIndex = readBuffer.indexOf(result);
+                                    if (matchIndex !== -1) {
+                                        readBuffer = readBuffer.substring(matchIndex + result.length);
+                                        resultCount++;
+                                    }
+                                    break;
+                                }
+                            }
+
+                            // If we didn't find anything usable, just use the first match
+                            if (!found && matches.length > 0) {
                                 delimiterFound = true;
-                                result = currMatch;
-                                found = true;
-                                console.log(`[Audio FIFO] Found result using regex: "${result}"`);
+                                result = matches[0].trim();
+                                console.log(`[Audio FIFO] Using first match (no better options): "${result}"`);
 
                                 // Remove everything up to and including this match from the buffer
                                 const matchIndex = readBuffer.indexOf(result);
@@ -282,34 +399,7 @@ wss.on('connection', (ws, req) => {
                                     readBuffer = readBuffer.substring(matchIndex + result.length);
                                     resultCount++;
                                 }
-                                break;
                             }
-                        }
-
-                        // If we didn't find anything usable, just use the first match
-                        if (!found && matches.length > 0) {
-                            delimiterFound = true;
-                            result = matches[0].trim();
-                            console.log(`[Audio FIFO] Using first match (no better options): "${result}"`);
-
-                            // Remove everything up to and including this match from the buffer
-                            const matchIndex = readBuffer.indexOf(result);
-                            if (matchIndex !== -1) {
-                                readBuffer = readBuffer.substring(matchIndex + result.length);
-                                resultCount++;
-                            }
-                        }
-                    }
-
-                    // If no regex match, try dollar sign delimiter as a fallback
-                    if (!delimiterFound) {
-                        let dollarIndex = readBuffer.indexOf('$');
-                        if (dollarIndex !== -1) {
-                            delimiterFound = true;
-                            result = readBuffer.substring(0, dollarIndex).trim();
-                            readBuffer = readBuffer.substring(dollarIndex + 1);
-                            resultCount++;
-                            console.log(`[Audio FIFO] Found result using $ delimiter: "${result}"`);
                         }
                     }
 
