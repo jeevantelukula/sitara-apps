@@ -292,6 +292,85 @@ var init = function() {
                 audioClassificationResult.label = "Ready: " + deviceName;
             };
 
+            // WebSocket for audio classification results
+            let wsAudio = null;
+            let isClassifying = false;
+
+            // Function to set up WebSocket for audio classification results
+            function setupAudioWebSocket() {
+                console.log("[Audio WebSocket] Setting up connection");
+
+                // Close any existing WebSocket connection
+                if (wsAudio) {
+                    console.log("[Audio WebSocket] Closing existing connection");
+                    wsAudio.close();
+                    wsAudio = null;
+                }
+
+                // Create new WebSocket connection
+                wsAudio = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/audio");
+
+                wsAudio.onopen = function() {
+                    console.log("[Audio WebSocket] Connected successfully");
+                };
+
+                wsAudio.onmessage = function(event) {
+                    try {
+                        const result = JSON.parse(event.data);
+                        console.log("[Audio WebSocket] Received:", result);
+
+                        // Handle different message types
+                        if (result.status === 'connected') {
+                            console.log("[Audio WebSocket] Initial connection message received");
+                        } else if (result.status === 'stopped') {
+                            console.log("[Audio WebSocket] Classification stopped");
+                            audioClassificationResult.label = "Classification stopped";
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                            isClassifying = false;
+                        } else if (result.error) {
+                            console.error("[Audio WebSocket] Error:", result.error);
+                            audioClassificationResult.label = "Error: " + result.error;
+                            if (confidenceScore) confidenceScore.label = "Confidence: N/A";
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                            isClassifying = false;
+                        } else if (result.class) {
+                            // Classification result - THIS IS THE KEY PART
+                            console.log("[Audio WebSocket] Classification result:", result.class);
+                            audioClassificationResult.label = result.class;
+
+                            if (confidenceScore && result.confidence !== undefined) {
+                                const confidence = parseFloat(result.confidence);
+                                const confidencePercent = isNaN(confidence) ? 0 : confidence * 100;
+                                confidenceScore.label = "Confidence: " + confidencePercent.toFixed(1) + "%";
+                            }
+                        }
+                    } catch (e) {
+                        console.error("[Audio WebSocket] Error parsing message:", e, "Data:", event.data);
+                    }
+                };
+
+                wsAudio.onclose = function() {
+                    console.log("[Audio WebSocket] Connection closed");
+                    if (isClassifying) {
+                        audioClassificationResult.label = "Connection lost";
+                        startAudioButton.disabled = false;
+                        stopAudioButton.disabled = true;
+                        isClassifying = false;
+                    }
+                    wsAudio = null;
+                };
+
+                wsAudio.onerror = function(error) {
+                    console.error("[Audio WebSocket] Connection error:", error);
+                    audioClassificationResult.label = "WebSocket error";
+                    startAudioButton.disabled = false;
+                    stopAudioButton.disabled = true;
+                    isClassifying = false;
+                };
+            }
+
             // Start button handler
             if (startAudioButton) {
                 startAudioButton.addEventListener('click', function() {
@@ -301,23 +380,36 @@ var init = function() {
                         return;
                     }
 
-                    console.log("Starting classification with device:", selectedDevice);
+                    console.log("[Audio] Starting classification with device:", selectedDevice);
 
-                    // TODO: Add WebSocket and start classification logic here
-                    audioClassificationResult.label = "Starting classification with " + selectedDevice;
+                    // Set up WebSocket FIRST to catch early messages
+                    setupAudioWebSocket();
 
+                    // Update UI
+                    audioClassificationResult.label = "Starting...";
+                    startAudioButton.disabled = true;
+                    stopAudioButton.disabled = true;
+
+                    // Start classification
                     $.ajax({
                         url: '/start-audio-classification?device=' + encodeURIComponent(selectedDevice),
                         type: 'GET',
                         success: function(response) {
-                            console.log("Start SUCCESS:", response);
-                            audioClassificationResult.label = "Classifying: " + selectedDevice;
-                            startAudioButton.disabled = true;
+                            console.log("[Audio] Start SUCCESS:", response);
+                            audioClassificationResult.label = "Listening...";
                             stopAudioButton.disabled = false;
+                            isClassifying = true;
                         },
                         error: function(xhr, status, error) {
-                            console.error("Start ERROR:", error);
+                            console.error("[Audio] Start ERROR:", error);
                             audioClassificationResult.label = "Error: " + error;
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                            isClassifying = false;
+                            if (wsAudio) {
+                                wsAudio.close();
+                                wsAudio = null;
+                            }
                         }
                     });
                 });
@@ -328,246 +420,33 @@ var init = function() {
                 stopAudioButton.addEventListener('click', function() {
                     console.log(">>> STOP BUTTON CLICKED <<<");
 
+                    audioClassificationResult.label = "Stopping...";
+                    stopAudioButton.disabled = true;
+
                     $.ajax({
                         url: '/stop-audio-classification',
                         type: 'GET',
                         success: function(response) {
-                            console.log("Stop SUCCESS:", response);
+                            console.log("[Audio] Stop SUCCESS:", response);
                             audioClassificationResult.label = "Classification stopped";
                             startAudioButton.disabled = false;
                             stopAudioButton.disabled = true;
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Stop ERROR:", error);
-                        }
-                    });
-                });
-            }
-
-            // WebSocket for audio classification results
-            let wsAudio = null;
-            let isClassifying = false;
-
-            // Function to set up WebSocket for audio classification results
-            function setupAudioWebSocket() {
-                // Close any existing WebSocket connection
-                if (wsAudio) {
-                    wsAudio.close();
-                    wsAudio = null;
-                }
-
-                // Create new WebSocket connection
-                wsAudio = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/audio");
-
-                wsAudio.onopen = function() {
-                    console.log("Audio Classification WebSocket connected.");
-                };
-
-                wsAudio.onmessage = function(event) {
-                    try {
-                        const result = JSON.parse(event.data);
-
-                        // Handle different message types
-                        if (result.status === 'connected') {
-                            console.log("Audio WebSocket connected successfully");
-                            // Keep existing UI state
-                        } else if (result.status === 'stopped') {
-                            console.log("Audio classification stopped via WebSocket");
-                            updateUIState('stopped');
-                        } else if (result.error) {
-                            console.error("Error from WebSocket:", result.error);
-                            audioClassificationResult.label = "Error: " + result.error;
-                            confidenceScore.label = "Confidence: N/A";
-                            updateUIState('error');
-                        } else if (result.class) {
-                            // Classification result
-                            audioClassificationResult.label = "Class: " + result.class;
-                            if (result.confidence !== undefined) {
-                                const confidence = parseFloat(result.confidence);
-                                const confidencePercent = isNaN(confidence) ? 0 : confidence * 100;
-                                confidenceScore.label = "Confidence: " + confidencePercent.toFixed(1) + "%";
-                            } else {
-                                confidenceScore.label = "Confidence: N/A";
-                            }
-                            loadingSpinner.style.display = 'none';
-                        }
-                    } catch (e) {
-                        console.error("Error parsing WebSocket message:", e);
-                        // If not JSON, treat as plain text classification
-                        const text = event.data.toString();
-                        if (text && text.trim()) {
-                            audioClassificationResult.label = "Class: " + text.trim();
-                            confidenceScore.label = "Confidence: N/A";
-                            loadingSpinner.style.display = 'none';
-                        }
-                    }
-                };
-
-                wsAudio.onclose = function() {
-                    console.log("Audio Classification WebSocket disconnected.");
-                    if (isClassifying) {
-                        // Unexpected close while still classifying
-                        audioClassificationResult.label = "Connection lost. Classification stopped.";
-                        updateUIState('stopped');
-                    }
-                    wsAudio = null;
-                };
-
-                wsAudio.onerror = function(error) {
-                    console.error("Audio Classification WebSocket error: ", error);
-                    audioClassificationResult.label = "WebSocket error. Classification stopped.";
-                    updateUIState('error');
-                    if (wsAudio) {
-                        wsAudio.close();
-                        wsAudio = null;
-                    }
-                };
-            }
-
-            // Function to update UI state
-            function updateUIState(state) {
-                console.log("[Audio] UI state changing to:", state);
-                switch(state) {
-                    case 'starting':
-                        isClassifying = true;
-                        startAudioButton.disabled = true;
-                        stopAudioButton.disabled = false;
-                        // Disable device selection buttons
-                        const selectButtons = deviceListContainer.querySelectorAll('.device-select-btn');
-                        selectButtons.forEach(btn => btn.disabled = true);
-                        audioClassificationResult.label = "Starting classification...";
-                        confidenceScore.label = "Confidence: ";
-                        loadingSpinner.style.display = 'block';
-                        break;
-
-                    case 'started':
-                        isClassifying = true;
-                        startAudioButton.disabled = true;
-                        stopAudioButton.disabled = false;
-                        audioClassificationResult.label = "Listening for audio...";
-                        loadingSpinner.style.display = 'none';
-                        break;
-
-                    case 'stopping':
-                        startAudioButton.disabled = true;
-                        stopAudioButton.disabled = true;
-                        audioClassificationResult.label = "Stopping classification...";
-                        loadingSpinner.style.display = 'block';
-                        break;
-
-                    case 'stopped':
-                        isClassifying = false;
-                        startAudioButton.disabled = selectedDevice ? false : true; // Only enable if device is selected
-                        stopAudioButton.disabled = true;
-                        // Re-enable device selection buttons
-                        const selectBtns = deviceListContainer.querySelectorAll('.device-select-btn');
-                        selectBtns.forEach(btn => btn.disabled = false);
-                        loadingSpinner.style.display = 'none';
-                        if (audioClassificationResult.label === "Starting classification..." ||
-                            audioClassificationResult.label === "Stopping classification...") {
-                            audioClassificationResult.label = "Classification stopped. Select a device to start again.";
-                        }
-                        break;
-
-                    case 'error':
-                        isClassifying = false;
-                        startAudioButton.disabled = selectedDevice ? false : true;
-                        stopAudioButton.disabled = true;
-                        // Re-enable device selection buttons
-                        const selectBtnsError = deviceListContainer.querySelectorAll('.device-select-btn');
-                        selectBtnsError.forEach(btn => btn.disabled = false);
-                        loadingSpinner.style.display = 'none';
-                        break;
-                }
-            }
-
-            // Start audio classification
-            startAudioButton.addEventListener('click', function() {
-                if (!selectedDevice) {
-                    audioClassificationResult.label = "Please select an audio device first";
-                    return;
-                }
-
-                console.log("[Audio] Start button clicked, selected device:", selectedDevice);
-
-                // Update UI to starting state
-                updateUIState('starting');
-
-                // Set up WebSocket first to ensure we catch early messages
-                setupAudioWebSocket();
-
-                // Send request to start classification with selected device
-                console.log("[Audio] Sending start request with device:", selectedDevice);
-                $.ajax({
-                    url: "/start-audio-classification?device=" + encodeURIComponent(selectedDevice),
-                    method: "GET",
-                    dataType: "json",
-                    timeout: 15000, // 15 seconds timeout
-                    success: function(data) {
-                        console.log("[Audio] Start classification response:", data);
-                        if (data.status === 'started') {
-                            updateUIState('started');
-                            audioClassificationResult.label = `Classifying audio from: ${selectedDeviceName}`;
-                            // Keep WebSocket open for results
-                        } else {
-                            audioClassificationResult.label = "Classification process completed.";
-                            updateUIState('stopped');
+                            isClassifying = false;
                             if (wsAudio) {
                                 wsAudio.close();
                                 wsAudio = null;
                             }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("[Audio] Stop ERROR:", error);
+                            audioClassificationResult.label = "Error stopping";
+                            startAudioButton.disabled = false;
+                            stopAudioButton.disabled = true;
+                            isClassifying = false;
                         }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.error("[Audio] Error starting audio classification:", jqXHR.responseText);
-                        let errorMsg;
-                        try {
-                            const response = JSON.parse(jqXHR.responseText);
-                            errorMsg = response.error || "Failed to start classification";
-                        } catch (e) {
-                            errorMsg = "Failed to start classification: " + textStatus;
-                        }
-                        audioClassificationResult.label = "Error: " + errorMsg;
-                        updateUIState('error');
-                        if (wsAudio) {
-                            wsAudio.close();
-                            wsAudio = null;
-                        }
-                    }
+                    });
                 });
-            });
-
-            // Stop audio classification
-            stopAudioButton.addEventListener('click', function() {
-                // Update UI to stopping state
-                updateUIState('stopping');
-
-                $.ajax({
-                    url: "/stop-audio-classification",
-                    method: "GET",
-                    dataType: "json",
-                    timeout: 10000,
-                    success: function(data) {
-                        console.log("Stop classification response:", data);
-                        audioClassificationResult.label = "Classification stopped.";
-                        updateUIState('stopped');
-                        if (wsAudio) {
-                            // Keep WebSocket open briefly to receive any final messages
-                            setTimeout(function() {
-                                if (wsAudio) {
-                                    wsAudio.close();
-                                    wsAudio = null;
-                                }
-                            }, 1000);
-                        }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.error("Error stopping audio classification:", textStatus, errorThrown);
-                        audioClassificationResult.label = "Error stopping classification. Please try again.";
-                        updateUIState('error');
-                    }
-                });
-            });
+            }
 
             function updateCpuLoad() {
                 $.get("/cpu-load", function(data) {
