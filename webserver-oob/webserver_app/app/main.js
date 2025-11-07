@@ -314,7 +314,7 @@ var init = function() {
 
                     // Log diagnostic info
                     pingCounter++;
-                    console.log(`[DIAGNOSTIC] Ping #${pingCounter}, classification active for ${pingCounter * 5} seconds`);
+                    console.log(`[DIAGNOSTIC] Ping #${pingCounter}, classification active for ${pingCounter} seconds`);
 
                     // Check WebSocket state
                     if (!wsAudio) {
@@ -327,7 +327,7 @@ var init = function() {
                     if (wsAudio && wsAudio.readyState === WebSocket.OPEN) {
                         wsAudio.send(JSON.stringify({type: "diagnostic_ping", counter: pingCounter}));
                     }
-                }, 5000);
+                }, 1000); // Changed from 5000ms to 1000ms (1 second) for faster updates
             };
 
             // Set up WebSocket immediately (persistent connection)
@@ -387,7 +387,7 @@ var init = function() {
                                 audioClassificationResult.label = "Error: " + result.error;
                                 audioClassificationResult.style.color = "#F44336"; // Red for error
                                 audioClassificationResult.style.opacity = "1"; // Reset opacity
-                                if (confidenceScore) confidenceScore.label = "Confidence: N/A";
+                                if (confidenceScore) confidenceScore.label = "Status: Error";
                                 startAudioButton.disabled = false;
                                 stopAudioButton.disabled = true;
                                 isClassifying = false;
@@ -425,15 +425,9 @@ var init = function() {
                                 const timeString = now.toLocaleTimeString();
 
                                 if (confidenceScore) {
-                                    if (result.confidence !== undefined) {
-                                        const confidence = parseFloat(result.confidence);
-                                        const confidencePercent = isNaN(confidence) ? 0 : confidence * 100;
-                                        confidenceScore.label = "Confidence: " + confidencePercent.toFixed(1) + "% (" + timeString + ")";
-                                        console.log("[Audio WebSocket] Updated confidence score:", confidencePercent.toFixed(1) + "%");
-                                    } else {
-                                        confidenceScore.label = "Last update: " + timeString;
-                                        console.log("[Audio WebSocket] Updated timestamp:", timeString);
-                                    }
+                                    // Remove confidence display and just show timestamp
+                                    confidenceScore.label = "Last update: " + timeString;
+                                    console.log("[Audio WebSocket] Updated timestamp:", timeString);
                                 } else {
                                     console.error("[Audio WebSocket] confidenceScore element not found");
                                 }

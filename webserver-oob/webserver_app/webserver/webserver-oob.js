@@ -175,7 +175,7 @@ wss.on('connection', (ws, req) => {
                     // Force send a test message to verify WebSocket works
                     const testMessage = {
                         class: `TEST_CLASS_${data.counter}`,
-                        confidence: 1.0,
+                        // Remove confidence as requested
                         timestamp: Date.now()
                     };
 
