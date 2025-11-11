@@ -327,13 +327,15 @@ var init = function() {
                 for (var i = 0; i < lines.length; i++) {
                     var deviceName = lines[i].trim();
 
-                    // Extract device name for display (e.g., "plughw:1,0" -> "Device 1")
+                    // Extract device name for display (e.g., "plughw:1,0" -> "Card 1, Device 0")
                     var displayName = 'Audio Device ' + (i + 1);
                     if (deviceName.includes('plughw:')) {
-                        var match = deviceName.match(/plughw:(\d+),\d+/);
+                        var match = deviceName.match(/plughw:(\d+),(\d+)/);
                         if (match) {
-                            displayName = 'Audio Capture Device ' + match[1];
+                            displayName = 'Card ' + match[1] + ', Subdevice ' + match[2];
                         }
+                    } else if (deviceName === 'default') {
+                        displayName = 'Default Audio Device';
                     }
 
                     html += '<div class="device-card" data-device="' + deviceName + '">';
@@ -670,6 +672,21 @@ var init = function() {
                     }
 
                     console.log("[Audio] Starting classification with device:", selectedDevice);
+
+                    // Log the exact device format being sent
+                    console.log("[Audio] Device format check:");
+                    console.log("  - Raw device string:", selectedDevice);
+                    console.log("  - URL encoded:", encodeURIComponent(selectedDevice));
+
+                    // Verify it's in the correct format for GStreamer (plughw:X,Y)
+                    if (selectedDevice.includes('plughw:')) {
+                        var match = selectedDevice.match(/plughw:(\d+),(\d+)/);
+                        if (match) {
+                            console.log("  - Card number:", match[1]);
+                            console.log("  - Subdevice number:", match[2]);
+                            console.log("  - GStreamer will use: alsasrc device=" + selectedDevice);
+                        }
+                    }
 
                     // WebSocket is already set up (persistent connection)
                     // Just ensure it's connected or reconnect if needed

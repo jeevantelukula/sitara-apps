@@ -112,6 +112,13 @@ app.get('/audio-devices', (req, res) => {
 app.get('/start-audio-classification', (req, res) => {
     const device = req.query.device || 'default';
 
+    console.log('[Audio Classification] Starting with device:', device);
+    console.log('[Audio Classification] Device format:', {
+        raw: device,
+        isPlugHw: device.includes('plughw:'),
+        command: `/usr/bin/audio_utils start_gst "${device}"`
+    });
+
     if (audioProcess) {
         return res.status(400).send('Audio classification already running');
     }
