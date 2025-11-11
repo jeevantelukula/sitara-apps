@@ -203,22 +203,28 @@ var init = function() {
                 });
             }
 
-            // ===== AUDIO CLASSIFICATION - SIMPLIFIED VERSION =====
+            // ===== AUDIO CLASSIFICATION - MODERN UI VERSION =====
             console.log("=== Audio Classification Init ===");
 
-            const fetchDevicesButton = templateObj.$.fetch_devices_button;
-            const startAudioButton = templateObj.$.start_audio_button;
-            const stopAudioButton = templateObj.$.stop_audio_button;
-            const audioClassificationResult = templateObj.$.audio_classification_result;
-            const confidenceScore = templateObj.$.confidence_score;
+            const fetchDevicesButton = document.getElementById('fetch_devices_button');
+            const startAudioButton = document.getElementById('start_audio_button');
+            const stopAudioButton = document.getElementById('stop_audio_button');
+            const audioClassificationResult = document.getElementById('audio_classification_result');
 
             let selectedDevice = null;
             let audioDevices = [];
+            let classificationStats = {
+                total: 0,
+                uniqueClasses: new Set(),
+                startTime: null,
+                lastUpdateTime: null,
+                history: []
+            };
 
             console.log("Fetch button:", fetchDevicesButton ? "OK" : "MISSING");
             console.log("Start button:", startAudioButton ? "OK" : "MISSING");
 
-            // Simple button click to fetch devices
+            // Event listeners using getElementById instead of templateObj
             if (fetchDevicesButton) {
                 fetchDevicesButton.addEventListener('click', function() {
                     console.log(">>> FETCH DEVICES BUTTON CLICKED <<<");
@@ -235,7 +241,7 @@ var init = function() {
                     return;
                 }
 
-                container.innerHTML = '<p style="color: blue;">Loading devices...</p>';
+                container.innerHTML = '<div class="loading-devices">Loading audio devices...</div>';
 
                 console.log("Making AJAX call to /audio-devices");
 
@@ -250,7 +256,7 @@ var init = function() {
                     error: function(xhr, status, error) {
                         console.error("ERROR!", status, error);
                         console.error("Response:", xhr.responseText);
-                        container.innerHTML = '<p style="color: red;">Error: ' + error + '</p>';
+                        container.innerHTML = '<div class="no-devices-message">Error loading devices: ' + error + '</div>';
                     }
                 });
             }
@@ -265,32 +271,113 @@ var init = function() {
 
                 if (lines.length === 0 || lines[0].toLowerCase().includes('error') ||
                     lines[0].toLowerCase().includes('no audio')) {
-                    container.innerHTML = '<p>No audio devices found</p>';
+                    container.innerHTML = '<div class="no-devices-message">No audio devices found</div>';
                     return;
                 }
 
                 audioDevices = lines;
-                var html = '<div style="border: 1px solid #ccc; padding: 10px;">';
+                var html = '';
 
                 for (var i = 0; i < lines.length; i++) {
                     var deviceName = lines[i].trim();
-                    html += '<div style="margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;">';
-                    html += '<span style="font-weight: bold;">' + deviceName + '</span>';
-                    html += '<button onclick="window.selectDevice(\'' + deviceName + '\')" style="margin-left: 10px; padding: 5px 15px; background: #148C9C; color: white; border: none; border-radius: 3px; cursor: pointer;">Select</button>';
+                    var isSelected = deviceName === selectedDevice;
+
+                    html += '<div class="device-card' + (isSelected ? ' selected' : '') + '" onclick="window.selectDevice(\'' + deviceName + '\')">';
+                    html += '  <div class="device-info">';
+                    html += '    <div class="device-name">Audio Device ' + (i + 1) + '</div>';
+                    html += '    <div class="device-id">' + deviceName + '</div>';
+                    html += '  </div>';
+                    html += '  <div class="device-status ' + (isSelected ? 'selected' : 'available') + '">';
+                    html += isSelected ? 'Selected' : 'Available';
+                    html += '  </div>';
                     html += '</div>';
                 }
 
-                html += '</div>';
                 container.innerHTML = html;
             }
 
-            // Global function for button onclick
+            // Global function for device selection
             window.selectDevice = function(deviceName) {
                 console.log("Device selected:", deviceName);
                 selectedDevice = deviceName;
+
+                // Update UI
+                displayDevices(audioDevices.join('\n'));
                 startAudioButton.disabled = false;
-                audioClassificationResult.label = "Ready: " + deviceName;
+
+                // Update display
+                audioClassificationResult.textContent = "Device Selected";
+                audioClassificationResult.classList.remove('waiting');
             };
+
+            // Update session time display
+            function updateSessionTime() {
+                if (classificationStats.startTime) {
+                    const elapsed = Date.now() - classificationStats.startTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    const timeStr = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+
+                    const sessionTimeElem = document.getElementById('session_time');
+                    if (sessionTimeElem) {
+                        sessionTimeElem.textContent = timeStr;
+                    }
+                }
+            }
+
+            // Update statistics
+            function updateStats(classification) {
+                classificationStats.total++;
+                classificationStats.uniqueClasses.add(classification);
+                classificationStats.lastUpdateTime = Date.now();
+
+                // Add to history
+                const historyItem = {
+                    class: classification,
+                    time: new Date().toLocaleTimeString()
+                };
+                classificationStats.history.unshift(historyItem);
+                if (classificationStats.history.length > 20) {
+                    classificationStats.history.pop();
+                }
+
+                // Update UI
+                const totalElem = document.getElementById('total_classifications');
+                if (totalElem) totalElem.textContent = classificationStats.total;
+
+                const uniqueElem = document.getElementById('unique_classes');
+                if (uniqueElem) uniqueElem.textContent = classificationStats.uniqueClasses.size;
+
+                // Calculate update rate
+                if (classificationStats.startTime) {
+                    const elapsed = (Date.now() - classificationStats.startTime) / 60000; // minutes
+                    const rate = Math.round(classificationStats.total / elapsed);
+                    const rateElem = document.getElementById('update_rate');
+                    if (rateElem) rateElem.textContent = rate;
+                }
+
+                // Update history display
+                updateHistoryDisplay();
+            }
+
+            // Update history display
+            function updateHistoryDisplay() {
+                const historyContainer = document.getElementById('classification_history');
+                if (!historyContainer) return;
+
+                if (classificationStats.history.length === 0) {
+                    historyContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No classifications yet. Start audio classification to see results here.</div>';
+                } else {
+                    let html = '';
+                    classificationStats.history.forEach((item, index) => {
+                        html += '<div class="history-item' + (index === 0 ? ' new-classification' : '') + '">';
+                        html += '  <span class="history-class">' + item.class + '</span>';
+                        html += '  <span class="history-time">' + item.time + '</span>';
+                        html += '</div>';
+                    });
+                    historyContainer.innerHTML = html;
+                }
+            }
 
             // WebSocket for audio classification results
             let wsAudio = null;
@@ -371,72 +458,67 @@ var init = function() {
                                 console.log("[Audio WebSocket] Initial connection message received");
                             } else if (result.status === 'stopped') {
                                 console.log("[Audio WebSocket] Classification stopped");
-                                audioClassificationResult.label = "Classification stopped";
+                                audioClassificationResult.textContent = "Classification stopped";
+                                audioClassificationResult.classList.add('waiting');
                                 startAudioButton.disabled = false;
                                 stopAudioButton.disabled = true;
                                 isClassifying = false;
 
-                                // Clear any pulsing effect
-                                if (pulseInterval) {
-                                    clearInterval(pulseInterval);
-                                    pulseInterval = null;
-                                    audioClassificationResult.style.opacity = "1";
+                                // Update status indicator
+                                const statusIndicator = document.getElementById('status_indicator');
+                                const statusText = document.getElementById('status_text');
+                                if (statusIndicator) {
+                                    statusIndicator.classList.remove('active');
+                                    statusIndicator.classList.add('inactive');
+                                }
+                                if (statusText) {
+                                    statusText.textContent = 'Inactive';
                                 }
                             } else if (result.error) {
                                 console.error("[Audio WebSocket] Error:", result.error);
-                                audioClassificationResult.label = "Error: " + result.error;
-                                audioClassificationResult.style.color = "#F44336"; // Red for error
-                                audioClassificationResult.style.opacity = "1"; // Reset opacity
-                                if (confidenceScore) confidenceScore.label = "Status: Error";
+                                audioClassificationResult.textContent = "Error: " + result.error;
+                                audioClassificationResult.style.color = "#dc3545"; // Red for error
                                 startAudioButton.disabled = false;
                                 stopAudioButton.disabled = true;
                                 isClassifying = false;
 
-                                // Clear any pulsing effect
-                                if (pulseInterval) {
-                                    clearInterval(pulseInterval);
-                                    pulseInterval = null;
+                                // Update status indicator
+                                const statusIndicator = document.getElementById('status_indicator');
+                                const statusText = document.getElementById('status_text');
+                                if (statusIndicator) {
+                                    statusIndicator.classList.remove('active');
+                                    statusIndicator.classList.add('inactive');
+                                }
+                                if (statusText) {
+                                    statusText.textContent = 'Error';
                                 }
                             } else if (result.class) {
                                 // Classification result - LIVE UPDATES!
                                 console.log("[Audio WebSocket] Classification result received:", result.class);
 
-                                // Force update to ensure UI reflects changes
+                                // Update main display
                                 if (audioClassificationResult) {
-                                    // Create a visual flash effect
-                                    audioClassificationResult.style.transition = "color 0.5s ease";
-                                    audioClassificationResult.style.color = "#FF5722"; // Orange color for new result
+                                    audioClassificationResult.textContent = result.class;
+                                    audioClassificationResult.classList.remove('waiting');
 
-                                    // Update the displayed text
-                                    audioClassificationResult.label = result.class;
+                                    // Brief highlight animation
+                                    audioClassificationResult.style.animation = 'none';
+                                    setTimeout(() => {
+                                        audioClassificationResult.style.animation = 'highlight 0.5s ease';
+                                    }, 10);
 
                                     console.log("[Audio WebSocket] Updated UI with:", result.class);
-
-                                    // Return to normal color after 300ms
-                                    setTimeout(() => {
-                                        audioClassificationResult.style.color = ""; // Back to default
-                                    }, 300);
-                                } else {
-                                    console.error("[Audio WebSocket] audioClassificationResult element not found");
                                 }
 
-                                // Update timestamp to show when last update was received
-                                const now = new Date();
-                                const timeString = now.toLocaleTimeString();
-
-                                if (confidenceScore) {
-                                    // Remove confidence display and just show timestamp
-                                    confidenceScore.label = "Last update: " + timeString;
-                                    console.log("[Audio WebSocket] Updated timestamp:", timeString);
-                                } else {
-                                    console.error("[Audio WebSocket] confidenceScore element not found");
-                                }
+                                // Update statistics
+                                updateStats(result.class);
 
                                 // Add notification for user if needed
                                 if (document.hidden) {
-                                    // Page is not visible, could add notification here
                                     console.log("[Audio WebSocket] Page hidden, classification continuing in background");
                                 }
+                            } else if (result.type === 'diagnostic_response') {
+                                console.log("[Audio WebSocket] Diagnostic response:", result);
                             }
                         } catch (e) {
                             console.error("[Audio WebSocket] Error parsing message:", e);
@@ -480,6 +562,9 @@ var init = function() {
                 }
             }
 
+            // Session timer
+            let sessionTimer = null;
+
             // Start button handler
             if (startAudioButton) {
                 startAudioButton.addEventListener('click', function() {
@@ -498,10 +583,35 @@ var init = function() {
                         setupAudioWebSocket();
                     }
 
+                    // Reset statistics
+                    classificationStats = {
+                        total: 0,
+                        uniqueClasses: new Set(),
+                        startTime: Date.now(),
+                        lastUpdateTime: null,
+                        history: []
+                    };
+
+                    // Start session timer
+                    if (sessionTimer) clearInterval(sessionTimer);
+                    sessionTimer = setInterval(updateSessionTime, 1000);
+
                     // Update UI
-                    audioClassificationResult.label = "Starting...";
+                    audioClassificationResult.textContent = "Starting...";
+                    audioClassificationResult.classList.add('waiting');
                     startAudioButton.disabled = true;
                     stopAudioButton.disabled = true;
+
+                    // Update status indicator
+                    const statusIndicator = document.getElementById('status_indicator');
+                    const statusText = document.getElementById('status_text');
+                    if (statusIndicator) {
+                        statusIndicator.classList.remove('inactive');
+                        statusIndicator.classList.add('active');
+                    }
+                    if (statusText) {
+                        statusText.textContent = 'Connecting...';
+                    }
 
                     // First try stopping any existing classification
                     $.ajax({
@@ -535,13 +645,14 @@ var init = function() {
                                 type: 'GET',
                                 success: function(response) {
                                     console.log("[Audio] Start SUCCESS:", response);
-                                    audioClassificationResult.label = "Listening... (waiting for first result)";
-                                    audioClassificationResult.style.color = "#2196F3"; // Blue for listening state
+                                    audioClassificationResult.textContent = "Listening...";
+                                    audioClassificationResult.classList.add('waiting');
                                     stopAudioButton.disabled = false;
-                                    // Already set isClassifying = true above
 
-                                    // Start the pulsing effect to show active classification
-                                    startPulsing();
+                                    // Update status
+                                    if (statusText) {
+                                        statusText.textContent = 'Active - Listening';
+                                    }
 
                                     // Start diagnostics
                                     startDiagnostics();
@@ -587,14 +698,14 @@ var init = function() {
                 stopAudioButton.addEventListener('click', function() {
                     console.log(">>> STOP BUTTON CLICKED <<<");
 
-                    audioClassificationResult.label = "Stopping...";
+                    audioClassificationResult.textContent = "Stopping...";
+                    audioClassificationResult.classList.add('waiting');
                     stopAudioButton.disabled = true;
 
-                    // Clear any pulsing effect
-                    if (pulseInterval) {
-                        clearInterval(pulseInterval);
-                        pulseInterval = null;
-                        audioClassificationResult.style.opacity = "1";
+                    // Stop session timer
+                    if (sessionTimer) {
+                        clearInterval(sessionTimer);
+                        sessionTimer = null;
                     }
 
                     // Clear diagnostics
@@ -603,31 +714,34 @@ var init = function() {
                         diagnosticInterval = null;
                     }
 
+                    // Update status indicator
+                    const statusIndicator = document.getElementById('status_indicator');
+                    const statusText = document.getElementById('status_text');
+                    if (statusIndicator) {
+                        statusIndicator.classList.remove('active');
+                        statusIndicator.classList.add('inactive');
+                    }
+                    if (statusText) {
+                        statusText.textContent = 'Stopping...';
+                    }
+
                     $.ajax({
                         url: '/stop-audio-classification',
                         type: 'GET',
                         success: function(response) {
                             console.log("[Audio] Stop SUCCESS:", response);
-                            audioClassificationResult.label = "Classification stopped";
-                            audioClassificationResult.style.color = ""; // Reset color
-                            audioClassificationResult.style.opacity = "1"; // Reset opacity
+                            audioClassificationResult.textContent = "Classification stopped";
+                            audioClassificationResult.classList.add('waiting');
                             startAudioButton.disabled = false;
                             stopAudioButton.disabled = true;
 
                             // Make sure to set the flag to stop classification
                             isClassifying = false;
 
-                            // Clear any pending timeouts or intervals
-                            if (pulseInterval) {
-                                clearInterval(pulseInterval);
-                                pulseInterval = null;
+                            // Update status
+                            if (statusText) {
+                                statusText.textContent = 'Inactive';
                             }
-
-                            // DON'T close WebSocket - keep it open for next classification
-                            // if (wsAudio) {
-                            //     wsAudio.close();
-                            //     wsAudio = null;
-                            // }
 
                             // Send status update via WebSocket
                             if (wsAudio && wsAudio.readyState === WebSocket.OPEN) {
@@ -636,7 +750,7 @@ var init = function() {
                         },
                         error: function(xhr, status, error) {
                             console.error("[Audio] Stop ERROR:", error);
-                            audioClassificationResult.label = "Error stopping";
+                            audioClassificationResult.textContent = "Error stopping";
                             startAudioButton.disabled = false;
                             stopAudioButton.disabled = true;
                             isClassifying = false;
