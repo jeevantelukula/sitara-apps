@@ -2869,20 +2869,45 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         if (cpuChart) {
                             console.log("Updating CPU chart with " + cpuData.history.length + " data points");
 
-                            // Use chronological order (not reversed) - time flows left to right
-                            const historyLabels = Array.from(Array(cpuData.history.length).keys());
-                            cpuChart.data.labels = historyLabels;
-                            cpuChart.data.datasets[0].data = cpuData.history.slice(); // Clone array to avoid reference issues
+                            // Always use the last 300 points (5 minutes) for smooth rolling window
+                            // The backend already handles the rolling window in cpu_stats.c
+                            const dataPoints = cpuData.history.slice(); // Clone array
 
-                            // Update x-axis to show appropriate time range (up to 5 minutes)
-                            if (cpuData.history.length >= 300) {
-                                cpuChart.options.scales.x.title.text = 'Time (last 5 minutes)';
-                            } else if (cpuData.history.length > 60) {
-                                cpuChart.options.scales.x.title.text = 'Time (last ' + Math.floor(cpuData.history.length/60) + ' min ' + (cpuData.history.length % 60) + ' sec)';
+                            // Create time labels for the x-axis (in seconds ago format)
+                            const labels = [];
+                            for (let i = 0; i < dataPoints.length; i++) {
+                                // Label every 30 seconds for clarity
+                                if (i % 30 === 0) {
+                                    const secondsAgo = dataPoints.length - i - 1;
+                                    if (secondsAgo === 0) {
+                                        labels.push('Now');
+                                    } else if (secondsAgo < 60) {
+                                        labels.push(secondsAgo + 's');
+                                    } else {
+                                        const minutes = Math.floor(secondsAgo / 60);
+                                        const seconds = secondsAgo % 60;
+                                        labels.push(minutes + 'm' + (seconds > 0 ? seconds + 's' : ''));
+                                    }
+                                } else {
+                                    labels.push('');
+                                }
                             }
 
-                            // Force complete redraw to ensure visibility
-                            cpuChart.update();
+                            cpuChart.data.labels = labels;
+                            cpuChart.data.datasets[0].data = dataPoints;
+
+                            // Always show "last 5 minutes" when we have enough data
+                            if (cpuData.history.length >= 300) {
+                                cpuChart.options.scales.x.title.text = 'Time (last 5 minutes - rolling window)';
+                            } else {
+                                const totalSeconds = cpuData.history.length;
+                                const minutes = Math.floor(totalSeconds / 60);
+                                const seconds = totalSeconds % 60;
+                                cpuChart.options.scales.x.title.text = 'Time (' + (minutes > 0 ? minutes + 'm ' : '') + seconds + 's)';
+                            }
+
+                            // Smooth animation for rolling effect
+                            cpuChart.update('none'); // Use 'none' for no animation to reduce CPU load
                         } else {
                             // If chart initialization in the first block failed, try again
                             var ctx = cpuChartCanvas.getContext('2d');
