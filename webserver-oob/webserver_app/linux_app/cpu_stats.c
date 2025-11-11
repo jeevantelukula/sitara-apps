@@ -44,10 +44,10 @@
 #include <sys/types.h>
 
 #define HISTORY_SIZE 300        /* Store 5 minutes of history (assuming 1 second per sample) */
-#define SAMPLE_COUNT 5          /* Number of samples to take for one measurement */
-#define SAMPLE_INTERVAL_MS 200  /* Time between samples in milliseconds */
-#define SPIKE_THRESHOLD 30.0    /* Percentage change to consider a spike */
-#define EMA_ALPHA 0.3           /* Weight for current sample in exponential moving average */
+#define SAMPLE_COUNT 2          /* Number of samples to take for one measurement - reduced for real-time */
+#define SAMPLE_INTERVAL_MS 100  /* Time between samples in milliseconds - reduced for faster response */
+#define SPIKE_THRESHOLD 40.0    /* Percentage change to consider a spike - increased for less filtering */
+#define EMA_ALPHA 0.5           /* Weight for current sample in exponential moving average - increased for faster response */
 #define HISTORY_FILE "/tmp/cpu_stats_history.dat"  /* File to store history data */
 #define HISTORY_VERSION 1       /* Version of history file format */
 
@@ -219,115 +219,51 @@ int load_cpu_history(CpuHistory *history) {
     return 1;
 }
 
-/* Calculate CPU usage with multiple samples and intelligent filtering */
+/* Calculate CPU usage with optimized real-time approach */
 double get_cpu_usage() {
-    CpuTimes samples[SAMPLE_COUNT+1];
-    double measurements[SAMPLE_COUNT];
-    int valid_measurements = 0;
+    CpuTimes sample1, sample2;
     double cpu_percentage = 0.0;
     time_t now = time(NULL);
 
-    /* Take initial sample */
-    if (!read_cpu_times(&samples[0])) {
-        return 0.0;
+    /* Take first sample */
+    if (!read_cpu_times(&sample1)) {
+        return cpu_history.last_reading;
     }
 
-    /* Take multiple samples */
-    for (int i = 0; i < SAMPLE_COUNT; i++) {
-        sleep_ms(SAMPLE_INTERVAL_MS);
+    /* Short delay for accurate delta measurement */
+    sleep_ms(SAMPLE_INTERVAL_MS);
 
-        if (!read_cpu_times(&samples[i+1])) {
-            continue;
-        }
-
-        /* Calculate differences */
-        long long int total_diff = samples[i+1].total - samples[i].total;
-        long long int idle_diff = samples[i+1].idle_total - samples[i].idle_total;
-
-        if (total_diff > 0) {
-            double interval_percentage = ((total_diff - idle_diff) * 100.0) / total_diff;
-
-            /* Basic validity checks */
-            if (interval_percentage < 0) interval_percentage = 0.0;
-            if (interval_percentage > 100) interval_percentage = 100.0;
-
-            /* Store this measurement */
-            measurements[valid_measurements++] = interval_percentage;
-        }
+    /* Take second sample */
+    if (!read_cpu_times(&sample2)) {
+        return cpu_history.last_reading;
     }
 
-    if (valid_measurements == 0) {
-        return cpu_history.last_reading; /* Return last valid reading if no valid samples */
-    }
+    /* Calculate CPU usage percentage */
+    long long int total_diff = sample2.total - sample1.total;
+    long long int idle_diff = sample2.idle_total - sample1.idle_total;
 
-    /* Sort measurements to find median */
-    for (int i = 0; i < valid_measurements-1; i++) {
-        for (int j = 0; j < valid_measurements-i-1; j++) {
-            if (measurements[j] > measurements[j+1]) {
-                double temp = measurements[j];
-                measurements[j] = measurements[j+1];
-                measurements[j+1] = temp;
-            }
-        }
-    }
+    if (total_diff > 0) {
+        cpu_percentage = ((total_diff - idle_diff) * 100.0) / total_diff;
 
-    /* Get median value (more robust than average) */
-    double median = measurements[valid_measurements / 2];
-
-    /* Calculate standard deviation to detect outliers */
-    double sum = 0.0, sum_sq = 0.0, stddev = 0.0;
-
-    for (int i = 0; i < valid_measurements; i++) {
-        sum += measurements[i];
-        sum_sq += measurements[i] * measurements[i];
-    }
-
-    double mean = sum / valid_measurements;
-
-    /* Only calculate stddev if we have multiple measurements */
-    if (valid_measurements > 1) {
-        stddev = sqrt((sum_sq / valid_measurements) - (mean * mean));
-    }
-
-    /* Generic spike detection using statistical methods and history */
-    int is_spike = 0;
-
-    /* Method 1: Detect sudden large changes from previous value */
-    if (cpu_history.history_count > 0 &&
-        fabs(median - cpu_history.last_reading) > SPIKE_THRESHOLD) {
-        is_spike = 1;
-    }
-
-    /* Method 2: Detect if value is far from the mean (>2 standard deviations) */
-    if (valid_measurements > 2 && stddev > 0 &&
-        fabs(median - mean) > (2 * stddev)) {
-        is_spike = 1;
-    }
-
-    /* Method 3: Detect if value is very high and very different from recent values */
-    if (cpu_history.history_count > 5 && median > 90.0 &&
-        cpu_history.avg_cpu_usage < 70.0) {
-        is_spike = 1;
-    }
-
-    /* If we detect a spike, use a more stable value instead */
-    if (is_spike) {
-        /* Use previous reading or mean of measurements (excluding highest value) */
-        if (cpu_history.history_count > 0) {
-            cpu_percentage = cpu_history.last_reading;
-        } else if (valid_measurements > 1) {
-            /* Calculate mean excluding highest value */
-            double sum_without_highest = sum - measurements[valid_measurements-1];
-            cpu_percentage = sum_without_highest / (valid_measurements - 1);
-        } else {
-            cpu_percentage = median; /* Fall back to median if no better option */
-        }
+        /* Basic validity checks */
+        if (cpu_percentage < 0) cpu_percentage = 0.0;
+        if (cpu_percentage > 100) cpu_percentage = 100.0;
     } else {
-        /* No spike detected, use median */
-        cpu_percentage = median;
+        return cpu_history.last_reading;
     }
 
-    /* Apply exponential moving average for smoothing */
+    /* Simple spike detection - only check for extreme changes */
+    if (cpu_history.history_count > 0) {
+        double change = fabs(cpu_percentage - cpu_history.last_reading);
+
+        /* If change is too extreme (>50%), apply light smoothing */
+        if (change > 50.0 && cpu_history.last_reading < 80.0) {
+            /* Blend with previous value to smooth the spike */
+            cpu_percentage = (cpu_percentage * 0.7) + (cpu_history.last_reading * 0.3);
+        }
+    }
+
+    /* Apply light exponential moving average for smoothing */
     if (cpu_history.history_count > 0) {
         cpu_history.ema = (EMA_ALPHA * cpu_percentage) +
                           ((1.0 - EMA_ALPHA) * cpu_history.ema);
@@ -426,6 +362,29 @@ int main(int argc, char *argv[]) {
 
     /* Save history after update */
     save_cpu_history(&cpu_history);
+
+    /* Realtime mode: return instant CPU load without smoothing */
+    if (argc > 1 && strcmp(argv[1], "realtime") == 0) {
+        CpuTimes sample1, sample2;
+        double instant_cpu = 0.0;
+
+        /* Take two quick samples for instant reading */
+        if (read_cpu_times(&sample1)) {
+            sleep_ms(50);  /* Very short delay for instant reading */
+            if (read_cpu_times(&sample2)) {
+                long long int total_diff = sample2.total - sample1.total;
+                long long int idle_diff = sample2.idle_total - sample1.idle_total;
+
+                if (total_diff > 0) {
+                    instant_cpu = ((total_diff - idle_diff) * 100.0) / total_diff;
+                    if (instant_cpu < 0) instant_cpu = 0.0;
+                    if (instant_cpu > 100) instant_cpu = 100.0;
+                }
+            }
+        }
+        printf("%.1f\n", instant_cpu);
+        return 0;
+    }
 
     /* Basic mode: return just the current CPU load */
     if (argc == 1) {
