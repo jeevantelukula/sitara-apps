@@ -228,7 +228,45 @@ var init = function() {
             if (fetchDevicesButton) {
                 fetchDevicesButton.addEventListener('click', function() {
                     console.log(">>> FETCH DEVICES BUTTON CLICKED <<<");
-                    fetchAudioDevices();
+
+                    // Check if classification is running
+                    if (isClassifying) {
+                        if (confirm("Audio classification is currently running. Stop it and refresh devices?")) {
+                            // Stop classification first
+                            $.ajax({
+                                url: '/stop-audio-classification',
+                                type: 'GET',
+                                complete: function() {
+                                    isClassifying = false;
+                                    stopAudioButton.disabled = true;
+
+                                    // Stop session timer
+                                    if (sessionTimer) {
+                                        clearInterval(sessionTimer);
+                                        sessionTimer = null;
+                                    }
+
+                                    // Update status
+                                    const statusIndicator = document.getElementById('status_indicator');
+                                    const statusText = document.getElementById('status_text');
+                                    if (statusIndicator) {
+                                        statusIndicator.classList.remove('active');
+                                        statusIndicator.classList.add('inactive');
+                                    }
+                                    if (statusText) {
+                                        statusText.textContent = 'Inactive';
+                                    }
+
+                                    // Now fetch devices
+                                    fetchAudioDevices();
+                                }
+                            });
+                        }
+                        // If user cancels, don't do anything
+                    } else {
+                        // No classification running, just fetch devices
+                        fetchAudioDevices();
+                    }
                 });
             }
 
@@ -240,6 +278,14 @@ var init = function() {
                     console.error("ERROR: device_list_container not found!");
                     return;
                 }
+
+                // Reset selection when fetching devices
+                selectedDevice = null;
+                startAudioButton.disabled = true;
+
+                // Reset the classification display
+                audioClassificationResult.textContent = "Waiting to start...";
+                audioClassificationResult.classList.add('waiting');
 
                 container.innerHTML = '<div class="loading-devices">Loading audio devices...</div>';
 
@@ -280,15 +326,23 @@ var init = function() {
 
                 for (var i = 0; i < lines.length; i++) {
                     var deviceName = lines[i].trim();
-                    var isSelected = deviceName === selectedDevice;
 
-                    html += '<div class="device-card' + (isSelected ? ' selected' : '') + '" onclick="window.selectDevice(\'' + deviceName + '\')">';
+                    // Extract device name for display (e.g., "plughw:1,0" -> "Device 1")
+                    var displayName = 'Audio Device ' + (i + 1);
+                    if (deviceName.includes('plughw:')) {
+                        var match = deviceName.match(/plughw:(\d+),\d+/);
+                        if (match) {
+                            displayName = 'Audio Capture Device ' + match[1];
+                        }
+                    }
+
+                    html += '<div class="device-card" onclick="window.selectDevice(\'' + deviceName + '\')">';
                     html += '  <div class="device-info">';
-                    html += '    <div class="device-name">Audio Device ' + (i + 1) + '</div>';
+                    html += '    <div class="device-name">' + displayName + '</div>';
                     html += '    <div class="device-id">' + deviceName + '</div>';
                     html += '  </div>';
-                    html += '  <div class="device-status ' + (isSelected ? 'selected' : 'available') + '">';
-                    html += isSelected ? 'Selected' : 'Available';
+                    html += '  <div class="device-status available">';
+                    html += 'Available';
                     html += '  </div>';
                     html += '</div>';
                 }
@@ -301,12 +355,46 @@ var init = function() {
                 console.log("Device selected:", deviceName);
                 selectedDevice = deviceName;
 
-                // Update UI
-                displayDevices(audioDevices.join('\n'));
+                // Update UI - only highlight the selected device
+                var deviceCards = document.querySelectorAll('.device-card');
+                deviceCards.forEach(function(card) {
+                    // Remove selected class from all cards
+                    card.classList.remove('selected');
+
+                    // Find the status element within the card
+                    var statusElem = card.querySelector('.device-status');
+                    if (statusElem) {
+                        statusElem.classList.remove('selected');
+                        statusElem.classList.add('available');
+                        statusElem.textContent = 'Available';
+                    }
+                });
+
+                // Find and highlight only the selected device card
+                deviceCards.forEach(function(card) {
+                    var deviceIdElem = card.querySelector('.device-id');
+                    if (deviceIdElem && deviceIdElem.textContent === deviceName) {
+                        card.classList.add('selected');
+                        var statusElem = card.querySelector('.device-status');
+                        if (statusElem) {
+                            statusElem.classList.remove('available');
+                            statusElem.classList.add('selected');
+                            statusElem.textContent = 'Selected';
+                        }
+                    }
+                });
+
                 startAudioButton.disabled = false;
 
-                // Update display
-                audioClassificationResult.textContent = "Device Selected";
+                // Update display with shortened device name
+                var shortName = deviceName;
+                if (deviceName.includes('plughw:')) {
+                    var match = deviceName.match(/plughw:(\d+),(\d+)/);
+                    if (match) {
+                        shortName = "Device " + match[1] + " (Sub " + match[2] + ")";
+                    }
+                }
+                audioClassificationResult.textContent = "Ready: " + shortName;
                 audioClassificationResult.classList.remove('waiting');
             };
 
