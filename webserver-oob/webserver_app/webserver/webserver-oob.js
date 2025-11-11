@@ -34,18 +34,18 @@
  */
 
 /*
- * Libraries
+ * WebServer OOB with LVGL-style FIFO Reading
+ * Enhanced with dedicated child process for blocking FIFO reads
+ * providing real-time audio classification without affecting server responsiveness
  */
+
 const express = require('express');
 const { exec, spawn } = require('child_process');
 const http = require('http');
 const WebSocket = require('ws');
 const pty = require('node-pty');
 const fs = require('fs');
-
-/*
- * Definitions
- */
+const path = require('path');
 
 /* Set the path from command line argument */
 const app_dir = process.argv[2] || 'app';
@@ -55,16 +55,18 @@ const app = express();
 const server = http.createServer(app);
 const port = 3000;
 
-/*
- * Server Code
- */
+/* Audio classification support */
+const fifoPath = '/tmp/audio_classification_fifo';
+let fifoReaderProcess = null;
+let audioProcess = null;
+let connectedAudioClients = new Set();
 
-/* Place the GUI files onto the server and point to the main html file */
+/* Place the GUI files onto the server */
 app.use(express.static(app_dir));
 
 /* Handle system information requests */
 app.get('/run-uname', (req, res) => {
-    exec('uname -a', (error, stdout, stderr) => {
+    exec('uname -a', (error, stdout) => {
         if (error) {
             console.error(`exec error: ${error}`);
             return res.status(500).send(error);
@@ -75,7 +77,7 @@ app.get('/run-uname', (req, res) => {
 
 /* Handle CPU load requests */
 app.get('/cpu-load', (req, res) => {
-    exec('/usr/bin/cpu_stats enhanced', (error, stdout, stderr) => {
+    exec('/usr/bin/cpu_stats enhanced', (error, stdout) => {
         if (error) {
             console.error(`exec error: ${error}`);
             return res.status(500).send(error);
@@ -86,7 +88,7 @@ app.get('/cpu-load', (req, res) => {
 
 /* Handle CPU info requests */
 app.get('/cpu-info', (req, res) => {
-    exec('/usr/bin/cpu_stats info', (error, stdout, stderr) => {
+    exec('/usr/bin/cpu_stats info', (error, stdout) => {
         if (error) {
             console.error(`exec error: ${error}`);
             return res.status(500).send(error);
@@ -95,8 +97,140 @@ app.get('/cpu-info', (req, res) => {
     });
 });
 
-/* Audio classification support */
-const fifoPath = '/tmp/audio_classification_fifo';
+/* Handle audio device list requests */
+app.get('/audio-devices', (req, res) => {
+    exec('/usr/bin/audio_utils devices', (error, stdout) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            return res.status(500).send('Error listing audio devices');
+        }
+        res.send(stdout);
+    });
+});
+
+/* Start audio classification */
+app.get('/start-audio-classification', (req, res) => {
+    const device = req.query.device || 'default';
+
+    if (audioProcess) {
+        return res.status(400).send('Audio classification already running');
+    }
+
+    // Start the audio classification process
+    audioProcess = spawn('/usr/bin/audio_utils', ['start_gst', device]);
+
+    audioProcess.on('error', (err) => {
+        console.error('Failed to start audio classification:', err);
+        audioProcess = null;
+    });
+
+    audioProcess.on('exit', (code) => {
+        console.log(`Audio classification process exited with code ${code}`);
+        audioProcess = null;
+        stopFifoReader();
+    });
+
+    // Start the FIFO reader child process
+    startFifoReader();
+
+    res.send('Audio classification started');
+});
+
+/* Stop audio classification */
+app.get('/stop-audio-classification', (req, res) => {
+    stopAudioClassification();
+    res.send('Audio classification stopped');
+});
+
+/* Start FIFO reader child process */
+function startFifoReader() {
+    if (fifoReaderProcess) {
+        console.log('[FIFO Reader] Already running');
+        return;
+    }
+
+    console.log('[FIFO Reader] Starting child process for blocking FIFO reads');
+
+    // Spawn the FIFO reader process
+    fifoReaderProcess = spawn('node', [path.join(__dirname, 'fifo-reader.js')]);
+
+    // Handle data from the FIFO reader
+    fifoReaderProcess.stdout.on('data', (data) => {
+        const lines = data.toString().split('\n');
+        lines.forEach(line => {
+            if (line.trim()) {
+                try {
+                    const message = JSON.parse(line);
+
+                    // Handle different message types
+                    if (message.type === 'classification') {
+                        // Send to all connected WebSocket clients
+                        const resultData = {
+                            class: message.class,
+                            timestamp: message.timestamp
+                        };
+
+                        connectedAudioClients.forEach(ws => {
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify(resultData));
+                            }
+                        });
+
+                        console.log(`[FIFO Reader] Classification: ${message.class}`);
+                    } else if (message.type === 'status') {
+                        console.log(`[FIFO Reader] Status: ${message.message}`);
+                    } else if (message.type === 'error') {
+                        console.error(`[FIFO Reader] Error: ${message.message}`);
+                    }
+                } catch (err) {
+                    console.error('[FIFO Reader] Failed to parse message:', err);
+                }
+            }
+        });
+    });
+
+    fifoReaderProcess.stderr.on('data', (data) => {
+        console.error(`[FIFO Reader] stderr: ${data}`);
+    });
+
+    fifoReaderProcess.on('exit', (code) => {
+        console.log(`[FIFO Reader] Process exited with code ${code}`);
+        fifoReaderProcess = null;
+    });
+}
+
+/* Stop FIFO reader process */
+function stopFifoReader() {
+    if (fifoReaderProcess) {
+        console.log('[FIFO Reader] Stopping child process');
+        fifoReaderProcess.kill('SIGTERM');
+        fifoReaderProcess = null;
+    }
+}
+
+/* Stop audio classification completely */
+function stopAudioClassification() {
+    // Stop the audio process
+    if (audioProcess) {
+        exec('/usr/bin/audio_utils stop_gst', (error) => {
+            if (error) {
+                console.error('Error stopping audio classification:', error);
+            }
+        });
+        audioProcess.kill();
+        audioProcess = null;
+    }
+
+    // Stop the FIFO reader
+    stopFifoReader();
+
+    // Force kill any stray GStreamer processes
+    exec('pkill -f gst-launch', (error) => {
+        if (error) {
+            console.log('No GStreamer processes to kill');
+        }
+    });
+}
 
 /* WebSocket server for terminal and audio */
 const wss = new WebSocket.Server({ server });
@@ -105,6 +239,7 @@ wss.on('connection', (ws, req) => {
     console.log(`New WebSocket connection: ${req.url}`);
 
     if (req.url === '/terminal') {
+        // Terminal WebSocket handling (unchanged)
         const shell = pty.spawn('/bin/bash', [], {
             name: 'xterm-color',
             cols: 80,
@@ -128,664 +263,68 @@ wss.on('connection', (ws, req) => {
             shell.kill();
         });
 
-        ws.on('error', (err) => {
-            console.error(`Terminal WebSocket error: ${err.message}`);
-            shell.kill();
-        });
     } else if (req.url === '/audio') {
-        console.log(`Setting up audio classification WebSocket on ${fifoPath}`);
+        console.log('[Audio WebSocket] New client connected');
+
+        // Add to connected clients set
+        connectedAudioClients.add(ws);
 
         // Send initial connected message
-        ws.send(JSON.stringify({ status: 'connected', message: 'WebSocket connected, waiting for audio classification results' }));
-
-        let fifoFd = null;
-        let readBuffer = '';
-        let readInterval = null;
-        let isClassifying = true; // Assume active by default until told otherwise
+        ws.send(JSON.stringify({
+            status: 'connected',
+            message: 'WebSocket connected for audio classification'
+        }));
 
         // Handle client messages
         ws.on('message', (message) => {
             try {
                 const data = JSON.parse(message);
-                console.log('[Audio WebSocket] Received client message:', data);
+                console.log('[Audio WebSocket] Received:', data);
 
-                if (data.type === 'client_status') {
-                    if (data.status === 'stopped') {
-                        console.log('[Audio WebSocket] Client stopped classification, pausing FIFO reading');
-                        isClassifying = false;
-                    } else if (data.status === 'started') {
-                        console.log('[Audio WebSocket] Client started classification, resuming FIFO reading');
-                        isClassifying = true;
-                    }
-                } else if (data.type === 'diagnostic_ping') {
-                    console.log(`[Audio WebSocket] Received diagnostic ping #${data.counter}`);
-
-                    // Send back diagnostic information
-                    const diagnosticInfo = {
+                // Handle diagnostic pings (simplified - no test messages)
+                if (data.type === 'diagnostic_ping') {
+                    ws.send(JSON.stringify({
                         type: 'diagnostic_response',
                         fifo_exists: fs.existsSync(fifoPath),
-                        fifo_fd: fifoFd !== null ? 'open' : 'closed',
-                        buffer_size: readBuffer.length,
-                        is_classifying: isClassifying,
+                        reader_running: fifoReaderProcess !== null,
                         timestamp: Date.now()
-                    };
-
-                    ws.send(JSON.stringify(diagnosticInfo));
-
-                    // Only send a test message if we haven't seen real data from FIFO in the last 3 seconds
-                    // This ensures test messages only appear when no real classifications are coming through
-                    const lastClassificationAge = Date.now() - (global.lastRealClassification || 0);
-                    if (lastClassificationAge > 3000) {
-                        console.log(`[Audio WebSocket] No real classification for ${Math.round(lastClassificationAge/1000)}s, sending test message`);
-                        // Force send a test message to verify WebSocket works
-                        const testMessage = {
-                            class: `Looking for sound...`,  // More user-friendly message than TEST_CLASS_X
-                            timestamp: Date.now()
-                        };
-
-                        ws.send(JSON.stringify(testMessage));
-                    }
+                    }));
                 }
             } catch (err) {
-                console.error('[Audio WebSocket] Error parsing client message:', err.message);
+                console.error('[Audio WebSocket] Error parsing message:', err);
             }
         });
 
-        // Function to try opening and reading from FIFO
-        const tryReadFifo = () => {
-            try {
-                // Skip reading if classification is paused
-                if (!isClassifying) {
-                    return; // Classification is paused by client
-                }
-
-                // Check if FIFO exists
-                if (!fs.existsSync(fifoPath)) {
-                    console.log('[Audio FIFO] FIFO does not exist yet, waiting for pipeline to create it');
-                    return; // FIFO not created yet, wait for pipeline to start
-                }
-
-                // Try to open FIFO in non-blocking mode
-                if (fifoFd === null) {
-                    try {
-                        console.log(`[Audio FIFO] Attempting to open FIFO at ${fifoPath}`);
-                        fifoFd = fs.openSync(fifoPath, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK);
-                        console.log('[Audio FIFO] FIFO opened successfully for reading, fd:', fifoFd);
-                    } catch (err) {
-                        console.log('[Audio FIFO] Failed to open FIFO, it may not be ready yet:', err.message);
-                        // FIFO not ready yet
-                        return;
-                    }
-                }
-
-                // Read available data - increased buffer size to capture more classifications at once
-                const buffer = Buffer.alloc(8192); // Doubled buffer size
-                let bytesRead = 0;
-
-                try {
-                    // Detailed error logging for the read operation
-                    try {
-                        bytesRead = fs.readSync(fifoFd, buffer, 0, buffer.length, null);
-                    } catch (readError) {
-                        if (readError.code === 'EAGAIN' || readError.code === 'EWOULDBLOCK') {
-                            // No data available yet, this is normal for non-blocking reads
-                            return;
-                        }
-
-                        // Log detailed error information
-                        console.error('[Audio FIFO] Error reading from FIFO:', readError);
-                        console.error(`[Audio FIFO] FIFO status: exists=${fs.existsSync(fifoPath)}, fd=${fifoFd}`);
-
-                        // Attempt recovery by reopening the FIFO
-                        try {
-                            if (fifoFd !== null) {
-                                fs.closeSync(fifoFd);
-                                console.log('[Audio FIFO] Closed FIFO after read error');
-                            }
-                            fifoFd = null;
-                            return; // Skip this round and try again later
-                        } catch (closeError) {
-                            console.error('[Audio FIFO] Error closing FIFO after read error:', closeError);
-                        }
-
-                        throw readError; // Re-throw the original error
-                    }
-
-                    // Successfully read from the FIFO
-                    if (bytesRead > 0) {
-                        console.log(`[Audio FIFO] Successfully read ${bytesRead} bytes from FIFO`);
-
-                        // Log more comprehensive debug information
-                        const rawData = buffer.toString('utf8', 0, Math.min(bytesRead, 100));
-                        console.log(`[Audio FIFO] Raw data (first 100 chars): "${rawData}${bytesRead > 100 ? '...' : ''}"`);
-
-                        // Count dollar signs for better diagnostics
-                        const dollarCount = (buffer.toString('utf8', 0, bytesRead).match(/\$/g) || []).length;
-                        if (dollarCount === 0) {
-                            console.log('[Audio FIFO] Warning: No dollar sign delimiters found in data');
-                        } else {
-                            console.log(`[Audio FIFO] Found ${dollarCount} dollar sign delimiters in data`);
-                        }
-                    }
-                } catch (err) {
-                    console.error('[Audio FIFO] Fatal error reading from FIFO:', err);
-
-                    // Try to recover by resetting the FIFO descriptor
-                    if (fifoFd !== null) {
-                        try {
-                            fs.closeSync(fifoFd);
-                            console.log('[Audio FIFO] Closed FIFO after fatal error');
-                        } catch (e) {
-                            console.error('[Audio FIFO] Error closing FIFO after fatal error:', e);
-                        }
-                        fifoFd = null;
-                    }
-
-                    return; // Skip this round instead of throwing
-                }
-
-                if (bytesRead > 0) {
-                    // Append to read buffer
-                    readBuffer += buffer.toString('utf8', 0, bytesRead);
-                    console.log('[Audio FIFO] Buffer now contains:', readBuffer.length, 'bytes');
-
-                    // Process complete results (try multiple possible delimiters)
-                    let resultCount = 0;
-                    let result = null;
-                    let delimiterFound = false;
-
-                    // First try to use dollar sign delimiter since we know that's the actual format
-                    // from the FIFO (e.g., "Typing$Typing$Chewing, mastication$...")
-
-                    // Strategy: Find the LAST (rightmost) value to always show the latest classification
-                    let lastClassification = null;
-                    let processedAny = false;
-
-                    // Step 1: First check if there are any dollar signs in the buffer
-                    if (readBuffer.indexOf('$') !== -1) {
-                        delimiterFound = true;
-                        processedAny = true;
-
-                        // Step 2: Split by dollar sign to get all classifications
-                        const allClassifications = readBuffer.split('$');
-
-                        // Step 3: Get the last non-empty classification (the one before the last dollar sign)
-                        // We iterate through all values but only keep the last non-empty one
-                        for (let i = 0; i < allClassifications.length - 1; i++) {
-                            const current = allClassifications[i].trim();
-                            if (current) {
-                                resultCount++;
-                                lastClassification = current;
-                            }
-                        }
-
-                        // Step 4: Clear the buffer to avoid reprocessing old data
-                        // This is critical for real-time performance to avoid backlog
-                        readBuffer = '';
-
-                        // Step 5: Log and send only the last (most recent) classification
-                        if (lastClassification) {
-                            console.log(`[Audio FIFO] Found LATEST classification: "${lastClassification}"`);
-
-                            if (ws.readyState === WebSocket.OPEN) {
-                                try {
-                                    const resultData = {
-                                        class: lastClassification,
-                                        timestamp: Date.now()
-                                    };
-                                    ws.send(JSON.stringify(resultData));
-                                    console.log(`[Audio FIFO] Sent LATEST classification: "${lastClassification}"`);
-
-                                    // Update last real classification timestamp
-                                    global.lastRealClassification = Date.now();
-
-                                    // Set the result for later processing
-                                    result = lastClassification;
-                                } catch (err) {
-                                    console.error(`[Audio FIFO] Error sending latest classification: ${err.message}`);
-                                }
-                            }
-                        }
-                    }
-
-                    // If we processed any results with dollar signs, stop here
-                    if (processedAny) {
-                        // Clear the delimiterFound flag so we don't try to send the result again later
-                        delimiterFound = false;
-                        result = null;
-                    }
-
-                    // Only if $ delimiter isn't found, try regex pattern matching
-                    if (!delimiterFound) {
-                        // Try to extract using regex pattern matching for audio class names
-                        // Improved regex for multi-word classifications like "Chewing, mastication"
-                        // Allow spaces, commas, and keep phrases together
-                        const classRegex = /\b([A-Za-z][A-Za-z_,\s]{3,}[A-Za-z])\b/g;
-                        const matches = readBuffer.match(classRegex);
-                        if (matches && matches.length > 0) {
-                            // Common words that aren't likely to be classifications
-                            const commonWords = ["from", "with", "this", "that", "have", "been", "your", "file", "data"];
-
-                            // Find the first word that's not in our common words list
-                            let found = false;
-                            for (let i = 0; i < matches.length; i++) {
-                                const currMatch = matches[i].trim();
-                                if (!commonWords.includes(currMatch.toLowerCase())) {
-                                    // Found a potential classification
-                                    delimiterFound = true;
-                                    result = currMatch;
-                                    found = true;
-                                    console.log(`[Audio FIFO] Found result using regex: "${result}"`);
-
-                                    // Remove everything up to and including this match from the buffer
-                                    const matchIndex = readBuffer.indexOf(result);
-                                    if (matchIndex !== -1) {
-                                        readBuffer = readBuffer.substring(matchIndex + result.length);
-                                        resultCount++;
-                                    }
-                                    break;
-                                }
-                            }
-
-                            // If we didn't find anything usable, just use the first match
-                            if (!found && matches.length > 0) {
-                                delimiterFound = true;
-                                result = matches[0].trim();
-                                console.log(`[Audio FIFO] Using first match (no better options): "${result}"`);
-
-                                // Remove everything up to and including this match from the buffer
-                                const matchIndex = readBuffer.indexOf(result);
-                                if (matchIndex !== -1) {
-                                    readBuffer = readBuffer.substring(matchIndex + result.length);
-                                    resultCount++;
-                                }
-                            }
-                        }
-                    }
-
-                    // If no dollar sign, try newline delimiter
-                    if (!delimiterFound) {
-                        let newlineIndex = readBuffer.indexOf('\n');
-                        if (newlineIndex !== -1) {
-                            delimiterFound = true;
-                            result = readBuffer.substring(0, newlineIndex).trim();
-                            readBuffer = readBuffer.substring(newlineIndex + 1);
-                            resultCount++;
-                            console.log(`[Audio FIFO] Found result using newline delimiter: "${result}"`);
-                        }
-                    }
-
-                    // If nothing found yet but buffer is getting large (reduced threshold), try to extract anything useful
-                    if (!delimiterFound && readBuffer.length > 200) {
-                        console.log(`[Audio FIFO] No delimiter found but buffer large (${readBuffer.length} bytes), using whole buffer`);
-                        result = readBuffer.trim();
-                        readBuffer = '';
-                        resultCount++;
-
-                        // Try to find and extract just a word if it's a messy buffer
-                        const wordMatch = result.match(/[A-Za-z_]+/);
-                        if (wordMatch) {
-                            console.log(`[Audio FIFO] Extracted word from buffer: "${wordMatch[0]}"`);
-                            result = wordMatch[0];
-                        }
-                    }
-
-                    // Process the result we found (if any)
-                    if (result !== null) {
-                        console.log(`[Audio FIFO] Extracted result: "${result}"`);
-
-                        if (result && ws.readyState === WebSocket.OPEN) {
-                            console.log(`[Audio FIFO] Sending classification result: "${result}"`);
-
-                            // Send as JSON
-                            const resultData = {
-                                class: result,
-                                timestamp: Date.now()
-                            };
-
-                            try {
-                                ws.send(JSON.stringify(resultData));
-                                console.log('[Audio FIFO] Sent real classification result to WebSocket client');
-
-                                // Update timestamp of last real classification
-                                global.lastRealClassification = Date.now();
-                            } catch (wsErr) {
-                                console.error('[Audio FIFO] Error sending to WebSocket:', wsErr.message);
-                            }
-                        } else {
-                            // Log why we're not sending
-                            if (!result) {
-                                console.log('[Audio FIFO] Not sending: empty result');
-                            } else if (!ws || ws.readyState !== WebSocket.OPEN) {
-                                console.log(`[Audio FIFO] Not sending: WebSocket not ready, readyState=${ws ? ws.readyState : 'ws is null'}`);
-                            }
-                        }
-                    }
-
-                    if (resultCount > 0) {
-                        console.log(`[Audio FIFO] Processed ${resultCount} classification results`);
-                    } else {
-                        console.log('[Audio FIFO] No complete results found in buffer yet');
-                    }
-                }
-            } catch (err) {
-                console.error(`[Audio FIFO] Error reading from FIFO: ${err.message}`);
-                console.error(`[Audio FIFO] Error stack: ${err.stack}`);
-                if (fifoFd !== null) {
-                    try {
-                        fs.closeSync(fifoFd);
-                        console.log('[Audio FIFO] Closed FIFO file descriptor after error');
-                    } catch (e) {
-                        console.error('[Audio FIFO] Error closing FIFO:', e.message);
-                    }
-                    fifoFd = null;
-                }
-            }
-        };
-
-        // Poll FIFO every 100ms for faster updates
-        console.log('[Audio FIFO] Setting up polling interval (100ms)');
-        readInterval = setInterval(tryReadFifo, 100);
-
         ws.on('close', () => {
-            console.log('Audio WebSocket connection closed');
-            if (readInterval) {
-                clearInterval(readInterval);
-                readInterval = null;
-            }
-            if (fifoFd !== null) {
-                try {
-                    fs.closeSync(fifoFd);
-                } catch (err) {}
-                fifoFd = null;
-            }
+            console.log('[Audio WebSocket] Client disconnected');
+            connectedAudioClients.delete(ws);
         });
 
         ws.on('error', (err) => {
-            console.error(`Audio WebSocket error: ${err.message}`);
-            if (readInterval) {
-                clearInterval(readInterval);
-                readInterval = null;
-            }
-            if (fifoFd !== null) {
-                try {
-                    fs.closeSync(fifoFd);
-                } catch (e) {}
-                fifoFd = null;
-            }
+            console.error('[Audio WebSocket] Error:', err);
+            connectedAudioClients.delete(ws);
         });
     } else {
-        console.log(`Unknown WebSocket URL: ${req.url}`);
+        // Unknown WebSocket URL
         ws.close(1003, "Unsupported WebSocket URL");
     }
 });
 
-/* Audio classification support */
-let audioProcess = null;
-
-// Helper function to force kill any GStreamer processes
-function forceKillGstreamer() {
-    console.log('[Force Cleanup] Looking for stray GStreamer processes');
-    try {
-        // Use execSync to get immediate results
-        const { execSync } = require('child_process');
-        try {
-            // Find GStreamer processes
-            const psOutput = execSync('ps aux | grep gst-launch | grep -v grep', { encoding: 'utf8' });
-
-            if (psOutput && psOutput.trim()) {
-                console.log('[Force Cleanup] Found GStreamer processes:', psOutput);
-                // Extract PIDs
-                const lines = psOutput.trim().split('\n');
-                for (const line of lines) {
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length > 1) {
-                        const pid = parts[1];
-                        console.log('[Force Cleanup] Killing PID:', pid);
-                        try {
-                            // Force kill with SIGKILL
-                            execSync(`kill -9 ${pid}`);
-                            console.log('[Force Cleanup] Successfully killed PID:', pid);
-                        } catch (killError) {
-                            console.error('[Force Cleanup] Failed to kill PID:', pid, killError.message);
-                        }
-                    }
-                }
-            } else {
-                console.log('[Force Cleanup] No GStreamer processes found');
-            }
-        } catch (psError) {
-            // If grep returns no results, it will exit with code 1
-            if (psError.status === 1) {
-                console.log('[Force Cleanup] No GStreamer processes found');
-            } else {
-                console.error('[Force Cleanup] Error checking for GStreamer processes:', psError.message);
-            }
-        }
-
-        // Clean up any FIFO or PID files
-        if (fs.existsSync('/tmp/audio_classification.pid')) {
-            fs.unlinkSync('/tmp/audio_classification.pid');
-            console.log('[Force Cleanup] Removed stale PID file');
-        }
-
-        if (fs.existsSync(fifoPath)) {
-            fs.unlinkSync(fifoPath);
-            console.log('[Force Cleanup] Removed stale FIFO');
-        }
-    } catch (err) {
-        console.error('[Force Cleanup] Error during cleanup:', err.message);
-    }
-}
-
-app.get('/audio-devices', (req, res) => {
-    console.log('[/audio-devices] Endpoint called');
-
-    // Use standard /usr/bin location for binary
-    const audioUtilsPath = '/usr/bin/audio_utils';
-
-    console.log(`[/audio-devices] Executing: ${audioUtilsPath} devices`);
-    exec(`${audioUtilsPath} devices`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`[/audio-devices] Failed to get audio devices: ${error}`);
-            console.error(`[/audio-devices] stderr: ${stderr}`);
-            console.error(`[/audio-devices] error code: ${error.code}`);
-            console.error(`[/audio-devices] Attempted path: ${audioUtilsPath}`);
-            // Send plain text error message, not JSON
-            return res.status(500).send(`Error: ${error.message}\n${stderr}`);
-        }
-
-        // Log both stdout and stderr for debugging
-        console.log(`[/audio-devices] Audio devices stdout: ${stdout.trim()}`);
-        if (stderr) {
-            console.log(`[/audio-devices] Audio devices stderr: ${stderr.trim()}`);
-        }
-
-        // Return the list of devices from stdout (plain text)
-        console.log(`[/audio-devices] Sending response with ${stdout.trim().split('\n').length} lines`);
-        res.send(stdout);
-    });
+/* Cleanup on exit */
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, cleaning up...');
+    stopAudioClassification();
+    process.exit(0);
 });
 
-app.get('/start-audio-classification', (req, res) => {
-    const device = req.query.device;
-    if (!device) {
-        return res.status(400).json({ error: 'Missing device parameter' });
-    }
-
-    if (audioProcess) {
-        return res.status(400).json({ error: 'Audio classification already running' });
-    }
-
-    console.log(`[/start-audio-classification] Starting audio classification with device: ${device}`);
-
-    // Use standard /usr/bin location for binary
-    const audioUtilsPath = '/usr/bin/audio_utils';
-
-    console.log(`[/start-audio-classification] Executing: ${audioUtilsPath} start_gst ${device}`);
-
-    // Start the audio_utils process
-    audioProcess = spawn(audioUtilsPath, ['start_gst', device]);
-
-    // Set up a timeout to check if the process started successfully
-    const startTimeout = setTimeout(() => {
-        if (audioProcess) {
-            console.error('Audio classification start timeout - no response received');
-            res.status(500).json({ error: 'Audio classification start timeout' });
-            audioProcess.kill();
-            audioProcess = null;
-        }
-    }, 5000);
-
-    let outputBuffer = '';
-
-    audioProcess.stdout.on('data', (data) => {
-        const output = data.toString().trim();
-        console.log(`audio_utils stdout: ${output}`);
-
-        outputBuffer += output;
-
-        // Check for success/error messages
-        if (output.includes('SUCCESS:')) {
-            clearTimeout(startTimeout);
-            res.status(200).json({ status: 'started', message: 'Audio classification started successfully' });
-        } else if (output.includes('ERROR:')) {
-            clearTimeout(startTimeout);
-            res.status(500).json({ error: output.replace('ERROR:', '').trim() });
-            audioProcess.kill();
-            audioProcess = null;
-        }
-    });
-
-    audioProcess.stderr.on('data', (data) => {
-        console.error(`audio_utils stderr: ${data}`);
-    });
-
-    audioProcess.on('error', (err) => {
-        clearTimeout(startTimeout);
-        console.error(`Failed to start audio_utils: ${err}`);
-        res.status(500).json({ error: `Failed to start audio classification: ${err.message}` });
-        audioProcess = null;
-    });
-
-    audioProcess.on('close', (code) => {
-        clearTimeout(startTimeout);
-        console.log(`audio_utils process exited with code ${code}`);
-
-        // Only send response if we haven't already
-        if (!res.headersSent) {
-            if (code === 0) {
-                res.status(200).json({ status: 'completed', message: 'Audio classification completed' });
-            } else {
-                res.status(500).json({ error: `Audio classification failed with code ${code}` });
-            }
-        }
-        audioProcess = null;
-    });
-});
-
-app.get('/stop-audio-classification', (req, res) => {
-    console.log('[/stop-audio-classification] Stopping audio classification');
-
-    // Start with force cleanup to ensure any stray processes are killed
-    forceKillGstreamer();
-
-    if (audioProcess) {
-        console.log('[/stop-audio-classification] Stopping managed audio process');
-
-        // Use standard /usr/bin location for binary
-        const audioUtilsPath = '/usr/bin/audio_utils';
-
-        console.log(`[/stop-audio-classification] Executing: ${audioUtilsPath} stop_gst`);
-
-        // Send the stop command
-        const stopProcess = spawn(audioUtilsPath, ['stop_gst']);
-
-        // Set a timeout for graceful shutdown
-        const forceKillTimeout = setTimeout(() => {
-            console.log('[/stop-audio-classification] Timeout waiting for clean stop, force killing');
-
-            // Kill the audio process if it still exists
-            if (audioProcess) {
-                console.log('[/stop-audio-classification] Killing audio process with SIGKILL');
-                try {
-                    audioProcess.kill('SIGKILL');
-                } catch (e) {
-                    console.error('[/stop-audio-classification] Error killing process:', e.message);
-                }
-                audioProcess = null;
-            }
-
-            // Run force cleanup again
-            forceKillGstreamer();
-        }, 3000); // 3 second timeout for graceful shutdown
-
-        stopProcess.stdout.on('data', (data) => {
-            console.log(`[/stop-audio-classification] Stop stdout: ${data.toString().trim()}`);
-        });
-
-        stopProcess.stderr.on('data', (data) => {
-            console.log(`[/stop-audio-classification] Stop stderr: ${data.toString().trim()}`);
-        });
-
-        stopProcess.on('close', (code) => {
-            console.log(`[/stop-audio-classification] Stop command exited with code ${code}`);
-            clearTimeout(forceKillTimeout);
-
-            // Ensure the main process is killed
-            setTimeout(() => {
-                if (audioProcess) {
-                    console.log('[/stop-audio-classification] Killing audio process');
-                    try {
-                        audioProcess.kill();
-                    } catch (e) {
-                        console.error('[/stop-audio-classification] Error killing process:', e.message);
-                    }
-                    audioProcess = null;
-                }
-
-                // Run force cleanup one more time to be sure
-                forceKillGstreamer();
-
-                res.status(200).json({ status: 'stopped', message: 'Audio classification stopped' });
-            }, 500);
-        });
-
-        stopProcess.on('error', (err) => {
-            console.error(`[/stop-audio-classification] Failed to stop audio classification: ${err.message}`);
-            clearTimeout(forceKillTimeout);
-
-            // Fallback to killing the process directly
-            if (audioProcess) {
-                try {
-                    audioProcess.kill('SIGKILL');
-                } catch (e) {
-                    console.error('[/stop-audio-classification] Error killing process:', e.message);
-                }
-                audioProcess = null;
-            }
-
-            // Run force cleanup again
-            forceKillGstreamer();
-
-            res.status(200).json({ status: 'stopped', message: 'Audio classification stopped (fallback)' });
-        });
-    } else {
-        // No managed process, but run cleanup anyway
-        console.log('[/stop-audio-classification] No managed audio process, but running cleanup');
-
-        // Run cleanup one more time
-        forceKillGstreamer();
-
-        res.status(200).json({ status: 'not_running', message: 'Audio classification not running' });
-    }
+process.on('SIGINT', () => {
+    console.log('Received SIGINT, cleaning up...');
+    stopAudioClassification();
+    process.exit(0);
 });
 
 /* Start the server */
-// Run cleanup on startup to ensure no stale processes
-console.log('[STARTUP] Running initial cleanup to ensure no stale processes');
-forceKillGstreamer();
-
 server.listen(port, () => {
-    console.log(`Webserver-OOB listening on port ${port}, serving from ${app_dir}`);
+    console.log(`WebServer OOB (Simplified) listening on port ${port}`);
+    console.log(`Serving files from: ${app_dir}`);
 });
