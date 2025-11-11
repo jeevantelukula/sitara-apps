@@ -336,7 +336,7 @@ var init = function() {
                         }
                     }
 
-                    html += '<div class="device-card" onclick="window.selectDevice(\'' + deviceName + '\')">';
+                    html += '<div class="device-card" data-device="' + deviceName + '">';
                     html += '  <div class="device-info">';
                     html += '    <div class="device-name">' + displayName + '</div>';
                     html += '    <div class="device-id">' + deviceName + '</div>';
@@ -348,6 +348,15 @@ var init = function() {
                 }
 
                 container.innerHTML = html;
+
+                // Add click handlers to all device cards
+                var deviceCards = container.querySelectorAll('.device-card');
+                deviceCards.forEach(function(card) {
+                    card.addEventListener('click', function() {
+                        var deviceName = this.getAttribute('data-device');
+                        window.selectDevice(deviceName);
+                    });
+                });
             }
 
             // Global function for device selection
@@ -357,29 +366,27 @@ var init = function() {
 
                 // Update UI - only highlight the selected device
                 var deviceCards = document.querySelectorAll('.device-card');
-                deviceCards.forEach(function(card) {
-                    // Remove selected class from all cards
-                    card.classList.remove('selected');
 
-                    // Find the status element within the card
-                    var statusElem = card.querySelector('.device-status');
-                    if (statusElem) {
-                        statusElem.classList.remove('selected');
-                        statusElem.classList.add('available');
-                        statusElem.textContent = 'Available';
-                    }
-                });
-
-                // Find and highlight only the selected device card
+                // Single loop to handle all cards
                 deviceCards.forEach(function(card) {
                     var deviceIdElem = card.querySelector('.device-id');
-                    if (deviceIdElem && deviceIdElem.textContent === deviceName) {
-                        card.classList.add('selected');
-                        var statusElem = card.querySelector('.device-status');
-                        if (statusElem) {
+                    var statusElem = card.querySelector('.device-status');
+
+                    if (deviceIdElem && statusElem) {
+                        // Check if this is the selected device
+                        if (deviceIdElem.textContent.trim() === deviceName.trim()) {
+                            // This is the selected device
+                            console.log("Highlighting device:", deviceName);
+                            card.classList.add('selected');
                             statusElem.classList.remove('available');
                             statusElem.classList.add('selected');
                             statusElem.textContent = 'Selected';
+                        } else {
+                            // This is not the selected device
+                            card.classList.remove('selected');
+                            statusElem.classList.remove('selected');
+                            statusElem.classList.add('available');
+                            statusElem.textContent = 'Available';
                         }
                     }
                 });
