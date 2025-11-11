@@ -43,7 +43,6 @@ const express = require('express');
 const { exec, spawn } = require('child_process');
 const http = require('http');
 const WebSocket = require('ws');
-const pty = require('node-pty');
 const fs = require('fs');
 const path = require('path');
 
@@ -245,32 +244,7 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws, req) => {
     console.log(`New WebSocket connection: ${req.url}`);
 
-    if (req.url === '/terminal') {
-        // Terminal WebSocket handling (unchanged)
-        const shell = pty.spawn('/bin/bash', [], {
-            name: 'xterm-color',
-            cols: 80,
-            rows: 30,
-            cwd: process.env.HOME,
-            env: process.env
-        });
-
-        shell.on('data', (data) => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(data);
-            }
-        });
-
-        ws.on('message', (message) => {
-            shell.write(message);
-        });
-
-        ws.on('close', () => {
-            console.log('Terminal WebSocket connection closed');
-            shell.kill();
-        });
-
-    } else if (req.url === '/audio') {
+    if (req.url === '/audio') {
         console.log('[Audio WebSocket] New client connected');
 
         // Add to connected clients set
