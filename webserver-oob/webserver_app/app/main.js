@@ -321,27 +321,37 @@ var init = function() {
                     return;
                 }
 
-                audioDevices = lines;
+                audioDevices = [];
                 var html = '';
 
                 for (var i = 0; i < lines.length; i++) {
-                    var deviceName = lines[i].trim();
+                    var line = lines[i].trim();
 
-                    // Extract device name for display (e.g., "plughw:1,0" -> "Card 1, Device 0")
-                    var displayName = 'Audio Device ' + (i + 1);
-                    if (deviceName.includes('plughw:')) {
-                        var match = deviceName.match(/plughw:(\d+),(\d+)/);
+                    // Parse the new format: plughw:X,Y|Device Name
+                    var parts = line.split('|');
+                    var alsaDevice = parts[0];
+                    var friendlyName = parts[1] || 'Unknown Device';
+
+                    // Store only the ALSA device identifier
+                    audioDevices.push(alsaDevice);
+
+                    // Create display name with both friendly name and ALSA identifier
+                    var displayName = friendlyName;
+                    var cardInfo = '';
+
+                    if (alsaDevice.includes('plughw:')) {
+                        var match = alsaDevice.match(/plughw:(\d+),(\d+)/);
                         if (match) {
-                            displayName = 'Card ' + match[1] + ', Subdevice ' + match[2];
+                            cardInfo = 'Card ' + match[1] + ', Subdevice ' + match[2];
                         }
-                    } else if (deviceName === 'default') {
-                        displayName = 'Default Audio Device';
+                    } else if (alsaDevice === 'default') {
+                        cardInfo = 'Default Device';
                     }
 
-                    html += '<div class="device-card" data-device="' + deviceName + '">';
+                    html += '<div class="device-card" data-device="' + alsaDevice + '">';
                     html += '  <div class="device-info">';
                     html += '    <div class="device-name">' + displayName + '</div>';
-                    html += '    <div class="device-id">' + deviceName + '</div>';
+                    html += '    <div class="device-id">' + cardInfo + ' (' + alsaDevice + ')</div>';
                     html += '  </div>';
                     html += '  <div class="device-status available">';
                     html += 'Available';
