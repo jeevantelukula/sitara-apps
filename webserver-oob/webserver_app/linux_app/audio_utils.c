@@ -286,9 +286,10 @@ int main(int argc, char *argv[]) {
         char *devices = get_arecord_devices();
         if (devices) {
             if (device_count > 0) {
-                // Print each audio device on a separate line for UI parsing
+                // Print each audio device's ALSA identifier for UI parsing
+                // This ensures unique identification even for identical USB devices
                 for (int i = 0; i < device_count; i++) {
-                    printf("%s\n", audio_devices[i].display_name);
+                    printf("%s\n", audio_devices[i].alsa_device);
                 }
             } else {
                 // Just output the message from get_arecord_devices for UI display

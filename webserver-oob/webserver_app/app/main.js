@@ -371,12 +371,12 @@ var init = function() {
 
                 // Single loop to handle all cards
                 deviceCards.forEach(function(card) {
-                    var deviceIdElem = card.querySelector('.device-id');
+                    var cardDevice = card.getAttribute('data-device');
                     var statusElem = card.querySelector('.device-status');
 
-                    if (deviceIdElem && statusElem) {
-                        // Check if this is the selected device
-                        if (deviceIdElem.textContent.trim() === deviceName.trim()) {
+                    if (cardDevice && statusElem) {
+                        // Check if this is the selected device by comparing data-device attribute
+                        if (cardDevice === deviceName) {
                             // This is the selected device
                             console.log("Highlighting device:", deviceName);
                             card.classList.add('selected');
