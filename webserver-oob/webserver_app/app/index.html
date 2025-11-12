@@ -2679,309 +2679,371 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </ti-widget-vtab>
     <ti-widget-vtab id="ti_widget_vtab_collaterals" name="Documentation" icon="icons:description" icon-style="width:30px;height:30px;padding:5px;" visible no-child-tabs-in-menu font-size="inherit" auto-scroll font-style="normal" font-weight="normal" text-align="left" text-decoration="none" autoscroll title vertical layout>
         <style>
-            /* Documentation section styles with TI brand colors */
+            /* Modern, clean documentation section */
             .docs-container {
-                padding: 20px;
-                max-width: 1200px;
+                padding: 40px 20px;
+                max-width: 1400px;
                 margin: 0 auto;
+                background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+                min-height: 100vh;
             }
 
             .docs-header {
-                text-align: center;
-                margin-bottom: 40px;
-                padding: 40px 20px;
-                background: linear-gradient(135deg, #CC0000 0%, #990000 100%);
-                border-radius: 16px;
-                color: white;
+                margin-bottom: 60px;
             }
 
             .docs-header h1 {
-                font-size: 36px;
-                color: white;
-                margin-bottom: 10px;
+                font-size: 42px;
+                color: #1a1a1a;
+                margin-bottom: 16px;
+                font-weight: 300;
+                letter-spacing: -1px;
+            }
+
+            .docs-header h1 span {
+                color: #CC0000;
                 font-weight: 600;
             }
 
             .docs-header p {
-                font-size: 18px;
-                color: rgba(255, 255, 255, 0.9);
+                font-size: 20px;
+                color: #666;
+                font-weight: 300;
+                max-width: 600px;
             }
 
             .docs-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-                gap: 24px;
-                margin-top: 30px;
+                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+                gap: 32px;
+                margin-bottom: 60px;
             }
 
             .doc-card {
                 background: white;
-                border-radius: 12px;
-                padding: 30px;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-                transition: all 0.3s ease;
+                border-radius: 20px;
+                padding: 32px;
+                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
                 cursor: pointer;
                 position: relative;
-                border: 1px solid #e0e0e0;
+                border: 1px solid rgba(0, 0, 0, 0.06);
                 overflow: hidden;
+                display: flex;
+                flex-direction: column;
             }
 
-            .doc-card::before {
+            .doc-card::after {
                 content: '';
                 position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 4px;
-                background: linear-gradient(90deg, #CC0000 0%, #148C9C 100%);
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(204, 0, 0, 0.03) 0%, transparent 70%);
+                opacity: 0;
+                transition: opacity 0.4s ease;
+                pointer-events: none;
+            }
+
+            .doc-card:hover::after {
+                opacity: 1;
             }
 
             .doc-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-                border-color: #CC0000;
+                transform: translateY(-8px);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
             }
 
-            .doc-card:hover .doc-card-icon {
-                background: #CC0000;
-                transform: scale(1.1);
-            }
-
-            .doc-card:hover .doc-card-link {
-                color: #CC0000;
+            .doc-card-header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 20px;
             }
 
             .doc-card-icon {
-                width: 56px;
-                height: 56px;
-                background: #148C9C;
-                border-radius: 12px;
+                width: 48px;
+                height: 48px;
+                background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+                border-radius: 14px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                margin-bottom: 20px;
-                font-size: 24px;
-                color: white;
-                transition: all 0.3s ease;
+                margin-right: 16px;
+                transition: all 0.4s ease;
             }
 
-            /* Alternate icon colors for visual variety while staying on-brand */
+            .doc-card:hover .doc-card-icon {
+                background: linear-gradient(135deg, #CC0000 0%, #148C9C 100%);
+                transform: rotate(5deg) scale(1.05);
+            }
+
             .doc-card:nth-child(2) .doc-card-icon {
-                background: #666666;
+                background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
             }
 
-            .doc-card:nth-child(3) .doc-card-icon {
-                background: #CC0000;
-            }
-
-            .doc-card:nth-child(4) .doc-card-icon {
-                background: #148C9C;
-            }
-
-            .doc-card:nth-child(5) .doc-card-icon {
-                background: #666666;
-            }
-
-            .doc-card:nth-child(6) .doc-card-icon {
-                background: #CC0000;
+            .doc-card:nth-child(2):hover .doc-card-icon {
+                background: linear-gradient(135deg, #148C9C 0%, #0d5a6c 100%);
             }
 
             .doc-card h3 {
-                color: #333;
-                font-size: 20px;
-                margin-bottom: 12px;
+                color: #1a1a1a;
+                font-size: 22px;
+                margin: 0;
                 font-weight: 600;
+                letter-spacing: -0.5px;
+                flex: 1;
             }
 
-            .doc-card p {
-                color: #666;
-                font-size: 14px;
-                line-height: 1.6;
-                margin-bottom: 20px;
+            .doc-card-description {
+                color: #6c757d;
+                font-size: 15px;
+                line-height: 1.7;
+                margin-bottom: 24px;
+                flex: 1;
+            }
+
+            .doc-card-footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-top: 20px;
+                border-top: 1px solid rgba(0, 0, 0, 0.05);
             }
 
             .doc-card-link {
+                color: #CC0000;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 14px;
                 display: inline-flex;
                 align-items: center;
-                color: #148C9C;
-                text-decoration: none;
-                font-weight: 600;
-                font-size: 14px;
                 transition: all 0.3s ease;
             }
 
             .doc-card-link:hover {
-                transform: translateX(5px);
+                transform: translateX(4px);
             }
 
             .doc-card-link::after {
                 content: '→';
-                margin-left: 8px;
-                font-size: 18px;
-                transition: margin-left 0.3s ease;
+                margin-left: 6px;
+                transition: transform 0.3s ease;
             }
 
-            .doc-card-link:hover::after {
-                margin-left: 12px;
+            .doc-card:hover .doc-card-link::after {
+                transform: translateX(4px);
             }
 
-            .additional-resources {
-                margin-top: 50px;
-                padding: 30px;
-                background: #f8f9fa;
-                border-radius: 12px;
-                border: 1px solid #e0e0e0;
-            }
-
-            .additional-resources h2 {
-                font-size: 24px;
-                color: #333;
-                margin-bottom: 20px;
+            .doc-card-badge {
+                padding: 4px 10px;
+                background: rgba(204, 0, 0, 0.08);
+                color: #CC0000;
+                border-radius: 6px;
+                font-size: 12px;
                 font-weight: 600;
-                position: relative;
-                padding-left: 20px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
 
-            .additional-resources h2::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 4px;
-                height: 24px;
-                background: #CC0000;
-            }
-
-            .resource-links {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 12px;
-            }
-
-            .resource-link {
-                display: inline-flex;
-                align-items: center;
-                padding: 10px 18px;
+            .quick-links {
                 background: white;
-                border-radius: 8px;
+                border-radius: 20px;
+                padding: 40px;
+                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+                border: 1px solid rgba(0, 0, 0, 0.06);
+            }
+
+            .quick-links h2 {
+                font-size: 28px;
+                color: #1a1a1a;
+                margin-bottom: 24px;
+                font-weight: 300;
+                letter-spacing: -0.5px;
+            }
+
+            .quick-links-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 16px;
+            }
+
+            .quick-link {
+                padding: 16px 20px;
+                background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+                border-radius: 12px;
                 text-decoration: none;
-                color: #333;
-                border: 1px solid #e0e0e0;
+                color: #495057;
                 transition: all 0.3s ease;
+                border: 1px solid transparent;
                 font-size: 14px;
                 font-weight: 500;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
             }
 
-            .resource-link:hover {
+            .quick-link:hover {
+                background: white;
                 border-color: #CC0000;
                 color: #CC0000;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(204, 0, 0, 0.1);
+                transform: translateX(4px);
+                box-shadow: 0 4px 12px rgba(204, 0, 0, 0.08);
             }
 
-            .resource-link::before {
-                content: '▸';
-                margin-right: 8px;
-                color: #CC0000;
-                font-weight: bold;
+            .quick-link::after {
+                content: '↗';
+                opacity: 0.5;
+                transition: opacity 0.3s ease;
+            }
+
+            .quick-link:hover::after {
+                opacity: 1;
             }
         </style>
 
         <div class="docs-container">
             <div class="docs-header">
-                <h1>AM335x Documentation & Resources</h1>
-                <p>Access comprehensive documentation, tools, and support for AM335x development</p>
+                <h1>Documentation & <span>Resources</span></h1>
+                <p>Everything you need to develop with AM335x Sitara processors</p>
             </div>
 
             <div class="docs-grid">
                 <div class="doc-card" onclick="window.open('https://www.ti.com/product/AM3358', '_blank')">
-                    <div class="doc-card-icon">
-                        <ti-widget-icon icon="hardware:developer_board" icon-size="32" icon-color="white"></ti-widget-icon>
+                    <div class="doc-card-header">
+                        <div class="doc-card-icon">
+                            <ti-widget-icon icon="hardware:developer_board" icon-size="24" icon-color="#666"></ti-widget-icon>
+                        </div>
+                        <h3>Product Page</h3>
                     </div>
-                    <h3>Product Page</h3>
-                    <p>Explore the AM335x Sitara processor family features, specifications, and ordering information</p>
-                    <a href="https://www.ti.com/product/AM3358" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
-                        Visit Product Page
-                    </a>
+                    <p class="doc-card-description">
+                        Explore specifications, features, and ordering information for the AM335x Sitara processor family
+                    </p>
+                    <div class="doc-card-footer">
+                        <a href="https://www.ti.com/product/AM3358" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
+                            View Product
+                        </a>
+                        <span class="doc-card-badge">Official</span>
+                    </div>
                 </div>
 
                 <div class="doc-card" onclick="window.open('https://www.ti.com/lit/ug/spruh73p/spruh73p.pdf', '_blank')">
-                    <div class="doc-card-icon">
-                        <ti-widget-icon icon="action:book" icon-size="32" icon-color="white"></ti-widget-icon>
+                    <div class="doc-card-header">
+                        <div class="doc-card-icon">
+                            <ti-widget-icon icon="action:book" icon-size="24" icon-color="#666"></ti-widget-icon>
+                        </div>
+                        <h3>Technical Manual</h3>
                     </div>
-                    <h3>Technical Reference Manual</h3>
-                    <p>Comprehensive technical documentation covering all AM335x subsystems and peripherals</p>
-                    <a href="https://www.ti.com/lit/ug/spruh73p/spruh73p.pdf" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
-                        Download TRM
-                    </a>
+                    <p class="doc-card-description">
+                        Complete technical documentation covering all AM335x subsystems, peripherals, and registers
+                    </p>
+                    <div class="doc-card-footer">
+                        <a href="https://www.ti.com/lit/ug/spruh73p/spruh73p.pdf" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
+                            Download PDF
+                        </a>
+                        <span class="doc-card-badge">4000+ pages</span>
+                    </div>
                 </div>
 
                 <div class="doc-card" onclick="window.open('https://www.ti.com/tool/PROCESSOR-SDK-AM335X', '_blank')">
-                    <div class="doc-card-icon">
-                        <ti-widget-icon icon="file:folder" icon-size="32" icon-color="white"></ti-widget-icon>
+                    <div class="doc-card-header">
+                        <div class="doc-card-icon">
+                            <ti-widget-icon icon="file:folder" icon-size="24" icon-color="#666"></ti-widget-icon>
+                        </div>
+                        <h3>Processor SDK</h3>
                     </div>
-                    <h3>Processor SDK</h3>
-                    <p>Complete Linux development kit with drivers, libraries, and example applications</p>
-                    <a href="https://www.ti.com/tool/PROCESSOR-SDK-AM335X" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
-                        Get SDK
-                    </a>
+                    <p class="doc-card-description">
+                        Linux development kit with drivers, libraries, and ready-to-run example applications
+                    </p>
+                    <div class="doc-card-footer">
+                        <a href="https://www.ti.com/tool/PROCESSOR-SDK-AM335X" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
+                            Get SDK
+                        </a>
+                        <span class="doc-card-badge">Latest</span>
+                    </div>
                 </div>
 
                 <div class="doc-card" onclick="window.open('https://software-dl.ti.com/processor-sdk-linux/esd/AM335X/latest/index_FDS.html', '_blank')">
-                    <div class="doc-card-icon">
-                        <ti-widget-icon icon="action:article" icon-size="32" icon-color="white"></ti-widget-icon>
+                    <div class="doc-card-header">
+                        <div class="doc-card-icon">
+                            <ti-widget-icon icon="action:article" icon-size="24" icon-color="#666"></ti-widget-icon>
+                        </div>
+                        <h3>Getting Started</h3>
                     </div>
-                    <h3>SDK Documentation</h3>
-                    <p>Detailed guides for SDK installation, development workflow, and application examples</p>
-                    <a href="https://software-dl.ti.com/processor-sdk-linux/esd/AM335X/latest/index_FDS.html" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
-                        Browse Docs
-                    </a>
+                    <p class="doc-card-description">
+                        Step-by-step guides for SDK installation, building applications, and deployment
+                    </p>
+                    <div class="doc-card-footer">
+                        <a href="https://software-dl.ti.com/processor-sdk-linux/esd/AM335X/latest/index_FDS.html" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
+                            Browse Docs
+                        </a>
+                        <span class="doc-card-badge">Guides</span>
+                    </div>
                 </div>
 
                 <div class="doc-card" onclick="window.open('https://e2e.ti.com/support/processors/', '_blank')">
-                    <div class="doc-card-icon">
-                        <ti-widget-icon icon="communication:forum" icon-size="32" icon-color="white"></ti-widget-icon>
+                    <div class="doc-card-header">
+                        <div class="doc-card-icon">
+                            <ti-widget-icon icon="communication:forum" icon-size="24" icon-color="#666"></ti-widget-icon>
+                        </div>
+                        <h3>Community Forum</h3>
                     </div>
-                    <h3>E2E Support Forum</h3>
-                    <p>Connect with TI engineers and the community for technical support and discussions</p>
-                    <a href="https://e2e.ti.com/support/processors/" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
-                        Join Forum
-                    </a>
+                    <p class="doc-card-description">
+                        Get help from TI engineers and connect with thousands of embedded developers
+                    </p>
+                    <div class="doc-card-footer">
+                        <a href="https://e2e.ti.com/support/processors/" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
+                            Join Discussion
+                        </a>
+                        <span class="doc-card-badge">Active</span>
+                    </div>
                 </div>
 
                 <div class="doc-card" onclick="window.open('https://training.ti.com/processor-sdk-training-series', '_blank')">
-                    <div class="doc-card-icon">
-                        <ti-widget-icon icon="social:school" icon-size="32" icon-color="white"></ti-widget-icon>
+                    <div class="doc-card-header">
+                        <div class="doc-card-icon">
+                            <ti-widget-icon icon="social:school" icon-size="24" icon-color="#666"></ti-widget-icon>
+                        </div>
+                        <h3>Training Videos</h3>
                     </div>
-                    <h3>Training & Tutorials</h3>
-                    <p>Video tutorials and hands-on training materials for AM335x development</p>
-                    <a href="https://training.ti.com/processor-sdk-training-series" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
-                        Start Learning
-                    </a>
+                    <p class="doc-card-description">
+                        Learn with hands-on tutorials and video training from TI experts
+                    </p>
+                    <div class="doc-card-footer">
+                        <a href="https://training.ti.com/processor-sdk-training-series" target="_blank" class="doc-card-link" onclick="event.stopPropagation()">
+                            Start Learning
+                        </a>
+                        <span class="doc-card-badge">Free</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="additional-resources">
-                <h2>Quick Links</h2>
-                <div class="resource-links">
-                    <a href="https://www.ti.com/lit/ds/symlink/am3358.pdf" target="_blank" class="resource-link">
+            <div class="quick-links">
+                <h2>Additional Resources</h2>
+                <div class="quick-links-grid">
+                    <a href="https://www.ti.com/lit/ds/symlink/am3358.pdf" target="_blank" class="quick-link">
                         Datasheet
                     </a>
-                    <a href="https://www.ti.com/tool/BEAGLEBONE-BLACK" target="_blank" class="resource-link">
+                    <a href="https://www.ti.com/tool/BEAGLEBONE-BLACK" target="_blank" class="quick-link">
                         BeagleBone Black
                     </a>
-                    <a href="https://github.com/beagleboard" target="_blank" class="resource-link">
+                    <a href="https://github.com/beagleboard" target="_blank" class="quick-link">
                         BeagleBoard GitHub
                     </a>
-                    <a href="https://www.ti.com/tool/PROCESSOR-SDK-AM335X#downloads" target="_blank" class="resource-link">
+                    <a href="https://www.ti.com/tool/PROCESSOR-SDK-AM335X#downloads" target="_blank" class="quick-link">
                         SDK Downloads
                     </a>
-                    <a href="https://www.ti.com/lit/pdf/sprac90" target="_blank" class="resource-link">
+                    <a href="https://www.ti.com/lit/pdf/sprac90" target="_blank" class="quick-link">
                         Migration Guide
                     </a>
-                    <a href="https://www.ti.com/tool/CCSTUDIO" target="_blank" class="resource-link">
+                    <a href="https://www.ti.com/tool/CCSTUDIO" target="_blank" class="quick-link">
                         Code Composer Studio
+                    </a>
+                    <a href="https://dev.ti.com/tirex/" target="_blank" class="quick-link">
+                        TI Resource Explorer
+                    </a>
+                    <a href="https://www.ti.com/tool/SYSCONFIG" target="_blank" class="quick-link">
+                        SysConfig Tool
                     </a>
                 </div>
             </div>
