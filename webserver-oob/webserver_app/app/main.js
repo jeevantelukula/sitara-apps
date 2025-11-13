@@ -145,64 +145,6 @@ var init = function() {
                 });
             }
 
-            // Terminal specific logic
-            const openTerminalButton = templateObj.$.open_terminal_button;
-            const terminalVtab = templateObj.$.ti_widget_vtab_terminal;
-            const terminalWidget = templateObj.$.terminal;
-
-            let wsTerminal;
-
-            if (openTerminalButton && terminalVtab && terminalWidget) {
-                openTerminalButton.addEventListener('click', function() {
-                    templateObj.$.ti_widget_vtabcontainer.selectedItem = terminalVtab;
-                    
-                    // Initialize terminal when tab is selected
-                    if (!terminalWidget._initialized) {
-                        console.log("Initializing terminal and connecting to WebSocket...");
-                        
-                        // Explicitly call _doInitialize with connectionMode 'None'
-                        terminalWidget.connectionMode = "None";
-                        terminalWidget._doInitialize();
-
-                        wsTerminal = new WebSocket("ws://" + window.location.hostname + ":8082");
-
-                        wsTerminal.onopen = function() {
-                            console.log("Terminal WebSocket connected.");
-                            terminalWidget.write("Connected to terminal WebSocket.\r\n");
-                            
-                            // Send initial terminal dimensions to the server
-                            if (terminalWidget._term) {
-                                const dimensions = { cols: terminalWidget._term.cols, rows: terminalWidget._term.rows };
-                                wsTerminal.send(JSON.stringify({ type: "resize", ...dimensions }));
-                            }
-                        };
-
-                        wsTerminal.onmessage = function(event) {
-                            terminalWidget.write(event.data);
-                        };
-
-                        wsTerminal.onclose = function() {
-                            console.log("Terminal WebSocket disconnected.");
-                            terminalWidget.write("\r\nDisconnected from terminal WebSocket.\r\n");
-                        };
-
-                        wsTerminal.onerror = function(error) {
-                            console.error("Terminal WebSocket error: ", error);
-                            terminalWidget.write("\r\nWebSocket error: " + error.message + "\r\n");
-                        };
-
-                        // Handle input from the terminal and send it to the WebSocket server
-                        terminalWidget.onKey(function(keyEvent) {
-                            if (wsTerminal && wsTerminal.readyState === WebSocket.OPEN) {
-                                wsTerminal.send(keyEvent.key);
-                            }
-                        });
-
-                        terminalWidget._initialized = true;
-                    }
-                });
-            }
-
             // ===== AUDIO CLASSIFICATION - MODERN UI VERSION =====
             console.log("=== Audio Classification Init ===");
 
